@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: "selawik";
+    src: url("/selawk.ttf");
+}
+
+@font-face {
+    font-family: "selawik bold";
+    src: url("/selawkb.ttf");
+}
+
+@font-face {
+    font-family: "selawik light";
+    src: url("/selawkl.ttf");
+}
+
+body {
+    font-family: "selawik";
+    font-size: 1.5rem;
+    background-color: #000;
+    color: #fff;
+}
