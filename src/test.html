@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip Animation</title>
+    <style>
+        body {
+            height: 100vh;
+            background-color: #f0f0f0;
+            perspective: 1000px;
+            display: flex;
+        }
+        
+        .container {
+            height: 10rem;
+            width: 10rem;
+            background-color: #f1b;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transform-origin: left;
+            animation: flipIn 0.8s ease-out;
+        }
+        
+        @keyframes flipIn {
+            from {
+                transform: rotateY(90deg);
+            }
+            to {
+                transform: rotateY(0) skewY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+    </div>
+</body>
+</html>
