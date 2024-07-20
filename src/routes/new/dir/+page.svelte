@@ -1,21 +1,16 @@
 <script>
 	import { kernel } from '../../../kernel/store';
 	import Input from '../../../components/Input.svelte';
-	import Select from '../../../components/Select.svelte';
 	import Button from '../../../components/Button.svelte';
 	import { addToast } from '../../../store/toast';
 	import { goto } from '$app/navigation';
 
 	let fileName = '';
-	let fileContent = '';
-	let fileType = 'document';
 	$: fileName;
-	$: fileContent;
-	$: fileType;
 
 	const add = () => {
-		if (fileName && fileContent && fileType) {
-			kernel.addFile(fileName, fileContent, fileType);
+		if (fileName) {
+			kernel.addDirectory(fileName);
 			kernel.updateFS();
 		} else {
 			addToast('Please fill all fields', 2000);
@@ -28,15 +23,9 @@
 </script>
 
 <div class="flex flex-col gap-4 mx-4 bg-black rounded-lg h-screen page-holder">
-	<span class="mt-4 text-6xl font-[300] mb-2 page">add file</span>
+	<span class="mt-4 text-6xl font-[300] mb-2 page">add directory</span>
 	<div class="flex flex-col gap-6 page">
-		<Input bind:content={fileName} label="File Name" />
-		<Input bind:content={fileContent} label="Target" />
-		<Select
-			bind:selection={fileType}
-			data={['document', 'image', 'music', 'video', 'app']}
-			label="Select document type"
-		/>
+		<Input bind:content={fileName} label="Directory Name" />
 	</div>
 </div>
 <div
