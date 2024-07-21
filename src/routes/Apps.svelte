@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	let apps = [
 		'Apple',
@@ -81,21 +81,55 @@
 		});
 		console.log(appList);
 	});
+
+	let isExiting = false;
+	let targetChar = '';
+
+	async function scrollToChar(char) {
+		await tick();
+		const targetElement = document.getElementById(char);
+		console.log(targetElement);
+		if (targetElement) {
+			targetElement.scrollIntoView({ behavior: 'instant' });
+		}
+	}
+
+	function handleClick(char, event) {
+		if (apps.find((app) => app.charAt(0).toLowerCase() === char)) {
+			targetChar = char;
+			event.preventDefault(); // Prevent immediate navigation
+			isExiting = true;
+			setTimeout(
+				() => {
+					const targetId = char.toUpperCase();
+                    scrollToChar(targetId);
+					showGrid = false;
+					isExiting = false;
+				},
+				grid.length * 10 + 200
+			); // Wait for all animations to complete
+			targetChar = '';
+		}
+	}
 </script>
 
 {#if showGrid}
-	<div class="flex justify-center items-start mt-6">
-		<div class="grid grid-cols-4 gap-x-4 gap-y-4">
-			{#each grid as char}
+	<div class="flex justify-center items-start my-6">
+		<div class="grid grid-cols-4 gap-x-3 gap-y-3">
+			{#each grid as char, index}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<a
 					href={`#${char.toUpperCase()}`}
-					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${apps.find((app) => app.charAt(0).toLowerCase() === char) ? 'bg-[#f1b]' : 'bg-[#121212]'}`}
-					on:click={() => {
-						if (apps.find((app) => app.charAt(0).toLowerCase() === char)) showGrid = false;
-					}}>{char}</a
+					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${
+						isExiting ? 'flip-out' : 'flip-in'
+					} ${
+						apps.find((app) => app.charAt(0).toLowerCase() === char) ? 'bg-[#f1b]' : 'bg-[#121212]'
+					}`}
+					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
+					on:click={(event) => handleClick(char, event)}
 				>
+					{char}
+				</a>
 			{/each}
 		</div>
 	</div>
@@ -124,3 +158,37 @@
 		{/each}
 	</div>
 {/if}
+
+<style>
+	.flip-in {
+		animation: flipIn 0.2s ease-out backwards;
+		backface-visibility: hidden;
+		transform-style: preserve-3d;
+	}
+
+	.flip-out {
+		animation: flipOut 0.2s ease-in forwards;
+	}
+
+	@keyframes flipIn {
+		from {
+			transform: rotateX(90deg);
+			opacity: 0;
+		}
+		to {
+			transform: rotateX(0deg);
+			opacity: 1;
+		}
+	}
+
+	@keyframes flipOut {
+		from {
+			transform: rotateX(0deg);
+			opacity: 1;
+		}
+		to {
+			transform: rotateX(90deg);
+			opacity: 0;
+		}
+	}
+</style>
