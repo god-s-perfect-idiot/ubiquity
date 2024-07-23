@@ -1,41 +1,26 @@
 <script>
 	import { onMount, tick } from 'svelte';
+	import { fetchApps } from '../kernel/system-utils';
+	import { kernel } from '../kernel/store';
+	import AppMenu from '../components/AppMenu.svelte';
 
-	let apps = [
-		'Apple',
-		'Google',
-		'Microsoft',
-		'Facebook',
-		'Amazon',
-		'Netflix',
-		'Twitter',
-		'Instagram',
-		'Snapchat',
-		'TikTok',
-		'Play Store',
-		'App Store',
-		'WhatsApp',
-		'Messenger',
-		'YouTube',
-		'Spotify',
-		'Twitch',
-		'Discord',
-		'Slack',
-		'Zoom',
-		'Skype',
-		'LinkedIn',
-		'Pinterest',
-		'Reddit',
-		'Tumblr',
-		'Telegram',
-		'Signal',
-		'WeChat',
-		'Viber',
-		'Line',
-		'KakaoTalk',
-		'Kik',
-		'Snapchat'
+	const systemApps = [
+		{
+			name: 'Ubiquity',
+			content: '/about'
+		},
+		{
+			name: 'Settings',
+			content: '/settings'
+		},
+		{ name: 'Files', content: '/files' },
+		{ name: 'Gallery', content: '/gallery' },
+		{ name: 'Music', content: '/music' },
+		{ name: 'Video', content: '/video' },
+		{ name: 'Documents', content: '/documents' },
+		{ name: 'Marketplace', content: '/marketplace' }
 	];
+	let apps = [];
 
 	const appList = {};
 	let showGrid = false;
@@ -70,20 +55,18 @@
 	];
 
 	onMount(() => {
-		apps = apps.sort();
+		const installedApps = fetchApps(kernel.fs.getFiles());
+		apps = [...installedApps, ...systemApps];
+		apps = apps.sort((a, b) => a.name.localeCompare(b.name));
 		apps.forEach((app) => {
-			const firstLetter = app.charAt(0).toUpperCase();
+			const firstLetter = app.name.charAt(0).toUpperCase();
 			if (appList[firstLetter]) {
 				appList[firstLetter].push(app);
 			} else {
 				appList[firstLetter] = [app];
 			}
 		});
-		console.log(appList);
 	});
-
-	let isExiting = false;
-	let targetChar = '';
 
 	async function scrollToChar(char) {
 		await tick();
@@ -95,14 +78,14 @@
 	}
 
 	function handleClick(char, event) {
-		if (apps.find((app) => app.charAt(0).toLowerCase() === char)) {
+		if (apps.find((app) => app.name.charAt(0).toLowerCase() === char)) {
 			targetChar = char;
 			event.preventDefault(); // Prevent immediate navigation
 			isExiting = true;
 			setTimeout(
 				() => {
 					const targetId = char.toUpperCase();
-                    scrollToChar(targetId);
+					scrollToChar(targetId);
 					showGrid = false;
 					isExiting = false;
 				},
@@ -110,6 +93,41 @@
 			); // Wait for all animations to complete
 			targetChar = '';
 		}
+	}
+
+	// onMount(() => {
+	//     document.addEventListener('mousedown', (event) => {
+	//         if (event.key === 'right') {
+	//             showMenu = !showMenu;
+	//         }
+	//     });
+	// });
+
+	let pressTimer;
+	let longPressThreshold = 500; // milliseconds
+	let isExiting = false;
+	let targetChar = '';
+	let showMenu = null;
+	let isLongPress = false;
+
+	function handleTouchStart(appName) {
+		isLongPress = false;
+		pressTimer = setTimeout(() => {
+			isLongPress = true;
+			handleLongPress(appName);
+		}, longPressThreshold);
+	}
+
+	function handleTouchEnd(event) {
+		clearTimeout(pressTimer);
+		if (isLongPress || showMenu !== null) {
+			event.preventDefault(); // Prevent default only if it was a long press
+		}
+		isLongPress = false;
+	}
+
+	function handleLongPress(appName) {
+		showMenu = appName;
 	}
 </script>
 
@@ -123,7 +141,9 @@
 					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${
 						isExiting ? 'flip-out' : 'flip-in'
 					} ${
-						apps.find((app) => app.charAt(0).toLowerCase() === char) ? 'bg-[#f1b]' : 'bg-[#121212]'
+						apps.find((app) => app.name.charAt(0).toLowerCase() === char)
+							? 'bg-[#ff00ff]'
+							: 'bg-[#121212]'
 					}`}
 					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
 					on:click={(event) => handleClick(char, event)}
@@ -134,13 +154,13 @@
 		</div>
 	</div>
 {:else}
-	<div class="ml-16 mt-4 flex gap-2 flex-col mb-16">
+	<div class="mt-4 flex gap-2 flex-col mb-16" on:touchstart={() => (showMenu = null)}>
 		{#each Object.entries(appList) as appEntry}
 			<div class="flex flex-col gap-2">
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<div
-					class="text-[#f1b] text-3xl lowercase border-2 w-12 h-12 border-[#f1b] justify-start items-end flex pl-1 pb-1"
+					class="ml-16 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1"
 					id={appEntry[0].toUpperCase()}
 					on:click={() => {
 						showGrid = true;
@@ -149,9 +169,22 @@
 					{appEntry[0]}
 				</div>
 				{#each appEntry[1] as app}
-					<div class="flex flex-row gap-4 items-center">
-						<span class="w-12 h-12 bg-[#f1b] justify-center items-center flex">{appEntry[0]}</span>
-						<span> {app}</span>
+					<div
+						class="flex flex-col relative"
+						on:touchstart={() => handleTouchStart(app.name)}
+						on:touchend={handleTouchEnd}
+						on:touchcancel={handleTouchEnd}
+						on:touchMove={handleTouchEnd}
+					>
+						<div class="ml-16 flex flex-row gap-4 items-center">
+							<span class="w-12 h-12 bg-[#ff00ff] justify-center items-center flex"
+								>{appEntry[0]}</span
+							>
+							<a href={app.content}> {app.name}</a>
+						</div>
+						{#if showMenu === app.name}
+							<AppMenu />
+						{/if}
 					</div>
 				{/each}
 			</div>

@@ -51,44 +51,4 @@
 </div>
 
 <style>
-	.page-holder {
-		perspective: 1000px;
-	}
-	.page {
-		transform-origin: left;
-		animation: flipIn 0.3s ease-out;
-	}
-	.bottom-bar {
-		animation: creep-in 0.3s ease-out forwards;
-	}
-	.btn {
-		animation: button-overshoot 0.5s ease-out forwards;
-	}
-	@keyframes button-overshoot {
-		0% {
-			transform: translateY(120%);
-		}
-		70% {
-			transform: translateY(-20%);
-		}
-		100% {
-			transform: translateY(0);
-		}
-	}
-	@keyframes creep-in {
-		from {
-			transform: translateY(100%);
-		}
-		to {
-			transform: translateY(0);
-		}
-	}
-	@keyframes flipIn {
-		from {
-			transform: rotateY(90deg);
-		}
-		to {
-			transform: rotateY(0);
-		}
-	}
 </style>

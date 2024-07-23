@@ -81,6 +81,9 @@ class FileSystem {
 			console.log('fs:goBack:cursor:', this.cursor);
 		}
 	}
+	goRoot() {
+		this.resetCursor();
+	}
 
 	// validation
 	checkFileExists(name) {
