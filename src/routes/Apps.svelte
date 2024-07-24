@@ -95,14 +95,6 @@
 		}
 	}
 
-	// onMount(() => {
-	//     document.addEventListener('mousedown', (event) => {
-	//         if (event.key === 'right') {
-	//             showMenu = !showMenu;
-	//         }
-	//     });
-	// });
-
 	let pressTimer;
 	let longPressThreshold = 500; // milliseconds
 	let isExiting = false;
@@ -121,13 +113,23 @@
 	function handleTouchEnd(event) {
 		clearTimeout(pressTimer);
 		if (isLongPress || showMenu !== null) {
-			event.preventDefault(); // Prevent default only if it was a long press
+			event.preventDefault();
 		}
 		isLongPress = false;
 	}
 
 	function handleLongPress(appName) {
 		showMenu = appName;
+	}
+
+	function handleOutsideTouch(event) {
+		if (showMenu !== null) {
+			const appMenu = event.target.closest('.app-menu');
+			if (!appMenu) {
+				showMenu = null;
+				event.preventDefault(); // Prevent link navigation
+			}
+		}
 	}
 </script>
 
@@ -154,9 +156,15 @@
 		</div>
 	</div>
 {:else}
-	<div class="mt-4 flex gap-2 flex-col mb-16" on:touchstart={() => (showMenu = null)}>
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div
+		class="mt-4 flex gap-2 flex-col mb-16"
+		on:touchstart={handleOutsideTouch}
+		on:click={handleOutsideTouch}
+	>
 		{#each Object.entries(appList) as appEntry}
-			<div class="flex flex-col gap-2">
+			<div class={`flex flex-col gap-2`}>
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<div
@@ -180,10 +188,17 @@
 							<span class="w-12 h-12 bg-[#ff00ff] justify-center items-center flex"
 								>{appEntry[0]}</span
 							>
-							<a href={app.content}> {app.name}</a>
+							<a
+								href={app.content}
+								on:click={(event) => showMenu !== null && event.preventDefault()}
+							>
+								{app.name}
+							</a>
 						</div>
 						{#if showMenu === app.name}
-							<AppMenu />
+							<div class="app-menu">
+								<AppMenu />
+							</div>
 						{/if}
 					</div>
 				{/each}
