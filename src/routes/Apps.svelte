@@ -126,8 +126,12 @@
 		if (showMenu !== null) {
 			const appMenu = event.target.closest('.app-menu');
 			if (!appMenu) {
-				showMenu = null;
-				event.preventDefault(); // Prevent link navigation
+				isExiting = true;
+				setTimeout(() => {
+					showMenu = null;
+					isExiting = false;
+				}, 500); // Match this to the animation duration
+				event.preventDefault();
 			}
 		}
 	}
@@ -159,7 +163,7 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
-		class="mt-4 flex gap-2 flex-col mb-16"
+		class={`mt-4 flex gap-2 flex-col mb-16 ${showMenu && !isExiting ? 'inactive' : ''} ${isExiting ? 'active-exit' : ''}`}
 		on:touchstart={handleOutsideTouch}
 		on:click={handleOutsideTouch}
 	>
@@ -168,7 +172,7 @@
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
 				<div
-					class="ml-16 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1"
+					class={`ml-16 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1`}
 					id={appEntry[0].toUpperCase()}
 					on:click={() => {
 						showGrid = true;
@@ -184,8 +188,10 @@
 						on:touchcancel={handleTouchEnd}
 						on:touchMove={handleTouchEnd}
 					>
-						<div class="ml-16 flex flex-row gap-4 items-center">
-							<span class="w-12 h-12 bg-[#ff00ff] justify-center items-center flex"
+						<div
+							class={`ml-16 flex flex-row gap-4 items-center ${showMenu === app.name && 'active'}`}
+						>
+							<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex`}
 								>{appEntry[0]}</span
 							>
 							<a
@@ -208,6 +214,17 @@
 {/if}
 
 <style>
+	.inactive {
+		animation: shrink 0.5s ease-in forwards;
+	}
+	.active-exit {
+		animation: expand 0.5s ease-out forwards;
+	}
+	.inactive .app-menu,
+	.active {
+		transform: scale(1.05);
+		z-index: 20;
+	}
 	.flip-in {
 		animation: flipIn 0.2s ease-out backwards;
 		backface-visibility: hidden;
@@ -216,6 +233,15 @@
 
 	.flip-out {
 		animation: flipOut 0.2s ease-in forwards;
+	}
+
+	@keyframes shrink {
+		from {
+			transform: scale(1);
+		}
+		to {
+			transform: scale(0.95);
+		}
 	}
 
 	@keyframes flipIn {
@@ -239,4 +265,13 @@
 			opacity: 0;
 		}
 	}
+
+	@keyframes expand {
+    from {
+      transform: scale(0.95);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
 </style>
