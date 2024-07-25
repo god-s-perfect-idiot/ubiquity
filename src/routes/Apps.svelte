@@ -1,8 +1,10 @@
+<!-- This is the ugliest code I've written. -->
 <script>
 	import { onMount, tick } from 'svelte';
 	import { fetchApps } from '../kernel/system-utils';
 	import { kernel } from '../kernel/store';
 	import AppMenu from '../components/AppMenu.svelte';
+	import { goto } from '$app/navigation';
 
 	const systemApps = [
 		{
@@ -98,6 +100,7 @@
 	let pressTimer;
 	let longPressThreshold = 500; // milliseconds
 	let isExiting = false;
+	let isEntering = false;
 	let targetChar = '';
 	let showMenu = null;
 	let isLongPress = false;
@@ -113,6 +116,7 @@
 	function handleTouchEnd(event) {
 		clearTimeout(pressTimer);
 		if (isLongPress || showMenu !== null) {
+			console.log('im the bastard');
 			event.preventDefault();
 		}
 		isLongPress = false;
@@ -123,18 +127,41 @@
 	}
 
 	function handleOutsideTouch(event) {
-		if (showMenu !== null) {
-			const appMenu = event.target.closest('.app-menu');
-			if (!appMenu) {
+		// This is so ugly, I'm sorry if this repo ever gets popular
+		if (event.target.classList.contains('override-touch-controls')) {
+			if (event.target.innerText === 'add new file') {
+				goto('/new/file');
+			}
+			return;
+		}
+		// Check if the click happened inside the app-menu or any of its children
+		const appMenu = event.target.closest('.app-menu');
+		if (!appMenu) {
+			if (showMenu !== null) {
+				showMenu = null; // Unset showMenu immediately
 				isExiting = true;
 				setTimeout(() => {
-					showMenu = null;
 					isExiting = false;
 				}, 500); // Match this to the animation duration
 				event.preventDefault();
 			}
 		}
 	}
+
+	$: {
+		if (showMenu !== null) {
+			isEntering = true;
+			setTimeout(() => {
+				isEntering = false;
+			}, 500); // Match this to the animation duration
+		}
+	}
+
+	onMount(() => {
+		window.oncontextmenu = () => {
+			return false;
+		};
+	});
 </script>
 
 {#if showGrid}
@@ -163,14 +190,16 @@
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
-		class={`mt-4 flex gap-2 flex-col mb-16 ${showMenu && !isExiting ? 'inactive' : ''} ${isExiting ? 'active-exit' : ''}`}
+		class={`mt-4 flex gap-2 flex-col mb-16 
+    ${isEntering ? 'active-enter' : ''} 
+    ${showMenu !== null && !isEntering ? 'inactive' : ''} 
+    ${isExiting ? 'active-exit' : ''}`}
 		on:touchstart={handleOutsideTouch}
 		on:click={handleOutsideTouch}
 	>
 		{#each Object.entries(appList) as appEntry}
 			<div class={`flex flex-col gap-2`}>
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<!-- svelte-ignore a11y-no-static-element-interactions -->
+				<!-- Touch event handler for each app entry -->
 				<div
 					class={`ml-16 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1`}
 					id={appEntry[0].toUpperCase()}
@@ -189,7 +218,7 @@
 						on:touchMove={handleTouchEnd}
 					>
 						<div
-							class={`ml-16 flex flex-row gap-4 items-center ${showMenu === app.name && 'active'}`}
+							class={`ml-16 flex flex-row gap-4 items-center ${showMenu === app.name ? 'active' : ''}`}
 						>
 							<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex`}
 								>{appEntry[0]}</span
@@ -214,13 +243,16 @@
 {/if}
 
 <style>
-	.inactive {
+	.active-enter {
 		animation: shrink 0.5s ease-in forwards;
+	}
+	.inactive {
+		transform: scale(0.95);
 	}
 	.active-exit {
 		animation: expand 0.5s ease-out forwards;
 	}
-	.inactive .app-menu,
+	.app-menu,
 	.active {
 		transform: scale(1.05);
 		z-index: 20;
@@ -267,11 +299,11 @@
 	}
 
 	@keyframes expand {
-    from {
-      transform: scale(0.95);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
+		from {
+			transform: scale(0.95);
+		}
+		to {
+			transform: scale(1);
+		}
+	}
 </style>
