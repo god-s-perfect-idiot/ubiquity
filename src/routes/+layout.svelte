@@ -2,6 +2,7 @@
 	import Header from './Header.svelte';
 	import "../app.css"
 	import Notifier from '../components/Notifier.svelte';
+	import NavBar from '../components/NavBar.svelte';
 
 </script>
 
@@ -12,7 +13,9 @@
 		<slot />
 	</main>
 
-	<footer></footer>
+	<footer>
+		<!-- <NavBar /> -->
+	</footer>
 </div>
 
 <style>

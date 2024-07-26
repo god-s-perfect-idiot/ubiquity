@@ -1,6 +1,5 @@
 <script>
 	import { kernel } from '../../kernel/store';
-
 	function addNewFile() {
 		kernel.addFile('newFile.txt',  'Hello, World!', "document");
 		kernel.updateFS();

@@ -31,10 +31,16 @@ body {
 }
 .page {
     transform-origin: left;
-    animation: flipIn 0.3s ease-out;
+    animation: flipIn 0.2s ease-out;
+}
+.page-exit {
+    animation: flipOut 0.2s ease-out forwards;
 }
 .bottom-bar {
-    animation: creep-in 0.3s ease-out forwards;
+    animation: creep-in 0.2s ease-out forwards;
+}
+.bottom-bar-exit {
+    animation: creep-out 0.2s ease-out forwards;
 }
 .btn {
     animation: button-overshoot 0.5s ease-out forwards;
@@ -58,11 +64,28 @@ body {
         transform: translateY(0);
     }
 }
+
+@keyframes creep-out {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(100%);
+    }
+}
 @keyframes flipIn {
     from {
         transform: rotateY(90deg);
     }
     to {
         transform: rotateY(0);
+    }
+}
+@keyframes flipOut {
+    from {
+        transform: rotateY(0);
+    }
+    to {
+        transform: rotateY(90deg);
     }
 }
