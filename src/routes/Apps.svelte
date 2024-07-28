@@ -9,18 +9,20 @@
 	const systemApps = [
 		{
 			name: 'Ubiquity',
-			content: '/about'
+			content: '/about',
+			isSystemApp: true
 		},
 		{
 			name: 'Settings',
-			content: '/settings'
+			content: '/settings',
+			isSystemApp: true
 		},
-		{ name: 'Files', content: '/files' },
-		{ name: 'Gallery', content: '/gallery' },
-		{ name: 'Music', content: '/music' },
-		{ name: 'Video', content: '/video' },
-		{ name: 'Documents', content: '/documents' },
-		{ name: 'Marketplace', content: '/marketplace' }
+		{ name: 'Files', content: '/files', isSystemApp: true },
+		{ name: 'Gallery', content: '/gallery', isSystemApp: true },
+		{ name: 'Music', content: '/music', isSystemApp: true },
+		{ name: 'Video', content: '/video', isSystemApp: true },
+		{ name: 'Documents', content: '/documents', isSystemApp: true },
+		{ name: 'Marketplace', content: '/marketplace', isSystemApp: true }
 	];
 	let apps = [];
 
@@ -116,7 +118,6 @@
 	function handleTouchEnd(event) {
 		clearTimeout(pressTimer);
 		if (isLongPress || showMenu !== null) {
-			console.log('im the bastard');
 			event.preventDefault();
 		}
 		isLongPress = false;
@@ -129,9 +130,31 @@
 	function handleOutsideTouch(event) {
 		// This is so ugly, I'm sorry if this repo ever gets popular
 		if (event.target.classList.contains('override-touch-controls')) {
-			if (event.target.innerText === 'add new file') {
-				goto('/new/file');
+			// if (event.target.innerText === 'add new file') {
+			// 	goto('/new/file');
+			// }
+			switch (event.target.innerText) {
+				case 'add new file':
+					goto('/new/file');
+					break;
+				case 'pin to start':
+					console.log('pin to start');
+					break;
+				case 'uninstall':
+					console.log('uninstall');
+					kernel.removeFile(showMenu, 'app');
+					appList[showMenu.charAt(0).toUpperCase()] = appList[
+						showMenu.charAt(0).toUpperCase()
+					].filter((app) => app.name !== showMenu);
+					if (appList[showMenu.charAt(0).toUpperCase()].length === 0) {
+						delete appList[showMenu.charAt(0).toUpperCase()];
+					}
+					showMenu = null;
+					break;
+				default:
+					break;
 			}
+
 			return;
 		}
 		// Check if the click happened inside the app-menu or any of its children
@@ -232,7 +255,7 @@
 						</div>
 						{#if showMenu === app.name}
 							<div class="app-menu">
-								<AppMenu />
+								<AppMenu isSystemApp={app.isSystemApp} />
 							</div>
 						{/if}
 					</div>

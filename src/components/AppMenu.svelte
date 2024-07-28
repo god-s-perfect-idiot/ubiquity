@@ -1,16 +1,15 @@
 <script>
-    import {goto} from '$app/navigation';
-    function handleClick() {
-        console.log('btn');
-    }
+    export let isSystemApp = false;
 </script>
 
 <div
 	class="app-menu-content animated-div bg-white w-full flex flex-col text-black font-[300] pl-4 pt-4 pb-16 gap-4 z-10 absolute top-1 justify-start items-start"
 >
 	<span class="override-touch-controls">add new file</span>
-	<span>pin to start</span>
-	<span>uninstall</span>
+	<span class="text-gray-300">pin to start</span>
+	{#if !isSystemApp}
+        <span class="override-touch-controls">uninstall</span>
+    {/if}
 </div>
 
 <style>

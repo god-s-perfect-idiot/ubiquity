@@ -37,6 +37,12 @@ function createKernelStore() {
                 cursor: fileSystem.cursor
             });
         },
+        sync : () => {
+            DataStore.commit('fileSystemState', {
+                files: fileSystem.files,
+                cursor: fileSystem.cursor
+            });
+        },
         // Add other methods to interact with fileSystem
         addFile: (fileName, content, type) => {
             update(fs => {
@@ -49,6 +55,7 @@ function createKernelStore() {
                 fs.deleteFile(fileName, fileTypes[type]);
                 return fs;
             });
+            store.sync();
         },
         addDirectory: (dirName) => {
             update(fs => {
