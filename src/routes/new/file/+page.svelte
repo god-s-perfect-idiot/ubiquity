@@ -13,22 +13,22 @@
 	$: fileContent;
 	$: fileType;
 	let isExiting = false;
+	const params = new URLSearchParams(window.location.search);
+	const redirectTo = params.get('redirectTo') || '/';
 
 	const close = () => {
 		isExiting = true;
 		setTimeout(() => {
-			goto('/');
-		}, 100); // Match this with the animation duration
+			goto(redirectTo);
+		}, 200); // Match this with the animation duration
 	};
 
 	const add = () => {
 		if (fileName && fileContent && fileType) {
 			isExiting = true;
-			setTimeout(() => {
-				kernel.addFile(fileName, fileContent, fileType);
-				kernel.updateFS();
-				close()
-			}, 100); // Match this with the animation duration
+			kernel.addFile(fileName, fileContent, fileType);
+			kernel.updateFS();
+			close()
 		} else {
 			addToast('Please fill all fields', 2000);
 		}
