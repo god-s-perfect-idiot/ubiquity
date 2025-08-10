@@ -3,7 +3,6 @@
 	import "../app.css"
 	import Notifier from '../components/Notifier.svelte';
 	import NavBar from '../components/NavBar.svelte';
-
 </script>
 
 <div class="app">
@@ -14,7 +13,7 @@
 	</main>
 
 	<footer>
-		<!-- <NavBar /> -->
+		<!-- <NavBar />	 -->
 	</footer>
 </div>
 

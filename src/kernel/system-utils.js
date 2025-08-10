@@ -16,8 +16,9 @@ export function findType(file) {
 
 export function parseDirectoryContents(files) {
 	const contents = Object.entries(files).map(([name, file]) => {
+		const isDirectory = typeof file === 'object' && !Array.isArray(file);
 		return {
-			name: name.slice(2, name.length),
+			name: isDirectory ? name : name.slice(2, name.length),
 			type: findType({ [name]: file }),
 			content: file
 		};
