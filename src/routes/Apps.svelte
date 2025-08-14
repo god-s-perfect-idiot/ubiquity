@@ -4,6 +4,7 @@
 	import { fetchApps } from '../kernel/system-utils';
 	import { kernel } from '../kernel/store';
 	import AppMenu from '../components/AppMenu.svelte';
+	import LetterGrid from '../components/LetterGrid.svelte';
 	import { addToast } from '../store/toast';
 
 	const systemApps = [
@@ -28,35 +29,6 @@
 
 	const appList = {};
 	let showGrid = false;
-	const grid = [
-		'#',
-		'a',
-		'b',
-		'c',
-		'd',
-		'e',
-		'f',
-		'g',
-		'h',
-		'i',
-		'j',
-		'k',
-		'l',
-		'm',
-		'n',
-		'o',
-		'p',
-		'q',
-		'r',
-		's',
-		't',
-		'u',
-		'v',
-		'w',
-		'x',
-		'y',
-		'z'
-	];
 
 	onMount(() => {
 		const installedApps = fetchApps(kernel.fs.getFiles());
@@ -81,22 +53,19 @@
 		}
 	}
 
-	function handleClick(char, event) {
-		if (apps.find((app) => app.name.charAt(0).toLowerCase() === char)) {
-			targetChar = char;
-			event.preventDefault(); // Prevent immediate navigation
-			isExiting = true;
-			setTimeout(
-				() => {
-					const targetId = char.toUpperCase();
-					scrollToChar(targetId);
-					showGrid = false;
-					isExiting = false;
-				},
-				grid.length * 10 + 200
-			); // Wait for all animations to complete
-			targetChar = '';
-		}
+	function handleLetterClick(char) {
+		targetChar = char;
+		isExiting = true;
+		setTimeout(
+			() => {
+				const targetId = char.toUpperCase();
+				scrollToChar(targetId);
+				showGrid = false;
+				isExiting = false;
+			},
+			27 * 10 + 200 // 27 letters in the grid
+		); // Wait for all animations to complete
+		targetChar = '';
 	}
 	
 	let pressTimer;
@@ -177,27 +146,13 @@
 </script>
 
 {#if showGrid}
-	<div class="flex justify-center items-start my-6">
-		<div class="grid grid-cols-4 gap-x-3 gap-y-3">
-			{#each grid as char, index}
-				<!-- svelte-ignore a11y-click-events-have-key-events -->
-				<a
-					href={`#${char.toUpperCase()}`}
-					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${
-						isExiting ? 'flip-out' : 'flip-in'
-					} ${
-						apps.find((app) => app.name.charAt(0).toLowerCase() === char)
-							? 'bg-[#ff00ff]'
-							: 'bg-[#121212]'
-					}`}
-					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
-					on:click={(event) => handleClick(char, event)}
-				>
-					{char}
-				</a>
-			{/each}
-		</div>
-	</div>
+	<LetterGrid 
+		items={apps}
+		itemNameKey="name"
+		showGrid={showGrid}
+		isExiting={isExiting}
+		onLetterClick={handleLetterClick}
+	/>
 {:else}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -269,15 +224,6 @@
 		transform: scale(1.05);
 		z-index: 20;
 	}
-	.flip-in {
-		animation: flipIn 0.2s ease-out backwards;
-		backface-visibility: hidden;
-		transform-style: preserve-3d;
-	}
-
-	.flip-out {
-		animation: flipOut 0.2s ease-in forwards;
-	}
 
 	@keyframes shrink {
 		from {
@@ -285,28 +231,6 @@
 		}
 		to {
 			transform: scale(0.95);
-		}
-	}
-
-	@keyframes flipIn {
-		from {
-			transform: rotateX(90deg);
-			opacity: 0;
-		}
-		to {
-			transform: rotateX(0deg);
-			opacity: 1;
-		}
-	}
-
-	@keyframes flipOut {
-		from {
-			transform: rotateX(0deg);
-			opacity: 1;
-		}
-		to {
-			transform: rotateX(90deg);
-			opacity: 0;
 		}
 	}
 

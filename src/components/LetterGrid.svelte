@@ -1,0 +1,118 @@
+<script>
+	import { tick } from 'svelte';
+
+	// Props
+	export let items = []; // Array of items to check against for highlighting
+	export let itemNameKey = 'name'; // Key to use for getting the name from items
+	export let showGrid = false;
+	export let isExiting = false;
+	export let onLetterClick = null; // Callback function for letter clicks
+
+	// Grid configuration
+	const grid = [
+		'#',
+		'a',
+		'b',
+		'c',
+		'd',
+		'e',
+		'f',
+		'g',
+		'h',
+		'i',
+		'j',
+		'k',
+		'l',
+		'm',
+		'n',
+		'o',
+		'p',
+		'q',
+		'r',
+		's',
+		't',
+		'u',
+		'v',
+		'w',
+		'x',
+		'y',
+		'z'
+	];
+
+	// Check if a letter has associated items
+	function hasItemsForLetter(char) {
+		return items.some(item => {
+			const name = typeof item === 'string' ? item : item[itemNameKey];
+			return name && name.charAt(0).toLowerCase() === char;
+		});
+	}
+
+	// Handle letter click
+	async function handleClick(char, event) {
+		if (hasItemsForLetter(char)) {
+			event.preventDefault(); // Prevent immediate navigation
+			
+			if (onLetterClick) {
+				onLetterClick(char);
+			}
+		}
+	}
+</script>
+
+{#if showGrid}
+	<div class="flex justify-center items-start my-6">
+		<div class="grid grid-cols-4 gap-x-3 gap-y-3">
+			{#each grid as char, index}
+				<!-- svelte-ignore a11y-click-events-have-key-events -->
+				<a
+					href={`#${char.toUpperCase()}`}
+					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${
+						isExiting ? 'flip-out' : 'flip-in'
+					} ${
+						hasItemsForLetter(char)
+							? 'bg-[#ff00ff]'
+							: 'bg-[#121212]'
+					}`}
+					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
+					on:click={(event) => handleClick(char, event)}
+				>
+					{char}
+				</a>
+			{/each}
+		</div>
+	</div>
+{/if}
+
+<style>
+	.flip-in {
+		animation: flipIn 0.2s ease-out backwards;
+		backface-visibility: hidden;
+		transform-style: preserve-3d;
+	}
+
+	.flip-out {
+		animation: flipOut 0.2s ease-in forwards;
+	}
+
+	@keyframes flipIn {
+		from {
+			transform: rotateX(90deg);
+			opacity: 0;
+		}
+		to {
+			transform: rotateX(0deg);
+			opacity: 1;
+		}
+	}
+
+	@keyframes flipOut {
+		from {
+			transform: rotateX(0deg);
+			opacity: 1;
+		}
+		to {
+			transform: rotateX(90deg);
+			opacity: 0;
+		}
+	}
+</style>
