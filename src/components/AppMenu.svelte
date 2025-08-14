@@ -1,14 +1,21 @@
 <script>
+	import { goto } from '$app/navigation';
+	
     export let isSystemApp = false;
+    export let onRemove = () => {};
+
+	const onAddNewFile = () => {
+		goto('/new/file');
+	}
 </script>
 
 <div
 	class="app-menu-content animated-div bg-white w-full flex flex-col text-black font-[300] pl-4 pt-4 pb-16 gap-4 z-10 absolute top-1 justify-start items-start"
 >
-	<span class="override-touch-controls">add new file</span>
-	<span class="text-gray-300">pin to start</span>
+	<button class="override-touch-controls" on:click={onAddNewFile} on:touchend={onAddNewFile} >add new file</button>
+	<!-- <span class="text-gray-300">pin to start</span> -->
 	{#if !isSystemApp}
-        <span class="override-touch-controls">uninstall</span>
+        <button class="override-touch-controls" on:click={onRemove} on:touchend={onRemove} >remove</button>
     {/if}
 </div>
 

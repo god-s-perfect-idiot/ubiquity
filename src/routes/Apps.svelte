@@ -4,8 +4,8 @@
 	import { fetchApps } from '../kernel/system-utils';
 	import { kernel } from '../kernel/store';
 	import AppMenu from '../components/AppMenu.svelte';
-	import { goto } from '$app/navigation';
-
+	import { addToast } from '../store/toast';
+	
 	const systemApps = [
 		{
 			name: 'Ubiquity',
@@ -98,7 +98,7 @@
 			targetChar = '';
 		}
 	}
-
+	
 	let pressTimer;
 	let longPressThreshold = 500; // milliseconds
 	let isExiting = false;
@@ -129,34 +129,9 @@
 
 	function handleOutsideTouch(event) {
 		// This is so ugly, I'm sorry if this repo ever gets popular
-		if (event.target.classList.contains('override-touch-controls')) {
-			// if (event.target.innerText === 'add new file') {
-			// 	goto('/new/file');
-			// }
-			switch (event.target.innerText) {
-				case 'add new file':
-					goto('/new/file');
-					break;
-				case 'pin to start':
-					console.log('pin to start');
-					break;
-				case 'uninstall':
-					console.log('uninstall');
-					kernel.removeFile(showMenu, 'app');
-					appList[showMenu.charAt(0).toUpperCase()] = appList[
-						showMenu.charAt(0).toUpperCase()
-					].filter((app) => app.name !== showMenu);
-					if (appList[showMenu.charAt(0).toUpperCase()].length === 0) {
-						delete appList[showMenu.charAt(0).toUpperCase()];
-					}
-					showMenu = null;
-					break;
-				default:
-					break;
-			}
-
-			return;
-		}
+		// if (event.target.classList.contains('override-touch-controls')) {
+		// 	return;
+		// }
 		// Check if the click happened inside the app-menu or any of its children
 		const appMenu = event.target.closest('.app-menu');
 		if (!appMenu) {
@@ -169,6 +144,20 @@
 				event.preventDefault();
 			}
 		}
+	}
+
+	function handleRemoveApp(appName) {
+		kernel.removeFile(appName, 'app');
+		appList[appName.charAt(0).toUpperCase()] = appList[appName.charAt(0).toUpperCase()].filter((app) => app.name !== appName);
+		if (appList[appName.charAt(0).toUpperCase()].length === 0) {
+			delete appList[appName.charAt(0).toUpperCase()];
+		}
+		showMenu = null;
+		isExiting = true;
+		setTimeout(() => {
+			isExiting = false;
+		}, 500);
+		addToast(`${appName} removed`, 2000);
 	}
 
 	$: {
@@ -255,7 +244,7 @@
 						</div>
 						{#if showMenu === app.name}
 							<div class="app-menu">
-								<AppMenu isSystemApp={app.isSystemApp} />
+								<AppMenu isSystemApp={app.isSystemApp} onRemove={() => handleRemoveApp(app.name)} />
 							</div>
 						{/if}
 					</div>
