@@ -5,7 +5,7 @@
 	import { kernel } from '../kernel/store';
 	import AppMenu from '../components/AppMenu.svelte';
 	import { addToast } from '../store/toast';
-	
+
 	const systemApps = [
 		{
 			name: 'Ubiquity',
@@ -18,7 +18,7 @@
 			isSystemApp: true
 		},
 		{ name: 'Files', content: '/files', isSystemApp: true },
-		{ name: 'Gallery', content: '/gallery', isSystemApp: true },
+		{ name: 'Photos', content: '/photos', isSystemApp: true },
 		{ name: 'Music', content: '/music', isSystemApp: true },
 		{ name: 'Video', content: '/video', isSystemApp: true },
 		{ name: 'Documents', content: '/documents', isSystemApp: true },

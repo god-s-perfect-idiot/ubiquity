@@ -62,3 +62,10 @@ export function fetchApps(files) {
     flatten(files, state);
     return  state.filter(file => file.type === 'app');
 }
+
+export function fetchPhotos(files) {
+    const photos = []
+    const state = [];
+    flatten(files, state);
+    return  state.filter(file => file.type === 'image');
+}
