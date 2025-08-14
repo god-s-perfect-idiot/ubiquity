@@ -29,9 +29,9 @@ import { kernel } from '../../kernel/store';
 </script>
 
 <div class="page-holder">
-    <div class="flex flex-col mt-4 w-full font-[400] h-screen page" class:page-exit={isExiting}>
+    <div class="flex flex-col pt-4 w-full font-[400] h-screen page" class:page-exit={isExiting}>
         <span class="text-6xl font-[300] h-[10%] px-4 "> photos </span>
-        <div class="mt-4 h-[90%] overflow-scroll px-4">
+        <div class="mt-4 h-[90%] overflow-scroll px-4 pb-14">
             <div class="photos-grid">
                 {#each photos as photo}
                     <div class="photo-item">

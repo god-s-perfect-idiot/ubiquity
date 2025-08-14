@@ -3,6 +3,7 @@
 	import "../app.css"
 	import Notifier from '../components/Notifier.svelte';
 	import NavBar from '../components/NavBar.svelte';
+	import '../kernel/debug.js';
 </script>
 
 <div class="app">
