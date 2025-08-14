@@ -1,14 +1,35 @@
 <script>
-    import { kernel } from '../../kernel/store';
+    import BottomControls from '../../components/BottomControls.svelte';
+import { kernel } from '../../kernel/store';
     import { fetchPhotos } from '../../kernel/system-utils';
+    import { goto } from '$app/navigation';
+	import Icon from '@iconify/svelte';
 
     const photos = fetchPhotos(kernel.fs.getFiles());
+    let isExpanded = false;
+    let isUnmounting = false;
+    let isExiting = false;
 
-    console.log(photos);
+    const handleToggle = () => {
+        isExpanded = !isExpanded;
+    };
+
+    function closePage() {
+		isUnmounting = true;
+		setTimeout(() => {
+			isExpanded = false;
+			setTimeout(() => {
+				isExiting = true;
+				setTimeout(() => {
+					goto('/');
+				}, 200); // Match the animation duration
+			}, 300); // Allow time for bottom controls to collapse
+		}, 300); // Allow time for unmounting animation
+	}
 </script>
 
 <div class="page-holder">
-    <div class="flex flex-col mt-4 w-full font-[400] h-screen page">
+    <div class="flex flex-col mt-4 w-full font-[400] h-screen page" class:page-exit={isExiting}>
         <span class="text-6xl font-[300] h-[10%] px-4 "> photos </span>
         <div class="mt-4 h-[90%] overflow-scroll px-4">
             <div class="photos-grid">
@@ -23,6 +44,18 @@
         
     </div>
 </div>
+
+
+<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
+	<div class="flex flex-row gap-12 w-full justify-center items-center">
+		<div class="btn-animate flex flex-col gap-2 justify-center items-center" class:animate={isExpanded}>
+			<button on:click={closePage} class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold">
+				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2"/>
+			</button>
+			<span class="text-xs font-[400]">close</span>
+		</div>
+	</div>
+</BottomControls>
 
 <style>
     .photos-grid {
@@ -43,5 +76,27 @@
         height: 100%;
         object-fit: cover;
     }
+
+    .btn-animate {
+		transform: translateY(120%);
+		opacity: 0;
+	}
+	
+	.btn-animate.animate {
+		animation: button-overshoot 0.5s ease-out forwards;
+		opacity: 1;
+	}
+	
+	@keyframes button-overshoot {
+		0% {
+			transform: translateY(120%);
+		}
+		70% {
+			transform: translateY(-20%);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
 </style>
 
