@@ -6,6 +6,7 @@
 	import AppMenu from '../components/AppMenu.svelte';
 	import LetterGrid from '../components/LetterGrid.svelte';
 	import { addToast } from '../store/toast';
+	import { getFaviconUrls } from '../kernel/favicon-utils';
 
 	const systemApps = [
 		{
@@ -26,6 +27,7 @@
 		{ name: 'Marketplace', content: '/marketplace', isSystemApp: true }
 	];
 	let apps = [];
+	let faviconCache = {};
 
 	const appList = {};
 	let showGrid = false;
@@ -42,6 +44,9 @@
 				appList[firstLetter] = [app];
 			}
 		});
+
+		// Get favicon URLs for external apps
+		faviconCache = getFaviconUrls(installedApps);
 	});
 
 	async function scrollToChar(char) {
@@ -121,6 +126,12 @@
 		if (appList[appName.charAt(0).toUpperCase()].length === 0) {
 			delete appList[appName.charAt(0).toUpperCase()];
 		}
+		
+		// Remove from favicon cache
+		if (faviconCache[appName]) {
+			delete faviconCache[appName];
+		}
+		
 		showMenu = null;
 		isExiting = true;
 		setTimeout(() => {
@@ -187,9 +198,31 @@
 						<div
 							class={`ml-16 flex flex-row gap-4 items-center ${showMenu === app.name ? 'active' : ''}`}
 						>
-							<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex`}
-								>{appEntry[0]}</span
-							>
+							{#if app.isSystemApp}
+								<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300]`}
+									>{app.name.charAt(0).toUpperCase()}</span
+								>
+							{:else}
+								{#if faviconCache[app.name]}
+									<img 
+										src={faviconCache[app.name].url} 
+										alt={`${app.name} icon`}
+										class={`w-12 h-12 object-contain p-1 ${faviconCache[app.name].bgColor}`}
+										on:error={(e) => {
+											// Fallback to letter if image fails to load
+											e.target.style.display = 'none';
+											e.target.nextElementSibling.style.display = 'flex';
+										}}
+									/>
+									<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300] hidden`}
+										>{app.name.charAt(0).toUpperCase()}</span
+									>
+								{:else}
+									<span class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300]`}
+										>{app.name.charAt(0).toUpperCase()}</span
+									>
+								{/if}
+							{/if}
 							<a
 								href={app.content}
 								on:click={(event) => showMenu !== null && event.preventDefault()}

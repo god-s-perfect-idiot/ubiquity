@@ -60,7 +60,13 @@ export function fetchApps(files) {
     const apps = []
     const state = [];
     flatten(files, state);
-    return  state.filter(file => file.type === 'app');
+    const appFiles = state.filter(file => file.type === 'app');
+    
+    // Add URL property for apps (the content is the URL)
+    return appFiles.map(app => ({
+        ...app,
+        url: app.content
+    }));
 }
 
 export function fetchPhotos(files) {
