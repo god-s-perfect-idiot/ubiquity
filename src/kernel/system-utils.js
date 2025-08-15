@@ -69,3 +69,24 @@ export function fetchPhotos(files) {
     flatten(files, state);
     return  state.filter(file => file.type === 'image');
 }
+
+export function fetchMusic(files) {
+    const music = []
+    const state = [];
+    flatten(files, state);
+    return  state.filter(file => file.type === 'music');
+}
+
+export function fetchVideos(files) {
+	const videos = []
+    const state = [];
+    flatten(files, state);
+    return  state.filter(file => file.type === 'video');
+}
+
+export function fetchDocuments(files) {
+	const documents = []
+    const state = [];
+    flatten(files, state);
+    return  state.filter(file => file.type === 'document');
+}

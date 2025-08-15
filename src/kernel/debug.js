@@ -172,13 +172,13 @@ const generateRandomData = () => {
     }
   ];
 
-  // Real music tracks (using free music samples)
+  // Real music tracks (using Wikimedia Commons MP3s)
   const songs = [
     {
       id: 'song_1',
-      name: 'Bohemian Rhapsody',
-      artist: 'Queen',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'The Blue Danube',
+      artist: 'Johann Strauss II',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/%22An_der_sch%C3%B6nen%2C_blauen_Donau%22_performed_by_the_U.S._Marine_Band.mp3',
       type: 'song',
       duration: 354,
       size: 8500000,
@@ -186,9 +186,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_2',
-      name: 'Imagine',
-      artist: 'John Lennon',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'Hungarian Rhapsody No. 6',
+      artist: 'Franz Liszt',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/transcoded/2/20/Franz_Liszt_-_Second_Hungarian_Rhapsody.ogg/Franz_Liszt_-_Second_Hungarian_Rhapsody.ogg.mp3',
       type: 'song',
       duration: 183,
       size: 4200000,
@@ -196,9 +196,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_3',
-      name: 'Billie Jean',
-      artist: 'Michael Jackson',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'Radetzky March',
+      artist: 'Johann Strauss I',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/e/ef/USMC_Band_-_Radetzky_March.mp3',
       type: 'song',
       duration: 294,
       size: 6800000,
@@ -206,9 +206,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_4',
-      name: 'Like a Prayer',
-      artist: 'Madonna',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'Serenade No. 10 "Gran Partita"',
+      artist: 'W.A. Mozart',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Mozart%27s_Serenade_No._10_%22Grand_Partita%22_-_I._Largo._Molto_Allegro_-_United_States_Marine_Band.mp3',
       type: 'song',
       duration: 339,
       size: 7800000,
@@ -216,9 +216,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_5',
-      name: 'Hound Dog',
-      artist: 'Elvis Presley',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'From Holberg\'s Time - Praeludium',
+      artist: 'Edvard Grieg',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Grieg%27s_Suite_for_Strings%2C_Op._40%2C_%22From_Holberg%E2%80%99s_Time%22_-_I._Praeludium_-_Chamber_Orchestra_-_United_States_Marine_Band.mp3',
       type: 'song',
       duration: 137,
       size: 3200000,
@@ -226,9 +226,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_6',
-      name: 'Blowin in the Wind',
-      artist: 'Bob Dylan',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'From Holberg\'s Time - Gavotte',
+      artist: 'Edvard Grieg',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/4/40/Grieg%27s_Suite_for_Strings%2C_Op._40%2C_%22From_Holberg%E2%80%99s_Time%22_-_III._Gavotte-Musette-Gavotte_-_Chamber_Orchestra_-_United_States_Marine_Band.mp3',
       type: 'song',
       duration: 165,
       size: 3800000,
@@ -236,9 +236,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_7',
-      name: 'Space Oddity',
-      artist: 'David Bowie',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'Violin Concerto No. 1 in A minor',
+      artist: 'J.S. Bach',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Violin_Concerto_No.1_in_A_minor_-_I._Allegro_moderato_-_Chamber_Orchestra_-_United_States_Marine_Band.mp3',
       type: 'song',
       duration: 315,
       size: 7200000,
@@ -246,9 +246,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_8',
-      name: 'Purple Rain',
-      artist: 'Prince',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'Concertino for Flute in D Major',
+      artist: 'Cécile Chaminade',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/4/4d/Flute_Concertino_in_D_major_-_United_States_Marine_Band.mp3',
       type: 'song',
       duration: 518,
       size: 11800000,
@@ -256,9 +256,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_9',
-      name: 'Superstition',
-      artist: 'Stevie Wonder',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'March, Op. 99',
+      artist: 'Sergei Prokofiev',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/a/a1/Sergei_Prokofiev%27s_%22March%2C_Opus_99%22_performed_by_the_U.S._Marine_Band_in_1992.mp3',
       type: 'song',
       duration: 266,
       size: 6100000,
@@ -266,9 +266,9 @@ const generateRandomData = () => {
     },
     {
       id: 'song_10',
-      name: 'Respect',
-      artist: 'Aretha Franklin',
-      url: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav',
+      name: 'The Stars and Stripes Forever',
+      artist: 'John Philip Sousa',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/e/ed/Sousa%27s_%22The_Stars_and_Stripes_Forever%22_-_United_States_Marine_Band_%282017%29.mp3',
       type: 'song',
       duration: 147,
       size: 3400000,
@@ -497,7 +497,7 @@ const addTestDataToFS = () => {
   
   // Add images
   data.images.forEach((image, index) => {
-    kernel.addFile(`image_${index + 1}`, image.url, 'image');
+    kernel.addFile(image.name, image.url, 'image');
   });
   
   // Add apps
@@ -507,17 +507,17 @@ const addTestDataToFS = () => {
   
   // Add songs
   data.songs.forEach((song, index) => {
-    kernel.addFile(`song_${index + 1}`, song.url, 'music');
+    kernel.addFile(song.name, song.url, 'music');
   });
   
   // Add videos
   data.videos.forEach((video, index) => {
-    kernel.addFile(`video_${index + 1}`, video.url, 'video');
+    kernel.addFile(video.name, video.url, 'video');
   });
   
   // Add documents
   data.documents.forEach((doc, index) => {
-    kernel.addFile(`doc_${index + 1}`, doc.url, 'document');
+    kernel.addFile(doc.name, doc.url, 'document');
   });
   
   kernel.sync();
