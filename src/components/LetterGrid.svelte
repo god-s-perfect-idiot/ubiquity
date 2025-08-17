@@ -8,6 +8,13 @@
 	export let isExiting = false;
 	export let onLetterClick = null; // Callback function for letter clicks
 
+	// Touch gesture detection variables
+	let touchStartY = 0;
+	let touchStartX = 0;
+	let touchEndY = 0;
+	let touchEndX = 0;
+	const TOUCH_THRESHOLD = 10; // pixels - if movement exceeds this, it's a scroll, not a tap
+
 	// Grid configuration
 	const grid = [
 		'#',
@@ -47,10 +54,38 @@
 		});
 	}
 
+	// Touch gesture handlers
+	function handleTouchStart(event) {
+		touchStartY = event.touches[0].clientY;
+		touchStartX = event.touches[0].clientX;
+	}
+
+	function handleTouchEnd(event) {
+		touchEndY = event.changedTouches[0].clientY;
+		touchEndX = event.changedTouches[0].clientX;
+	}
+
+	function isTap() {
+		const deltaY = Math.abs(touchEndY - touchStartY);
+		const deltaX = Math.abs(touchEndX - touchStartX);
+		return deltaY < TOUCH_THRESHOLD && deltaX < TOUCH_THRESHOLD;
+	}
+
 	// Handle letter click
 	async function handleClick(char, event) {
 		if (hasItemsForLetter(char)) {
 			event.preventDefault(); // Prevent immediate navigation
+			
+			if (onLetterClick) {
+				onLetterClick(char);
+			}
+		}
+	}
+
+	// Handle letter tap with gesture detection
+	function handleLetterTap(char, event) {
+		if (isTap() && hasItemsForLetter(char)) {
+			event.preventDefault();
 			
 			if (onLetterClick) {
 				onLetterClick(char);
@@ -75,6 +110,11 @@
 					}`}
 					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
 					on:click={(event) => handleClick(char, event)}
+					on:touchstart={handleTouchStart}
+					on:touchend={(event) => {
+						handleTouchEnd(event);
+						handleLetterTap(char, event);
+					}}
 				>
 					{char}
 				</a>

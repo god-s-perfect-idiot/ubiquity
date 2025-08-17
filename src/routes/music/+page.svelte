@@ -23,6 +23,13 @@
 	let duration = 0;
 	let seekValue = 0;
 
+	// Touch gesture detection variables
+	let touchStartY = 0;
+	let touchStartX = 0;
+	let touchEndY = 0;
+	let touchEndX = 0;
+	const TOUCH_THRESHOLD = 10; // pixels - if movement exceeds this, it's a scroll, not a tap
+
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
 	};
@@ -169,6 +176,33 @@
 		targetChar = '';
 	}
 
+	function handleSongTap(song) {
+		// Only play if it's a genuine tap (not a scroll)
+		if (isTap()) {
+			const songIndex = queue.findIndex((s) => s.name === song.name);
+			if (songIndex !== -1) {
+				playSong(songIndex);
+			}
+		}
+	}
+
+	// Touch gesture handlers
+	function handleTouchStart(event) {
+		touchStartY = event.touches[0].clientY;
+		touchStartX = event.touches[0].clientX;
+	}
+
+	function handleTouchEnd(event) {
+		touchEndY = event.changedTouches[0].clientY;
+		touchEndX = event.changedTouches[0].clientX;
+	}
+
+	function isTap() {
+		const deltaY = Math.abs(touchEndY - touchStartY);
+		const deltaX = Math.abs(touchEndX - touchStartX);
+		return deltaY < TOUCH_THRESHOLD && deltaX < TOUCH_THRESHOLD;
+	}
+
 	let targetChar = '';
 
 	$: console.log(nowPlayingLink);
@@ -281,7 +315,7 @@
 					class:page-exit={isExiting}
 				>
 					<span class="text-6xl font-[300] h-[10%]"> music </span>
-					<div class="flex flex-col gap-8 pb-16 mt-6">
+					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
 						{#each Object.entries(musicList) as musicEntry}
 							<div class="flex flex-col gap-6">
 								<button
@@ -289,6 +323,13 @@
 									id={musicEntry[0].toUpperCase()}
 									on:click={() => {
 										showGrid = true;
+									}}
+									on:touchstart={handleTouchStart}
+									on:touchend={(event) => {
+										handleTouchEnd(event);
+										if (isTap()) {
+											showGrid = true;
+										}
 									}}
 								>
 									{musicEntry[0]}
@@ -302,11 +343,10 @@
 												playSong(songIndex);
 											}
 										}}
-										on:touchend={() => {
-											const songIndex = queue.findIndex((s) => s.name === song.name);
-											if (songIndex !== -1) {
-												playSong(songIndex);
-											}
+										on:touchstart={handleTouchStart}
+										on:touchend={(event) => {
+											handleTouchEnd(event);
+											handleSongTap(song);
 										}}
 									>
 										<span

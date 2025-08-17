@@ -96,3 +96,82 @@ export function fetchDocuments(files) {
     flatten(files, state);
     return  state.filter(file => file.type === 'document');
 }
+
+/**
+ * Generates a thumbnail for a video file
+ * @param {Object} video - Video object with name and content properties
+ * @param {number} width - Thumbnail width (default: 120)
+ * @param {number} height - Thumbnail height (default: 68)
+ * @param {number} seekTime - Time in seconds to seek to for thumbnail (default: 1)
+ * @returns {Promise<string>} Promise that resolves to thumbnail data URL
+ */
+export function generateThumbnail(video, width = 120, height = 68, seekTime = 1) {
+	return new Promise((resolve, reject) => {
+		console.log('Starting thumbnail generation for:', video.name);
+		console.log('Video content type:', typeof video.content);
+		console.log('Video content:', video.content);
+		
+		// Check if content is a valid video source
+		if (!video.content || typeof video.content !== 'string') {
+			console.log('Invalid video content for:', video.name);
+			reject(new Error('Invalid video content'));
+			return;
+		}
+
+		const videoElement = document.createElement('video');
+		videoElement.crossOrigin = 'anonymous';
+		videoElement.muted = true;
+		videoElement.playsInline = true;
+		videoElement.preload = 'metadata';
+		
+		// Add more event listeners for debugging
+		videoElement.onloadstart = () => console.log('Video load started for:', video.name);
+		videoElement.onprogress = () => console.log('Video loading progress for:', video.name);
+		videoElement.oncanplay = () => console.log('Video can play for:', video.name);
+		videoElement.oncanplaythrough = () => console.log('Video can play through for:', video.name);
+		
+		videoElement.onloadeddata = () => {
+			console.log('Video loaded for:', video.name, 'duration:', videoElement.duration);
+			try {
+				// Seek to specified time to get a good frame
+				videoElement.currentTime = seekTime;
+			} catch (e) {
+				console.log('Could not seek video for thumbnail:', e);
+				reject(e);
+			}
+		};
+
+		videoElement.onseeked = () => {
+			console.log('Video seeked for:', video.name);
+			try {
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+				canvas.width = width;
+				canvas.height = height;
+				
+				ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+				const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
+				console.log('Thumbnail generated successfully for:', video.name);
+				
+				// Clean up
+				videoElement.src = '';
+				videoElement.load();
+				
+				resolve(thumbnailUrl);
+			} catch (e) {
+				console.log('Could not generate thumbnail for:', video.name, e);
+				reject(e);
+			}
+		};
+
+		videoElement.onerror = (e) => {
+			console.log('Error loading video for thumbnail:', video.name, e);
+			console.log('Video error details:', videoElement.error);
+			reject(new Error('Failed to load video for thumbnail'));
+		};
+
+		// Set video source
+		console.log('Setting video source for:', video.name, 'source:', video.content);
+		videoElement.src = video.content;
+	});
+}
