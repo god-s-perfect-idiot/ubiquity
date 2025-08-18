@@ -118,11 +118,30 @@ export function generateThumbnail(video, width = 120, height = 68, seekTime = 1)
 			return;
 		}
 
+		// Add a timeout to prevent hanging
+		const timeoutId = setTimeout(() => {
+			console.log('Thumbnail generation timeout for:', video.name);
+			// Clean up video element if it exists
+			if (videoElement && document.body.contains(videoElement)) {
+				document.body.removeChild(videoElement);
+			}
+			reject(new Error('Thumbnail generation timeout'));
+		}, 10000); // 10 second timeout
+
 		const videoElement = document.createElement('video');
 		videoElement.crossOrigin = 'anonymous';
 		videoElement.muted = true;
 		videoElement.playsInline = true;
 		videoElement.preload = 'metadata';
+		
+		// Ensure the video element is attached to the DOM before loading
+		// This is crucial for proper video loading in some browsers
+		videoElement.style.position = 'absolute';
+		videoElement.style.left = '-9999px';
+		videoElement.style.top = '-9999px';
+		videoElement.style.width = '1px';
+		videoElement.style.height = '1px';
+		document.body.appendChild(videoElement);
 		
 		// Add more event listeners for debugging
 		videoElement.onloadstart = () => console.log('Video load started for:', video.name);
@@ -137,6 +156,7 @@ export function generateThumbnail(video, width = 120, height = 68, seekTime = 1)
 				videoElement.currentTime = seekTime;
 			} catch (e) {
 				console.log('Could not seek video for thumbnail:', e);
+				clearTimeout(timeoutId);
 				reject(e);
 			}
 		};
@@ -144,6 +164,7 @@ export function generateThumbnail(video, width = 120, height = 68, seekTime = 1)
 		videoElement.onseeked = () => {
 			console.log('Video seeked for:', video.name);
 			try {
+				clearTimeout(timeoutId);
 				const canvas = document.createElement('canvas');
 				const ctx = canvas.getContext('2d');
 				canvas.width = width;
@@ -153,13 +174,21 @@ export function generateThumbnail(video, width = 120, height = 68, seekTime = 1)
 				const thumbnailUrl = canvas.toDataURL('image/jpeg', 0.8);
 				console.log('Thumbnail generated successfully for:', video.name);
 				
-				// Clean up
+				// Clean up - remove from DOM and reset
+				document.body.removeChild(videoElement);
 				videoElement.src = '';
 				videoElement.load();
 				
 				resolve(thumbnailUrl);
 			} catch (e) {
 				console.log('Could not generate thumbnail for:', video.name, e);
+				clearTimeout(timeoutId);
+				// Clean up on error too
+				if (document.body.contains(videoElement)) {
+					document.body.removeChild(videoElement);
+				}
+				videoElement.src = '';
+				videoElement.load();
 				reject(e);
 			}
 		};
@@ -167,11 +196,24 @@ export function generateThumbnail(video, width = 120, height = 68, seekTime = 1)
 		videoElement.onerror = (e) => {
 			console.log('Error loading video for thumbnail:', video.name, e);
 			console.log('Video error details:', videoElement.error);
+			clearTimeout(timeoutId);
+			// Clean up on error
+			if (document.body.contains(videoElement)) {
+				document.body.removeChild(videoElement);
+			}
+			videoElement.src = '';
+			videoElement.load();
 			reject(new Error('Failed to load video for thumbnail'));
 		};
 
-		// Set video source
+		// Set video source after ensuring it's in the DOM
 		console.log('Setting video source for:', video.name, 'source:', video.content);
 		videoElement.src = video.content;
 	});
+}
+
+export function getVideoProvider(video) {
+	const videoUrl = video.content;
+	console.log('Video URL:', videoUrl.split('/'));
+	return videoUrl.split('/')[2].split('.')[0];
 }
