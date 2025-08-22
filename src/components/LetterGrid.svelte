@@ -95,8 +95,8 @@
 </script>
 
 {#if showGrid}
-	<div class="flex justify-center items-start my-6">
-		<div class="grid grid-cols-4 gap-x-3 gap-y-3">
+	<div class="flex justify-center items-center my-6 w-full">
+		<div class="grid grid-cols-4 gap-3 w-full justify-between px-3">
 			{#each grid as char, index}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<a
