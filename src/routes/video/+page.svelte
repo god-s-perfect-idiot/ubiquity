@@ -125,13 +125,7 @@
 			<div
 				class="absolute top-4 right-4 w-screen bg-black bg-opacity-50 text-white px-4 py-2 rounded"
 			>
-				<span class="text-lg font-medium">{nowPlayingName}</span>
-				<button
-					on:click={closeVideoPlayer}
-					class="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full transition-all duration-200"
-				>
-					<Icon icon="carbon:close" width="24" height="24" />
-				</button>
+				<span class="px-4 text-2xl">{nowPlayingName}</span>
 			</div>
 
 			<!-- Video container -->
@@ -151,49 +145,61 @@
 
 			<!-- Video controls overlay -->
 			<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-80 text-white p-4">
-				<!-- First row: Skip, Play/Pause, Forward -->
-				<div class="flex justify-center items-center gap-8 mb-4">
-					<button
-						on:click={skipBackward}
-						class="bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-3 transition-all duration-200"
-					>
-						<Icon icon="mdi:rewind-10" width="24" height="24" />
-					</button>
-					
-					<button
-						on:click={togglePlayPause}
-						class="bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-4 transition-all duration-200"
-					>
-						<Icon icon={isVideoPaused ? "mdi:play" : "mdi:pause"} width="32" height="32" />
-					</button>
-					
-					<button
-						on:click={skipForward}
-						class="bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-3 transition-all duration-200"
-					>
-						<Icon icon="mdi:fast-forward-10" width="24" height="24" />
-					</button>
-				</div>
-				
-				<!-- Second row: Seek bar -->
-				<div class="flex items-center gap-3">
-					<span class="text-sm font-mono min-w-[50px]">
-						{Math.floor(currentTime / 60)}:{(currentTime % 60).toFixed(0).padStart(2, '0')}
-					</span>
-					
-					<div
-						class="flex-1 h-2 bg-gray-600 rounded-full cursor-pointer relative"
-						on:click={handleSeek}
-					>
-						<div
-							class="h-full bg-white rounded-full transition-all duration-100"
-							style="width: {duration > 0 ? (currentTime / duration) * 100 : 0}%"
-						></div>
+				<div class="flex flex-col gap-4 mb-4">
+					<!-- Row 1: Seekbar -->
+					<div class="w-full">
+						<div class="h-[3px] bg-gray-600 rounded-full cursor-pointer relative" on:click={handleSeek}>
+							<div
+								class="h-full bg-white rounded-full transition-all duration-100 relative"
+								style="width: {duration > 0 ? (currentTime / duration) * 100 : 0}%"
+							>
+								<div
+									class="absolute right-0 top-1/2 transform -translate-y-1/2 w-5 h-5 bg-white rounded-full border-2 border-gray-600"
+								></div>
+							</div>
+						</div>
 					</div>
-					
-					<span class="text-sm font-mono min-w-[50px]">
-						{Math.floor(duration / 60)}:{(duration % 60).toFixed(0).padStart(2, '0')}
-					</span>
+
+					<!-- Row 2: Time values -->
+					<div class="flex justify-center items-center gap-1 self-end">
+						<span class="text-sm font-mono">
+							{Math.floor(currentTime / 60)}:{(currentTime % 60).toFixed(0).padStart(2, '0')}
+						</span>
+						<span class="text-sm font-mono"> / </span>
+						<span class="text-sm font-mono">
+							{Math.floor(duration / 60)}:{(duration % 60).toFixed(0).padStart(2, '0')}
+						</span>
+					</div>
+
+					<!-- Row 3: Controls -->
+					<div class="flex justify-center items-center gap-8">
+						<button
+							on:click={togglePlayPause}
+							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+						>
+							<Icon icon={isVideoPaused ? 'mdi:play' : 'mdi:pause'} width="24" height="24" />
+						</button>
+						<button
+							on:click={skipBackward}
+							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+						>
+							<Icon icon="mdi:rewind-10" width="24" height="24" />
+						</button>
+
+						<button
+							on:click={skipForward}
+							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+						>
+							<Icon icon="mdi:fast-forward-10" width="24" height="24" />
+						</button>
+
+						<button
+							on:click={closeVideoPlayer}
+							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+						>
+							<Icon icon="carbon:close" width="24" height="24" />
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -301,6 +307,4 @@
 			transform: translateY(0);
 		}
 	}
-
-
 </style>
