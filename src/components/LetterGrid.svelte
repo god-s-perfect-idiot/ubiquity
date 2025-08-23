@@ -96,12 +96,12 @@
 
 {#if showGrid}
 	<div class="flex justify-center items-center my-6 w-full">
-		<div class="grid grid-cols-4 gap-3 w-full justify-between px-3">
+		<div class="grid grid-cols-4 gap-4 w-full max-w-md mx-4">
 			{#each grid as char, index}
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<a
 					href={`#${char.toUpperCase()}`}
-					class={`w-20 h-20 text-4xl justify-start items-end flex pl-1 pb-1 ${
+					class={`aspect-square text-4xl justify-start items-end flex ${
 						isExiting ? 'flip-out' : 'flip-in'
 					} ${
 						hasItemsForLetter(char)
@@ -116,7 +116,7 @@
 						handleLetterTap(char, event);
 					}}
 				>
-					{char}
+					<span class="pl-1 pb-1">{char}</span>
 				</a>
 			{/each}
 		</div>
