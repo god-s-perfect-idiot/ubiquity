@@ -52,7 +52,7 @@
 		<Icon icon="carbon:chevron-right" width="18" height="18" class="text-[#d1d1d1]" />
 	</div>
 	<div class="page" class:page-exit={isExiting}>
-		<span class="text-6xl !h-[3rem]">documents</span>
+		<span class="text-6xl !h-[3rem]">files</span>
 	</div>
 	<div class="mt-8 h-[calc(100vh-10rem)] page" class:page-exit={isExiting}>
 		<div class="flex flex-col gap-3 overflow-y-scroll pb-8 h-full">
