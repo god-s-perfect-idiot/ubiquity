@@ -124,9 +124,9 @@
 			<span class="text-6xl font-[300] h-[10%]"> documents </span>
 			<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
 				{#each Object.entries(documentList) as docEntry}
-					<div class="flex flex-col gap-6">
+					<div class="flex flex-col gap-2">
 						<button
-							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
+							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-2 mb-4 font-[300]"
 							id={docEntry[0].toUpperCase()}
 							on:click={() => {
 								showGrid = true;
