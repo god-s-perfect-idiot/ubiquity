@@ -1,0 +1,154 @@
+<script>
+	import Icon from '@iconify/svelte';
+	import { kernel } from '../../kernel/store';
+	import BottomControls from '../../components/BottomControls.svelte';
+	import { goto } from '$app/navigation';
+	import Listing from './Listing.svelte';
+
+	let isExpanded = false;
+	let isUnmounting = false;
+	let isExiting = false;
+	let subPage = 'categories';
+
+	const handleToggle = () => {
+		isExpanded = !isExpanded;
+	};
+
+	const closePage = () => {
+		isUnmounting = true;
+		setTimeout(() => {
+			isExpanded = false;
+			setTimeout(() => {
+				isExiting = true;
+				setTimeout(() => {
+					goto('/');
+				}, 200); // Match the animation duration
+			}, 300); // Allow time for bottom controls to collapse
+		}, 300);
+	};
+
+	const changeSubPage = (page) => {
+		subPage = page;
+		isExpanded = false;
+	};
+</script>
+
+{#if subPage === 'categories'}
+	<div class="page-holder">
+		<div class="page pt-4 px-4 flex flex-col" class:page-exit={isExiting}>
+			<span class="text-6xl font-[300] h-[10%]">marketplace</span>
+			<div class="flex flex-col gap-1 mt-12">
+				<span class="text-xl font-[300] text-[#ff00ff]">categories</span>
+				<div class="flex flex-col gap-4">
+					<button
+						class="text-4xl font-[300] text-left"
+						on:click={() => {
+							changeSubPage('apps');
+						}}
+					>
+						apps
+					</button>
+					<button
+						class="text-4xl font-[300] text-left"
+						on:click={() => {
+							changeSubPage('music');
+						}}
+					>
+						music
+					</button>
+					<button
+						class="text-4xl font-[300] text-left"
+						on:click={() => {
+							changeSubPage('videos');
+						}}
+					>
+						videos
+					</button>
+					<button
+						class="text-4xl font-[300] text-left"
+						on:click={() => {
+							changeSubPage('documents');
+						}}
+					>
+						documents
+					</button>
+					<button
+						class="text-4xl font-[300] text-left"
+						on:click={() => {
+							changeSubPage('photos');
+						}}
+					>
+						photos
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{:else if subPage === 'apps'}
+	<Listing pageTitle="apps" />
+{:else if subPage === 'music'}
+	<Listing pageTitle="music" />
+{:else if subPage === 'videos'}
+	<Listing pageTitle="videos" />
+{:else if subPage === 'documents'}
+	<Listing pageTitle="documents" />
+{:else if subPage === 'photos'}
+	<Listing pageTitle="photos" />
+{/if}
+
+<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
+	<div class="flex flex-row gap-12 w-full justify-center items-center">
+		<div
+			class="btn-animate flex flex-col gap-2 justify-center items-center"
+			class:animate={isExpanded}
+		>
+			{#if subPage !== 'categories'}
+				<button
+					on:click={() => {
+						changeSubPage('categories');
+					}}
+					class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+				>
+					<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2" />
+				</button>
+				<span class="text-xs font-[400]">back</span>
+			{/if}
+		</div>
+		<div
+			class="btn-animate flex flex-col gap-2 justify-center items-center"
+			class:animate={isExpanded}
+		>
+			<button
+				on:click={closePage}
+				class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+			>
+				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2" />
+			</button>
+			<span class="text-xs font-[400]">close</span>
+		</div>
+	</div>
+</BottomControls>
+
+<style>
+	.btn-animate {
+		transform: translateY(120%);
+		opacity: 0;
+	}
+
+	.btn-animate.animate {
+		animation: button-overshoot 0.5s ease-out forwards;
+		opacity: 1;
+	}
+
+	@keyframes button-overshoot {
+		0% {
+			transform: translateY(120%);
+		}
+		70% {
+			transform: translateY(-20%);
+		}
+		100% {
+			transform: translateY(0);
+		}
+	}
+</style>
