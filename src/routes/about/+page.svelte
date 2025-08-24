@@ -42,14 +42,14 @@
             </div>
             <span class="text-lg mt-4 underline font-[300]"> Privacy Policy </span>
             <div class="flex flex-col gap-2 mt-6 text-lg font-[300]">
-                <span>Ubiquity Version 0.1</span>
-                <span>File Explorer 0.1</span>
-                <span>Marketplace 0.1</span>
-                <span>Music Player 0.1</span>
-                <span>Photos 0.1</span>
-                <span>Video 0.1</span>
-                <span>Settings 0.1</span>
-                <span>Documents 0.1</span>
+                <span>Ubiquity Version v-0.2</span>
+                <span>File Explorer v-0.1</span>
+                <span>Marketplace v-0.2</span>
+                <span>Music Player v-1.0</span>
+                <span>Photos v-1.0</span>
+                <span>Video v-0.2</span>
+                <span>Settings v-0 (not released)</span>
+                <span>Documents v-0.2</span>
             </div>
             <div class="mt-12 mb-8">
                 <span class="text-2xl text-[#ff00ff]">faq</span>
