@@ -52,9 +52,7 @@ function flatten(files, state) {
         }
     });
     return state;
-
 }
-
 
 export function fetchApps(files) {
     const apps = []

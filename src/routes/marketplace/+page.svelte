@@ -9,9 +9,14 @@
 	let isUnmounting = false;
 	let isExiting = false;
 	let subPage = 'categories';
+	let hiddenBottomBar = false;
 
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
+	};
+
+	const toggleBottomBar = (show) => {
+		hiddenBottomBar = show;
 	};
 
 	const closePage = () => {
@@ -85,49 +90,51 @@
 		</div>
 	</div>
 {:else if subPage === 'apps'}
-	<Listing pageTitle="apps" />
+	<Listing listingType="apps" {toggleBottomBar} isExiting={isExiting} />
 {:else if subPage === 'music'}
-	<Listing pageTitle="music" />
+	<Listing listingType="music" {toggleBottomBar} isExiting={isExiting} />
 {:else if subPage === 'videos'}
-	<Listing pageTitle="videos" />
+	<Listing listingType="videos" {toggleBottomBar} isExiting={isExiting} />
 {:else if subPage === 'documents'}
-	<Listing pageTitle="documents" />
+	<Listing listingType="documents" {toggleBottomBar} isExiting={isExiting} />
 {:else if subPage === 'photos'}
-	<Listing pageTitle="photos" />
+	<Listing listingType="photos" {toggleBottomBar} isExiting={isExiting} />
 {/if}
 
-<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
-	<div class="flex flex-row gap-12 w-full justify-center items-center">
-		<div
-			class="btn-animate flex flex-col gap-2 justify-center items-center"
-			class:animate={isExpanded}
-		>
+{#if !hiddenBottomBar}
+	<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
+		<div class="flex flex-row gap-12 w-full justify-center items-center">
 			{#if subPage !== 'categories'}
+				<div
+					class="btn-animate flex flex-col gap-2 justify-center items-center"
+					class:animate={isExpanded}
+				>
+					<button
+						on:click={() => {
+							changeSubPage('categories');
+						}}
+						class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+					>
+						<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2" />
+					</button>
+					<span class="text-xs font-[400]">back</span>
+				</div>
+			{/if}
+			<div
+				class="btn-animate flex flex-col gap-2 justify-center items-center"
+				class:animate={isExpanded}
+			>
 				<button
-					on:click={() => {
-						changeSubPage('categories');
-					}}
+					on:click={closePage}
 					class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
 				>
-					<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2" />
+					<Icon icon="carbon:close" width="20" height="20" strokeWidth="2" />
 				</button>
-				<span class="text-xs font-[400]">back</span>
-			{/if}
+				<span class="text-xs font-[400]">close</span>
+			</div>
 		</div>
-		<div
-			class="btn-animate flex flex-col gap-2 justify-center items-center"
-			class:animate={isExpanded}
-		>
-			<button
-				on:click={closePage}
-				class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
-			>
-				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2" />
-			</button>
-			<span class="text-xs font-[400]">close</span>
-		</div>
-	</div>
-</BottomControls>
+	</BottomControls>
+{/if}
 
 <style>
 	.btn-animate {

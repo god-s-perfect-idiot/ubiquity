@@ -10,7 +10,7 @@
 </script>
 
 {#if visible}
-    <div class="absolute z-10 top-0 w-full bg-[#ff00ff] px-2 py-4 text-xl toast font-[400]">
+    <div class="absolute z-10 top-0 w-full bg-[#ff00ff] px-2 py-4 text-xl toast font-[300]">
         {content}
     </div>
 {/if}
