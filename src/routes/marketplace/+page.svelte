@@ -10,13 +10,20 @@
 	let isExiting = false;
 	let subPage = 'categories';
 	let hiddenBottomBar = false;
+	let showSearch = false;
 
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
+		showSearch = false;
 	};
 
 	const toggleBottomBar = (show) => {
 		hiddenBottomBar = show;
+	};
+
+	const showSearchBar = () => {
+		showSearch = true;
+		isExpanded = false;
 	};
 
 	const closePage = () => {
@@ -90,15 +97,15 @@
 		</div>
 	</div>
 {:else if subPage === 'apps'}
-	<Listing listingType="apps" {toggleBottomBar} isExiting={isExiting} />
+	<Listing listingType="apps" {toggleBottomBar} isExiting={isExiting} {showSearch} />
 {:else if subPage === 'music'}
-	<Listing listingType="music" {toggleBottomBar} isExiting={isExiting} />
+	<Listing listingType="music" {toggleBottomBar} isExiting={isExiting} {showSearch} />
 {:else if subPage === 'videos'}
-	<Listing listingType="videos" {toggleBottomBar} isExiting={isExiting} />
+	<Listing listingType="videos" {toggleBottomBar} isExiting={isExiting} {showSearch} />
 {:else if subPage === 'documents'}
-	<Listing listingType="documents" {toggleBottomBar} isExiting={isExiting} />
+	<Listing listingType="documents" {toggleBottomBar} isExiting={isExiting} {showSearch} />
 {:else if subPage === 'photos'}
-	<Listing listingType="photos" {toggleBottomBar} isExiting={isExiting} />
+	<Listing listingType="photos" {toggleBottomBar} isExiting={isExiting} {showSearch} />
 {/if}
 
 {#if !hiddenBottomBar}
@@ -118,6 +125,20 @@
 						<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2" />
 					</button>
 					<span class="text-xs font-[400]">back</span>
+				</div>
+				<div
+					class="btn-animate flex flex-col gap-2 justify-center items-center"
+					class:animate={isExpanded}
+				>
+					<button
+						on:click={() => {
+							showSearchBar();
+						}}
+						class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+					>
+						<Icon icon="mdi:search" width="20" height="20" strokeWidth="2" />
+					</button>
+					<span class="text-xs font-[400]">search</span>
 				</div>
 			{/if}
 			<div

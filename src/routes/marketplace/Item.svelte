@@ -30,7 +30,7 @@
 
 <div class="page-holder">
     <div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
-        <span class="text-6xl font-[300] flex-shrink-0 line-clamp-1">{item.name}</span>
+        <span class="text-6xl font-[300] flex-shrink-0 break-words">{item.name}</span>
         <div class="flex flex-col gap-4 mt-12 flex-1 overflow-y-auto pb-16">
             <div class="flex flex-col gap-4 items-start">
                 <div class="w-40 h-40 flex items-center justify-center" style="background-color: {item.background}; text-color: white;">
