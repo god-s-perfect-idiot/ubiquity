@@ -7,9 +7,10 @@
 	let open = false;
 	selection = data[0];
 	export let label = '';
+	export let className = '';
 </script>
 
-<div class="flex flex-col gap-2 font-[400]">
+<div class="flex flex-col gap-2 font-[400] {className}">
     <span class="text-[#767676] text-sm">{label}</span>
     <div>
         {#if open}

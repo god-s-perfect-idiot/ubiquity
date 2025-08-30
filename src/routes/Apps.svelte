@@ -65,6 +65,13 @@
 			isSystemApp: true,
 			icon: 'ic:sharp-store',
 			bgColor: 'bg-purple-900'
+		},
+		{
+			name: "Spotify (Metro)",
+			content: '/spotify',
+			isSystemApp: true,
+			icon: 'mdi:spotify',
+			bgColor: 'bg-green-700'
 		}
 	];
 	let apps = [];

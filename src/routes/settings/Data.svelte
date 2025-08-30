@@ -3,22 +3,46 @@
 	import { addTestDataToFS } from '../../kernel/debug';
 	import { kernel } from '../../kernel/store';
 	import { addToast } from '../../store/toast';
+	import { accountsStore } from '../../store/accounts';
 
 	const addData = () => {
 		addTestDataToFS();
 		addToast('Started data successfully added to device');
 	};
 
+
+	const removeAccounts = () => {
+		accountsStore.logout('spotify');
+		accountsStore.cleanupStorage('spotify');
+	};
+
+	const resetAccounts = () => {
+		removeAccounts();
+		addToast('Accounts reset successfully');
+	};
+
 	const resetData = () => {
 		kernel.fs.resetFS();
+		removeAccounts();
 		addToast('Data reset successfully');
 	};
+		
 </script>
 
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300]">data</span>
 		<div class="flex flex-col gap-8 mt-8 flex-1 overflow-y-auto">
+			<div class="flex flex-col gap-4">
+				<button
+					type="button"
+					class="border-2 border-white px-4 py-2 w-fit text-base"
+					on:click={resetAccounts}>remove all accounts</button
+				>
+				<span class="flex flex-col gap-4 items-start text-sm text-[#a1a1a1]">
+					Remove all accounts from your device.
+				</span>
+			</div>
 			<div class="flex flex-col gap-4">
 				<button
 					type="button"

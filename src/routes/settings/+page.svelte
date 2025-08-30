@@ -3,14 +3,20 @@
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import Data from './Data.svelte';
+	import Accounts from './Accounts.svelte';
 
 	let isExpanded = false;
 	let isUnmounting = false;
 	let isExiting = false;
 	let currentPage = 'settings';
+    let hiddenBottomBar = false;
 
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
+	};
+
+	const hideBottomBar = (show) => {
+		hiddenBottomBar = show;
 	};
 
 	const closePage = () => {
@@ -84,9 +90,9 @@
 							>ubiquity device ID and other unique features</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">accounts</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+					<button class="flex flex-col items-start" on:click={() => changePage('accounts')}>
+						<span class="text-3xl font-[300]">accounts</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>google and other accounts</span
 						>
 					</button>
@@ -125,8 +131,11 @@
 	</div>
 {:else if currentPage === 'data'}
 	<Data isExiting={isExiting} />
+{:else if currentPage === 'accounts'}
+	<Accounts isExiting={isExiting} {hideBottomBar}/>
 {/if}
 
+{#if !hiddenBottomBar}
 <BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
 	<div class="flex flex-row gap-12 justify-center items-center">
 		{#if currentPage !== 'settings'}
@@ -157,6 +166,7 @@
 		</div>
 	</div>
 </BottomControls>
+{/if}
 
 <style>
 	.btn-animate {
