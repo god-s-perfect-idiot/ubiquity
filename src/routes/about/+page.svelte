@@ -44,12 +44,13 @@
             <div class="flex flex-col gap-2 mt-6 text-lg font-[300]">
                 <span>Ubiquity Version v-0.2</span>
                 <span>File Explorer v-0.1</span>
-                <span>Marketplace v-0.2</span>
+                <span>Marketplace v-0.3</span>
                 <span>Music Player v-1.0</span>
                 <span>Photos v-1.0</span>
                 <span>Video v-0.2</span>
-                <span>Settings v-0 (not released)</span>
+                <span>Settings v-0.1</span>
                 <span>Documents v-0.2</span>
+                <span>Spotify (Metro) v-0.5</span>
             </div>
             <div class="mt-12 mb-8">
                 <span class="text-2xl text-[#ff00ff]">faq</span>
@@ -70,6 +71,10 @@
                 <div class="flex flex-col">
                     <span class="text-xl">Is it free to use?</span>
                     <span class="text-sm text-[#767676] mt-1">Ubiquity is free and open source. The github repository can be accessed using the icon in the software release section in this page.</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl">Where are my logged in accounts stored?</span>
+                    <span class="text-sm text-[#767676] mt-1">Ubiquity uses your browser's local storage for storing credentials to all connected accounts. This is not stored on any server or third party service.</span>
                 </div>
             </div>
         </div>
