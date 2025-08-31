@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      spotify-web-api-js:
+        specifier: ^1.5.2
+        version: 1.5.2
       ubq-kernel:
         specifier: github:god-s-perfect-idiot/ubq-kernel#main
         version: https://codeload.github.com/god-s-perfect-idiot/ubq-kernel/tar.gz/aba881eae7bf1eb7387531e3c6b89c3b5f13722e
@@ -1182,6 +1185,9 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
+  spotify-web-api-js@1.5.2:
+    resolution: {integrity: sha512-ie1gbg1wCabfobIkXTIBLUMyULS/hMCpF44Cdx2pAO0/+FrjhNSDjlDzcwCEDy+ZIo3Fscs+Gkg/GTeQ/ijo+Q==}
+
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -2342,6 +2348,8 @@ snapshots:
       totalist: 3.0.1
 
   source-map-js@1.2.1: {}
+
+  spotify-web-api-js@1.5.2: {}
 
   string-width@4.2.3:
     dependencies:
