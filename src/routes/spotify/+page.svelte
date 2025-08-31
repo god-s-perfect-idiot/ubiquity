@@ -139,7 +139,7 @@
 					}
 				}
                 // disable this for local development. keep enabled or we will hit the rate limit.
-                hasMore = false;
+                // hasMore = false;
 			}
 
 			// Filter out songs without names
