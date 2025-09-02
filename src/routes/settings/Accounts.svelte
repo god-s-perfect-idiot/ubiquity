@@ -84,7 +84,9 @@
 					>
 					<span class="text-sm font-[300] text-[#a1a1a1]"
 						>This is the metro app and not the web app. You can click the button below to open the
-						music player app and connect your account.</span
+						music player app and connect your account. You need to be a part of the developer
+						allow-list to be able to connect your account. If you are interested, contact the
+						developer.</span
 					>
 				{/if}
 			</div>

@@ -51,6 +51,7 @@
                 <span>Settings v-0.1</span>
                 <span>Documents v-0.2</span>
                 <span>Spotify (Metro) v-0.5</span>
+                <span>Weather v-0.1</span>
             </div>
             <div class="mt-12 mb-8">
                 <span class="text-2xl text-[#ff00ff]">faq</span>

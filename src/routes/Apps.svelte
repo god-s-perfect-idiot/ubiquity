@@ -72,6 +72,13 @@
 			isSystemApp: true,
 			icon: 'mdi:spotify',
 			bgColor: 'bg-green-700'
+		}, 
+		{
+			name: "Weather",
+			content: '/weather',
+			isSystemApp: true,
+			icon: 'material-symbols-light:weather-mix',
+			bgColor: 'bg-blue-900'
 		}
 	];
 	let apps = [];

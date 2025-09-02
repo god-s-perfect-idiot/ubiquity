@@ -89,13 +89,16 @@
 		try {
 			const devices = await spotifyApi.getMyDevices();
 			availableDevices = devices.devices || [];
-			
+
 			// Prioritize web player if available
-			const webPlayer = availableDevices.find(device => 
-				device.type === 'Computer' && 
-				(device.name.includes('Web Player') || device.name.includes('Chrome') || device.name.includes('Safari'))
+			const webPlayer = availableDevices.find(
+				(device) =>
+					device.type === 'Computer' &&
+					(device.name.includes('Web Player') ||
+						device.name.includes('Chrome') ||
+						device.name.includes('Safari'))
 			);
-			
+
 			if (webPlayer) {
 				selectedDeviceId = webPlayer.id;
 				selectedDeviceName = webPlayer.name;
@@ -105,7 +108,7 @@
 				selectedDeviceName = availableDevices[0].name;
 				console.log('Selected device:', availableDevices[0].name);
 			}
-			
+
 			console.log('Available devices:', availableDevices);
 		} catch (error) {
 			console.error('Error loading devices:', error);
@@ -125,34 +128,34 @@
 
 			while (hasMore) {
 				const response = await spotifyApi.getMySavedTracks({ limit, offset });
-				const songs = response.items.map(item => item.track);
-				
+				const songs = response.items.map((item) => item.track);
+
 				if (songs.length === 0) {
 					hasMore = false;
 				} else {
 					allSongs = allSongs.concat(songs);
 					offset += limit;
-					
+
 					// If we got less than the limit, we've reached the end
 					if (songs.length < limit) {
 						hasMore = false;
 					}
 				}
-                // disable this for local development. keep enabled or we will hit the rate limit.
-                // hasMore = false;
+				// disable this for local development. keep enabled or we will hit the rate limit.
+				// hasMore = false;
 			}
 
 			// Filter out songs without names
-			likedSongs = allSongs.filter(song => song.name && song.name.trim() !== '');
-			
+			likedSongs = allSongs.filter((song) => song.name && song.name.trim() !== '');
+
 			// Sort songs alphabetically by name
 			likedSongs.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-			
+
 			console.log(`Loaded ${likedSongs.length} total liked songs in alphabetical order (filtered)`);
-			
+
 			// Initialize queue
 			queue = likedSongs;
-			
+
 			// Organize songs by first letter for LetterGrid
 			organizeSongsByLetter();
 		} catch (error) {
@@ -222,18 +225,23 @@
 		try {
 			// Use selected device if available
 			if (selectedDeviceId) {
-				await spotifyApi.play({ 
+				await spotifyApi.play({
 					uris: [uri],
 					device_id: selectedDeviceId
 				});
-				
-				const selectedDevice = availableDevices.find(d => d.id === selectedDeviceId);
-				console.log('Playing song:', uri, 'on selected device:', selectedDevice?.name || selectedDeviceId);
-				
+
+				const selectedDevice = availableDevices.find((d) => d.id === selectedDeviceId);
+				console.log(
+					'Playing song:',
+					uri,
+					'on selected device:',
+					selectedDevice?.name || selectedDeviceId
+				);
+
 				// Update now playing state
 				if (song) {
 					nowPlayingTrack = song;
-					currentSongIndex = queue.findIndex(s => s.uri === uri);
+					currentSongIndex = queue.findIndex((s) => s.uri === uri);
 					isPlaying = true;
 					showGrid = false;
 					startPlaybackPolling();
@@ -244,66 +252,75 @@
 			// Fallback: check for available devices
 			const devices = await spotifyApi.getMyDevices();
 			console.log(devices);
-			
+
 			if (!devices.devices || devices.devices.length === 0) {
 				console.error('No Spotify devices available. Opening Spotify web player...');
-				
+
 				// Try to open Spotify web player and then play
 				const webPlayerUrl = 'https://open.spotify.com';
 				const newTab = window.open(webPlayerUrl, '_blank');
-				
+
 				// Wait a moment for the tab to open, then try to play
 				setTimeout(async () => {
 					try {
 						// Try playing without device ID (will use web player if it's active)
 						await spotifyApi.play({ uris: [uri] });
 						console.log('Playing song on web player:', uri);
-						
+
 						// Update now playing state
 						if (song) {
 							nowPlayingTrack = song;
-							currentSongIndex = queue.findIndex(s => s.uri === uri);
+							currentSongIndex = queue.findIndex((s) => s.uri === uri);
 							isPlaying = true;
 							showGrid = false;
 							startPlaybackPolling();
 						}
 					} catch (webPlayerError) {
 						console.error('Web player playback failed:', webPlayerError);
-						alert('Please:\n1. Keep the Spotify web player tab open\n2. Make sure you\'re logged in\n3. Try playing the song again');
+						alert(
+							"Please:\n1. Keep the Spotify web player tab open\n2. Make sure you're logged in\n3. Try playing the song again"
+						);
 					}
 				}, 2000);
-				
+
 				return;
 			}
 
 			// Try to play on the first available device
 			const deviceId = selectedDeviceId || devices.devices[0].id; // Use selectedDeviceId if available, otherwise first device
-			await spotifyApi.play({ 
+			await spotifyApi.play({
 				uris: [uri],
 				device_id: deviceId
 			});
-			
-			console.log('Playing song:', uri, 'on device:', devices.devices.find(d => d.id === deviceId)?.name || 'web player');
-			
+
+			console.log(
+				'Playing song:',
+				uri,
+				'on device:',
+				devices.devices.find((d) => d.id === deviceId)?.name || 'web player'
+			);
+
 			// Update now playing state
 			if (song) {
 				nowPlayingTrack = song;
-				currentSongIndex = queue.findIndex(s => s.uri === uri);
+				currentSongIndex = queue.findIndex((s) => s.uri === uri);
 				isPlaying = true;
 				showGrid = false;
-				
+
 				// Start polling for playback state
 				startPlaybackPolling();
 			}
 		} catch (error) {
 			console.error('Error playing song:', error);
-			
+
 			if (error.status === 404) {
 				// Try opening web player as fallback
 				const webPlayerUrl = 'https://open.spotify.com';
 				window.open(webPlayerUrl, '_blank');
-				
-				alert('No active Spotify device found.\n\nI\'ve opened Spotify web player for you.\n\nPlease:\n1. Keep the web player tab open\n2. Log in to Spotify\n3. Try playing the song again\n\nYour app will control the web player once it\'s active.');
+
+				alert(
+					"No active Spotify device found.\n\nI've opened Spotify web player for you.\n\nPlease:\n1. Keep the web player tab open\n2. Log in to Spotify\n3. Try playing the song again\n\nYour app will control the web player once it's active."
+				);
 			} else if (error.status === 403) {
 				alert('Playback control requires a Spotify Premium account.');
 			} else {
@@ -334,7 +351,7 @@
 		try {
 			// Use selected device if available, otherwise get available devices
 			let deviceId = selectedDeviceId;
-			
+
 			if (!deviceId) {
 				const devices = await spotifyApi.getMyDevices();
 				if (!devices.devices || devices.devices.length === 0) {
@@ -353,7 +370,7 @@
 			}
 		} catch (error) {
 			console.error('Error toggling play/pause:', error);
-			
+
 			// Handle different types of errors
 			if (error.status === 401) {
 				alert('Authentication expired. Please log in to Spotify again.');
@@ -361,7 +378,9 @@
 			} else if (error.status === 429) {
 				alert('Rate limit exceeded. Please wait a moment before trying again.');
 			} else if (error.status === 404) {
-				alert('Cannot control playback. Please make sure Spotify app is open and you have an active device.');
+				alert(
+					'Cannot control playback. Please make sure Spotify app is open and you have an active device.'
+				);
 			} else if (error.status === 403) {
 				alert('Playback control requires a Spotify Premium account.');
 			} else if (error.message && error.message.includes('JSON')) {
@@ -388,10 +407,10 @@
 					currentTime = playbackState.progress_ms / 1000;
 					duration = playbackState.item.duration_ms / 1000;
 					seekValue = duration > 0 ? (currentTime / duration) * 100 : 0;
-					
+
 					// Check if still playing
 					isPlaying = playbackState.is_playing;
-					
+
 					// Check if song ended
 					if (!playbackState.is_playing && currentTime >= duration - 1) {
 						playNext();
@@ -399,7 +418,7 @@
 				}
 			} catch (error) {
 				console.error('Playback polling error:', error);
-				
+
 				// Handle different types of errors during polling
 				if (error.status === 401) {
 					console.log('Authentication expired during polling, stopping poll');
@@ -429,7 +448,7 @@
 
 	function formatImageUrl(images, size = 300) {
 		if (!images || images.length === 0) return null;
-		return images.find(img => img.width >= size)?.url || images[0].url;
+		return images.find((img) => img.width >= size)?.url || images[0].url;
 	}
 
 	// Helper function to open Spotify web player
@@ -440,15 +459,18 @@
 
 	// Check if user is authenticated
 	$: isAuthenticated = accountsStore.isAuthenticated('spotify');
-	
+
 	// Reactive statement to update selected device when devices change
 	$: if (availableDevices.length > 0 && !selectedDeviceId) {
 		// Auto-select web player if available, otherwise first device
-		const webPlayer = availableDevices.find(device => 
-			device.type === 'Computer' && 
-			(device.name.includes('Web Player') || device.name.includes('Chrome') || device.name.includes('Safari'))
+		const webPlayer = availableDevices.find(
+			(device) =>
+				device.type === 'Computer' &&
+				(device.name.includes('Web Player') ||
+					device.name.includes('Chrome') ||
+					device.name.includes('Safari'))
 		);
-		
+
 		if (webPlayer) {
 			selectedDeviceId = webPlayer.id;
 			selectedDeviceName = webPlayer.name;
@@ -459,10 +481,10 @@
 			console.log('Auto-selected device:', availableDevices[0].name);
 		}
 	}
-	
+
 	// Reactive statement to sync selectedDeviceName with selectedDeviceId
 	$: if (selectedDeviceName && availableDevices.length > 0) {
-		const device = availableDevices.find(d => d.name === selectedDeviceName);
+		const device = availableDevices.find((d) => d.name === selectedDeviceName);
 		if (device) {
 			selectedDeviceId = device.id;
 			console.log('Device selection changed to:', device.name, 'ID:', device.id);
@@ -508,7 +530,7 @@
 			<span class="text-6xl font-[300] h-[10%]">spotify</span>
 			<div class="flex flex-col gap-2 mb-16">
 				<span class="text-4xl font-[300]">now playing</span>
-				
+
 				<!-- Album Art -->
 				<div class="flex w-72 h-72 justify-center items-center mt-4">
 					{#if nowPlayingTrack.album?.images}
@@ -537,10 +559,12 @@
 						></div>
 					</div>
 				</div>
-				
+
 				<!-- Song Info -->
 				<span class="text-2xl font-[300] mt-2">{nowPlayingTrack.name}</span>
-				<span class="text-lg text-gray-400">{nowPlayingTrack.artists?.map(a => a.name).join(', ')}</span>
+				<span class="text-lg text-gray-400"
+					>{nowPlayingTrack.artists?.map((a) => a.name).join(', ')}</span
+				>
 
 				<!-- Playback Controls -->
 				<div class="flex flex-row justify-between mt-6 w-72">
@@ -563,7 +587,7 @@
 						<Icon icon="mdi:skip-next" width="32" height="32" />
 					</button>
 				</div>
-                <!-- <div class="flex flex-row gap-4 items-center mt-4 w-full">
+				<!-- <div class="flex flex-row gap-4 items-center mt-4 w-full">
                     <Select
                         bind:selection={selectedDeviceName}
                         data={availableDevices.map(device => device.name)}
@@ -593,9 +617,9 @@
 					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
 						{#if isLoading}
 							<!-- Loading State -->
-                             <div class="flex flex-col gap-4 items-center justify-center h-screen">
-                                <Loader />
-                             </div>
+							<div class="flex flex-col gap-4 items-center justify-center h-screen">
+								<Loader />
+							</div>
 						{:else if likedSongs.length > 0}
 							<!-- Liked Songs List -->
 							{#each Object.entries(musicList) as musicEntry}
@@ -622,18 +646,23 @@
 													class="w-16 h-16 object-cover flex-shrink-0"
 												/>
 											{:else}
-												<div class="w-12 h-12 rounded-lg bg-gray-700 flex items-start justify-center flex-shrink-0">
+												<div
+													class="w-12 h-12 rounded-lg bg-gray-700 flex items-start justify-center flex-shrink-0"
+												>
 													<Icon icon="mdi:music" width="24" height="24" class="text-gray-400" />
 												</div>
 											{/if}
-											
+
 											<!-- Song Info -->
 											<div class="flex flex-col min-w-0 items-start">
 												<span class="text-2xl font-[300] truncate" title={song.name}>
 													{song.name}
 												</span>
-												<span class="text-gray-400 text-base font-[300] truncate" title={song.artists?.map(a => a.name).join(', ')}>
-													{song.artists?.map(a => a.name).join(', ') || 'Unknown Artist'}
+												<span
+													class="text-gray-400 text-base font-[300] truncate"
+													title={song.artists?.map((a) => a.name).join(', ')}
+												>
+													{song.artists?.map((a) => a.name).join(', ') || 'Unknown Artist'}
 												</span>
 											</div>
 										</button>
@@ -642,10 +671,14 @@
 							{/each}
 						{:else}
 							<!-- Empty State -->
-							<div class="text-center py-12">
-								<Icon icon="carbon:music" width="64" height="64" class="text-gray-500 mx-auto mb-4" />
-								<h3 class="text-xl font-semibold mb-2">No Liked Songs Found</h3>
-								<p class="text-gray-400">Like some songs on Spotify to see them here.</p>
+							<div class="text-center py-12 mx-4">
+								<Icon icon="mdi:music" width="64" height="64" class="text-gray-500 mb-4" />
+								<h3 class="text-xl font-semibold mb-2 justify-start flex font-[300]">
+									No Liked Songs Found
+								</h3>
+								<p class="text-gray-400 font-[300] justify-start flex text-left text-lg">
+									Like some songs on Spotify to see them here.
+								</p>
 							</div>
 						{/if}
 					</div>
@@ -654,7 +687,6 @@
 		</div>
 	{/if}
 </div>
-
 <BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
 	<div class="flex flex-row gap-12 justify-center items-center">
 		{#if nowPlayingTrack}

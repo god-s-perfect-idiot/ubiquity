@@ -1,0 +1,195 @@
+import { getCurrentLocation, getWeatherData, getWeatherForecast } from './weather-utils.js';
+import { settingsStore } from '../store/settings.js';
+
+/**
+ * Weather actions that integrate with the settings store
+ */
+export const weatherActions = {
+	/**
+	 * Auto-detect location and fetch weather
+	 */
+	async autoDetectAndFetch() {
+		try {
+			console.log('Starting weather detection...');
+			console.log('Current settings state:', settingsStore.getAll());
+			
+			// Get current location
+			const location = await getCurrentLocation();
+			console.log('Location detected:', location);
+			
+			// Update location in settings
+			settingsStore.updateWeatherLocation(location);
+			console.log('Location updated in settings');
+			
+			// Fetch current weather
+			console.log('Fetching weather data...');
+			const current = await getWeatherData(location.lat, location.lon);
+			console.log('Weather data received:', current);
+			
+			// Fetch forecast
+			console.log('Fetching forecast...');
+			const forecast = await getWeatherForecast(location.lat, location.lon);
+			console.log('Forecast received:', forecast);
+			
+			// Update settings with weather data
+			settingsStore.updateWeatherData(current, forecast);
+			console.log('Weather data updated in settings');
+			
+			// Enable location services after successful detection
+			settingsStore.set('weather.locationServices', true);
+			settingsStore.set('weather.autoRefresh', true);
+			console.log('Location services enabled');
+			
+			console.log('Weather setup complete!');
+			console.log('Final settings state:', settingsStore.getAll());
+			
+		} catch (error) {
+			console.error('Weather error:', error);
+			settingsStore.setWeatherError(error.message);
+		}
+	},
+
+	/**
+	 * Refresh weather data for current location
+	 */
+	async refresh() {
+		const lastLocation = settingsStore.getLastLocation();
+		if (lastLocation) {
+			try {
+				// Fetch current weather
+				const current = await getWeatherData(lastLocation.lat, lastLocation.lon);
+				
+				// Fetch forecast
+				const forecast = await getWeatherForecast(lastLocation.lat, lastLocation.lon);
+				
+				// Update settings with weather data
+				settingsStore.updateWeatherData(current, forecast);
+				
+			} catch (error) {
+				settingsStore.setWeatherError(error.message);
+			}
+		} else {
+			// No location stored, try to detect again
+			await weatherActions.autoDetectAndFetch();
+		}
+	},
+
+	/**
+	 * Clear weather data
+	 */
+	clear() {
+		settingsStore.updateSettings({
+			'weather.currentWeather': null,
+			'weather.forecast': [],
+			'weather.lastLocation': null,
+			'weather.lastUpdated': null,
+			'weather.error': null
+		});
+	},
+
+	/**
+	 * Enable location services and fetch weather
+	 */
+	async enableLocationServices() {
+		settingsStore.toggleLocationServices();
+		await weatherActions.autoDetectAndFetch();
+	},
+
+	/**
+	 * Disable location services
+	 */
+	disableLocationServices() {
+		settingsStore.toggleLocationServices();
+		settingsStore.clearWeatherError();
+	},
+
+	/**
+	 * Change temperature unit and refresh data if needed
+	 */
+	async changeTemperatureUnit(unit) {
+		const success = settingsStore.setTemperatureUnit(unit);
+		if (success && settingsStore.getCurrentWeather()) {
+			// Refresh data to get new units
+			await weatherActions.refresh();
+		}
+		return success;
+	},
+
+	/**
+	 * Change wind speed unit and refresh data if needed
+	 */
+	async changeWindSpeedUnit(unit) {
+		const success = settingsStore.setWindSpeedUnit(unit);
+		if (success && settingsStore.getCurrentWeather()) {
+			// Refresh data to get new units
+			await weatherActions.refresh();
+		}
+		return success;
+	},
+
+	/**
+	 * Change pressure unit and refresh data if needed
+	 */
+	async changePressureUnit(unit) {
+		const success = settingsStore.setPressureUnit(unit);
+		if (success && settingsStore.getCurrentWeather()) {
+			// Refresh data to get new units
+			await weatherActions.refresh();
+		}
+		return success;
+	},
+
+	/**
+	 * Set auto-refresh interval
+	 */
+	setRefreshInterval(minutes) {
+		if (minutes >= 1 && minutes <= 60) {
+			settingsStore.set('weather.refreshInterval', minutes);
+			return true;
+		}
+		return false;
+	},
+
+	/**
+	 * Toggle auto-refresh
+	 */
+	toggleAutoRefresh() {
+		const current = settingsStore.isWeatherAutoRefreshEnabled();
+		settingsStore.set('weather.autoRefresh', !current);
+		return !current;
+	},
+
+	/**
+	 * Update only the location name without fetching new weather data
+	 */
+	async updateLocationOnly() {
+		const lastLocation = settingsStore.getLastLocation();
+		if (lastLocation) {
+			try {
+				console.log('Updating location name only...');
+				
+				// Get city name from coordinates
+				const { getCityName } = await import('./weather-utils.js');
+				const cityInfo = await getCityName(lastLocation.lat, lastLocation.lon);
+				
+				// Update the current weather with new city info
+				const currentWeather = settingsStore.getCurrentWeather();
+				if (currentWeather) {
+					const updatedWeather = {
+						...currentWeather,
+						city: cityInfo.city,
+						country: cityInfo.country
+					};
+					
+					settingsStore.updateSettings({
+						'weather.currentWeather': updatedWeather
+					});
+					
+					console.log('Location updated:', cityInfo);
+				}
+			} catch (error) {
+				console.error('Failed to update location:', error);
+			}
+		}
+	}
+};

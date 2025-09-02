@@ -4,6 +4,7 @@
 	import Icon from '@iconify/svelte';
 	import Data from './Data.svelte';
 	import Accounts from './Accounts.svelte';
+	import RegionUnits from './RegionUnits.svelte';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -96,6 +97,12 @@
 							>google and other accounts</span
 						>
 					</button>
+					<button class="flex flex-col items-start" on:click={() => changePage('region+units')}>
+						<span class="text-3xl font-[300]">region+units</span>
+						<span class="text-sm font-[300] text-[#818181]"
+							>change region and units of measurements</span
+						>
+					</button>
 				</div>
 				<div class="flex flex-col gap-3 items-start">
 					<span class="text-2xl font-[300] text-[#ff00ff] mt-2">extras+info</span>
@@ -133,6 +140,8 @@
 	<Data isExiting={isExiting} />
 {:else if currentPage === 'accounts'}
 	<Accounts isExiting={isExiting} {hideBottomBar}/>
+{:else if currentPage === 'region+units'}
+	<RegionUnits isExiting={isExiting} {hideBottomBar}/>
 {/if}
 
 {#if !hiddenBottomBar}
