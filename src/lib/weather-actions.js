@@ -45,7 +45,17 @@ export const weatherActions = {
 			
 		} catch (error) {
 			console.error('Weather error:', error);
-			settingsStore.setWeatherError(error.message);
+			
+			// Handle specific geolocation errors
+			if (error.message.includes('denied') || error.message.includes('permission')) {
+				settingsStore.setWeatherError('Location permission denied. Please allow location access and try again.');
+			} else if (error.message.includes('timeout')) {
+				settingsStore.setWeatherError('Location detection timed out. Please try again.');
+			} else if (error.message.includes('unavailable')) {
+				settingsStore.setWeatherError('Location service unavailable. Please check your device settings.');
+			} else {
+				settingsStore.setWeatherError(error.message);
+			}
 		}
 	},
 
@@ -92,7 +102,33 @@ export const weatherActions = {
 	 */
 	async enableLocationServices() {
 		settingsStore.toggleLocationServices();
-		await weatherActions.autoDetectAndFetch();
+		
+		// Clear any existing errors first
+		settingsStore.clearWeatherError();
+		
+		// Check if location permissions are now available
+		if (navigator.permissions && navigator.permissions.query) {
+			try {
+				const permission = await navigator.permissions.query({ name: 'geolocation' });
+				if (permission.state === 'granted') {
+					console.log('Location permission granted, proceeding with weather detection...');
+					await weatherActions.autoDetectAndFetch();
+				} else if (permission.state === 'prompt') {
+					console.log('Location permission prompt, requesting location...');
+					await weatherActions.autoDetectAndFetch();
+				} else {
+					console.log('Location permission denied, showing error...');
+					settingsStore.setWeatherError('Location permission denied. Please enable location access in your browser settings.');
+				}
+			} catch (error) {
+				console.log('Permission API not supported, proceeding with location request...');
+				await weatherActions.autoDetectAndFetch();
+			}
+		} else {
+			// Fallback for browsers without permissions API
+			console.log('Permissions API not available, proceeding with location request...');
+			await weatherActions.autoDetectAndFetch();
+		}
 	},
 
 	/**

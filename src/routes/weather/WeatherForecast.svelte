@@ -1,9 +1,102 @@
 <script>
+	import { onMount } from 'svelte';
 	import { settingsStore } from '../../store/settings.js';
 	import { getWeatherIconUrl, formatDate, formatTime } from '../../lib/weather-utils.js';
 
-	// Debug logging
-	$: console.log('Forecast data:', settingsStore.getWeatherForecast());
+	// Reactive variables for forecast data
+	let forecast = [];
+	let dailyForecast = {};
+	let forecastArray = [];
+
+	// Subscribe to settings store for real-time updates
+	onMount(() => {
+		console.log('WeatherForecast mounted, setting up store subscription...');
+		
+		const unsubscribe = settingsStore.subscribe((state) => {
+			forecast = state.settings?.weather?.forecast || [];
+			console.log('Forecast data updated:', forecast);
+			
+			// Process forecast data when it updates
+			processForecastData(forecast);
+		});
+		
+		// Get initial forecast data
+		const initialState = settingsStore.getAll();
+		forecast = initialState?.weather?.forecast || [];
+		console.log('Initial forecast data:', forecast);
+		
+		// Process initial data
+		processForecastData(forecast);
+		
+		// Cleanup subscription on unmount
+		return unsubscribe;
+	});
+
+	// Function to process forecast data
+	function processForecastData(forecastData) {
+		if (!forecastData || forecastData.length === 0) {
+			dailyForecast = {};
+			forecastArray = [];
+			return;
+		}
+
+		// Group forecast by day and get daily averages
+		dailyForecast = forecastData.reduce((acc, item) => {
+			// Ensure datetime is a proper Date object
+			const datetime = item.datetime instanceof Date ? item.datetime : new Date(item.datetime);
+			const date = formatDate(datetime);
+			
+			if (!acc[date]) {
+				acc[date] = {
+					date: date,
+					day: datetime.toLocaleDateString('en-US', { weekday: 'short' }),
+					items: [],
+					avgTemp: 0,
+					avgHumidity: 0,
+					mostCommonIcon: item.icon,
+					mostCommonDescription: item.description
+				};
+			}
+			acc[date].items.push(item);
+			return acc;
+		}, {});
+
+		// Calculate daily averages
+		Object.values(dailyForecast).forEach(day => {
+			if (day.items.length > 0) {
+				day.avgTemp = Math.round(
+					day.items.reduce((sum, item) => sum + item.temperature, 0) / day.items.length
+				);
+				day.avgHumidity = Math.round(
+					day.items.reduce((sum, item) => sum + item.humidity, 0) / day.items.length
+				);
+				
+				// Find most common weather condition for the day
+				const iconCounts = {};
+				const descCounts = {};
+				day.items.forEach(item => {
+					iconCounts[item.icon] = (iconCounts[item.icon] || 0) + 1;
+					descCounts[item.description] = (descCounts[item.description] || 0) + 1;
+				});
+				
+				day.mostCommonIcon = Object.keys(iconCounts).reduce((a, b) => 
+					iconCounts[a] > iconCounts[b] ? a : b
+				);
+				day.mostCommonDescription = Object.keys(descCounts).reduce((a, b) => 
+					descCounts[a] > descCounts[b] ? a : b
+				);
+			}
+		});
+
+		// Convert to array and sort by date
+		forecastArray = Object.values(dailyForecast).sort((a, b) => {
+			const dateA = a.items[0]?.datetime instanceof Date ? a.items[0].datetime : new Date(a.items[0]?.datetime);
+			const dateB = b.items[0]?.datetime instanceof Date ? b.items[0].datetime : new Date(b.items[0]?.datetime);
+			return dateA - dateB;
+		});
+		
+		console.log('Processed forecast data:', { dailyForecast, forecastArray });
+	}
 
 	// Function to get background color based on weather description
 	function getWeatherBackgroundColor(description) {
@@ -26,64 +119,9 @@
 			return 'bg-gray-600 !text-white'; // Default fallback
 		}
 	}
-
-	// Group forecast by day and get daily averages
-	$: dailyForecast = settingsStore.getWeatherForecast().reduce((acc, item) => {
-		// Ensure datetime is a proper Date object
-		const datetime = item.datetime instanceof Date ? item.datetime : new Date(item.datetime);
-		const date = formatDate(datetime);
-		
-		if (!acc[date]) {
-			acc[date] = {
-				date: date,
-				day: datetime.toLocaleDateString('en-US', { weekday: 'short' }),
-				items: [],
-				avgTemp: 0,
-				avgHumidity: 0,
-				mostCommonIcon: item.icon,
-				mostCommonDescription: item.description
-			};
-		}
-		acc[date].items.push(item);
-		return acc;
-	}, {});
-
-	// Calculate daily averages
-	$: Object.values(dailyForecast).forEach(day => {
-		if (day.items.length > 0) {
-			day.avgTemp = Math.round(
-				day.items.reduce((sum, item) => sum + item.temperature, 0) / day.items.length
-			);
-			day.avgHumidity = Math.round(
-				day.items.reduce((sum, item) => sum + item.humidity, 0) / day.items.length
-			);
-			
-			// Find most common weather condition for the day
-			const iconCounts = {};
-			const descCounts = {};
-			day.items.forEach(item => {
-				iconCounts[item.icon] = (iconCounts[item.icon] || 0) + 1;
-				descCounts[item.description] = (descCounts[item.description] || 0) + 1;
-			});
-			
-			day.mostCommonIcon = Object.keys(iconCounts).reduce((a, b) => 
-				iconCounts[a] > iconCounts[b] ? a : b
-			);
-			day.mostCommonDescription = Object.keys(descCounts).reduce((a, b) => 
-				descCounts[a] > descCounts[b] ? a : b
-			);
-		}
-	});
-
-	// Convert to array and sort by date
-	$: forecastArray = Object.values(dailyForecast).sort((a, b) => {
-		const dateA = a.items[0]?.datetime instanceof Date ? a.items[0].datetime : new Date(a.items[0]?.datetime);
-		const dateB = b.items[0]?.datetime instanceof Date ? b.items[0].datetime : new Date(b.items[0]?.datetime);
-		return dateA - dateB;
-	});
 </script>
 
-{#if settingsStore.getWeatherForecast().length > 0}
+{#if forecast.length > 0}
 	<div class="mt-8 mb-14">
 		<h3 class="text-2xl font-[300] mb-6 text-left">5 day forecast</h3>
 		

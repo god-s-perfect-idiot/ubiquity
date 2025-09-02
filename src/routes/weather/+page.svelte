@@ -10,7 +10,7 @@
 	let isExiting = false;
 	let isExpanded = false;
 	let isUnmounting = false;
-    let locationTitle = "";
+	let locationTitle = '';
 
 	function handleToggle(event) {
 		isExpanded = event.detail.expanded;
@@ -28,11 +28,16 @@
 			}, 300); // Allow time for bottom controls to collapse
 		}, 300); // Allow time for unmounting animation
 	}
+	$: console.log('locationTitle', locationTitle);
 </script>
 
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
-		<span class="text-6xl font-[300] mb-8 lowercase">{locationTitle}</span>
+		<span class="text-6xl font-[300] mb-8 lowercase"
+			>{locationTitle === '' || locationTitle === 'Unknown Location'
+				? 'weather'
+				: locationTitle}</span
+		>
 		<!-- Weather Display Component -->
 		<WeatherDisplay bind:locationTitle />
 		<!-- Weather Forecast Component -->

@@ -4,12 +4,17 @@
 	import { kernel } from '../../kernel/store';
 	import { addToast } from '../../store/toast';
 	import { accountsStore } from '../../store/accounts';
+	import { settingsStore } from '../../store/settings';
 
 	const addData = () => {
 		addTestDataToFS();
 		addToast('Started data successfully added to device');
 	};
 
+	const resetSettings = () => {
+		settingsStore.resetAll();
+		addToast('Settings reset successfully');
+	};
 
 	const removeAccounts = () => {
 		accountsStore.logout('spotify');
@@ -24,6 +29,7 @@
 	const resetData = () => {
 		kernel.fs.resetFS();
 		removeAccounts();
+		settingsStore.resetAll();
 		addToast('Data reset successfully');
 	};
 		
@@ -41,6 +47,15 @@
 				>
 				<span class="flex flex-col gap-4 items-start text-sm text-[#a1a1a1]">
 					Remove all accounts from your device.
+				</span>
+			</div><div class="flex flex-col gap-4">
+				<button
+					type="button"
+					class="border-2 border-white px-4 py-2 w-fit text-base"
+					on:click={resetSettings}>reset settings</button
+				>
+				<span class="flex flex-col gap-4 items-start text-sm text-[#a1a1a1]">
+					Reset all settings to default.
 				</span>
 			</div>
 			<div class="flex flex-col gap-4">
