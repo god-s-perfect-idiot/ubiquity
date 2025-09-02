@@ -35,6 +35,7 @@
 				videoList[firstLetter] = [video];
 			}
 		});
+		isExpanded = false;
 	});
 
 	const handleToggle = () => {

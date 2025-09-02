@@ -4,6 +4,7 @@
 	import BottomControls from '../../components/BottomControls.svelte';
 	import { goto } from '$app/navigation';
 	import Listing from './Listing.svelte';
+	import { onMount } from "svelte";
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -43,6 +44,10 @@
 		subPage = page;
 		isExpanded = false;
 	};
+
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 {#if subPage === 'categories'}

@@ -4,7 +4,8 @@
 	import WeatherDisplay from './WeatherDisplay.svelte';
 	import WeatherForecast from './WeatherForecast.svelte';
 	import Icon from '@iconify/svelte';
-
+	import { onMount } from "svelte";
+    
 	console.log('Weather page loading...');
 
 	let isExiting = false;
@@ -28,7 +29,10 @@
 			}, 300); // Allow time for bottom controls to collapse
 		}, 300); // Allow time for unmounting animation
 	}
-	$: console.log('locationTitle', locationTitle);
+
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 <div class="page-holder">

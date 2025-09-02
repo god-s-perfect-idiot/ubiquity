@@ -104,6 +104,7 @@
 
 	onMount(() => {
 		initializeDocuments();
+		isExpanded = false;
 	});
 </script>
 

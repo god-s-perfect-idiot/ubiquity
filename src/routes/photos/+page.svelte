@@ -4,7 +4,8 @@ import { kernel } from '../../kernel/store';
     import { fetchPhotos } from '../../kernel/system-utils';
     import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
-
+	import { onMount } from "svelte";
+    
     const photos = fetchPhotos(kernel.fs.getFiles());
     let isExpanded = false;
     let isUnmounting = false;
@@ -40,6 +41,10 @@ import { kernel } from '../../kernel/store';
         showPhotoView = false;
         selectedPhoto = null;
     }
+
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 {#if showPhotoView && selectedPhoto}

@@ -55,6 +55,7 @@
 		if (browser) {
 			await initializeSpotify();
 		}
+		isExpanded = false;
 	});
 
 	let isInitializing = true; // New variable to track initialization status

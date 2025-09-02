@@ -37,6 +37,10 @@
 			}, 300); // Allow time for bottom controls to collapse
 		}, 300); // Allow time for unmounting animation
 	}
+
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 <!-- <div class="flex flex-row gap-12 px-8">

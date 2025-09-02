@@ -5,7 +5,8 @@
 	import Data from './Data.svelte';
 	import Accounts from './Accounts.svelte';
 	import RegionUnits from './RegionUnits.svelte';
-
+	import { onMount } from "svelte";
+    
 	let isExpanded = false;
 	let isUnmounting = false;
 	let isExiting = false;
@@ -43,6 +44,9 @@
 		isExpanded = false;
 	};
 
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 {#if currentPage === 'settings'}

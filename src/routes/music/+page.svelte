@@ -143,6 +143,7 @@
 			}
 		});
 		initializeQueue();
+		isExpanded = false;
 	});
 
 	// Cleanup timer on component destroy

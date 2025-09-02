@@ -2,6 +2,7 @@
 	import Icon from "@iconify/svelte";
 	import BottomControls from "../../components/BottomControls.svelte";
 	import { goto } from "$app/navigation";
+	import { onMount } from "svelte";
 
     let isExpanded = false;
     let isUnmounting = false;
@@ -23,6 +24,10 @@
             }, 300); // Allow time for bottom controls to collapse
         }, 300); // Allow time for unmounting animation
     }
+
+    onMount(() => {
+        isExpanded = false;
+    });
 </script>
 
 <div class="page-holder">
