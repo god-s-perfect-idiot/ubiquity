@@ -497,7 +497,7 @@
 		<!-- Always show loader first -->
 		<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 			<span class="text-6xl font-[300] h-[10%]">spotify</span>
-			<div class="flex-1 flex flex-col items-center justify-center">
+			<div class="flex-1 flex flex-col items-center justify-center my-24">
 				<Loader />
 			</div>
 		</div>
@@ -617,7 +617,7 @@
 					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
 						{#if isLoading}
 							<!-- Loading State -->
-							<div class="flex flex-col gap-4 items-center justify-center h-screen">
+							<div class="flex flex-col gap-4 items-center justify-center my-24">
 								<Loader />
 							</div>
 						{:else if likedSongs.length > 0}
