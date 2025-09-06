@@ -5,6 +5,7 @@
 	import Data from './Data.svelte';
 	import Accounts from './Accounts.svelte';
 	import RegionUnits from './RegionUnits.svelte';
+	import Search from './Search.svelte';
 	import { onMount } from "svelte";
     
 	let isExpanded = false;
@@ -95,6 +96,12 @@
 							>ubiquity device ID and other unique features</span
 						>
 					</button>
+					<button class="flex flex-col items-start" on:click={() => changePage('search')}>
+						<span class="text-3xl font-[300]">search</span>
+						<span class="text-sm font-[300] text-[#818181]"
+							>change search engine and settings</span
+						>
+					</button>
 					<button class="flex flex-col items-start" on:click={() => changePage('accounts')}>
 						<span class="text-3xl font-[300]">accounts</span>
 						<span class="text-sm font-[300] text-[#818181]"
@@ -146,6 +153,8 @@
 	<Accounts isExiting={isExiting} {hideBottomBar}/>
 {:else if currentPage === 'region+units'}
 	<RegionUnits isExiting={isExiting} {hideBottomBar}/>
+{:else if currentPage === 'search'}
+	<Search isExiting={isExiting} {hideBottomBar}/>
 {/if}
 
 {#if !hiddenBottomBar}

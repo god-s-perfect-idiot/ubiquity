@@ -44,6 +44,15 @@ body {
 .btn {
     animation: button-overshoot 0.5s ease-out forwards;
 }
+.btn-animate {
+    transform: translateY(120%);
+    opacity: 0;
+}
+
+.btn-animate.animate {
+    animation: button-overshoot 0.5s ease-out forwards;
+    opacity: 1;
+}
 @keyframes button-overshoot {
     0% {
         transform: translateY(120%);

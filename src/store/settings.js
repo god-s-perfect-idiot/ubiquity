@@ -70,6 +70,7 @@ const createSettingsStore = () => {
       // Weather settings
       weather: {
         locationServices: false, // Enable location services for weather
+        region: 'Metric', // 'Imperial' or 'Metric' - determines unit system
         temperatureUnit: 'celsius', // 'celsius' or 'fahrenheit'
         windSpeedUnit: 'kmh', // 'kmh', 'mph', or 'ms'
         pressureUnit: 'hpa', // 'hpa' or 'inHg'
@@ -80,6 +81,14 @@ const createSettingsStore = () => {
         currentWeather: null, // Current weather data
         forecast: [], // Weather forecast data
         error: null // Last error message
+      },
+
+      // Search settings
+      search: {
+        defaultEngine: 'DUCKDUCKGO', // Default search engine
+        maxResults: 10, // Maximum number of results per search
+        safeSearch: true, // Enable safe search filtering
+        autoComplete: true, // Enable auto-complete suggestions
       }
     }
   });
@@ -257,6 +266,7 @@ const createSettingsStore = () => {
         },
         weather: {
           locationServices: false,
+          region: 'Metric',
           temperatureUnit: 'celsius',
           windSpeedUnit: 'kmh',
           pressureUnit: 'hpa',
@@ -267,6 +277,11 @@ const createSettingsStore = () => {
           currentWeather: null,
           forecast: [],
           error: null
+        },
+        search: {
+          defaultEngine: 'DUCKDUCKGO',
+          maxResults: 10,
+          safeSearch: true,
         }
       };
     },
@@ -279,17 +294,20 @@ const createSettingsStore = () => {
         const storedSettings = localStorage.getItem('system_settings');
         if (storedSettings) {
           const parsed = JSON.parse(storedSettings);
-          console.log('Loaded stored settings:', parsed);
           
-          // Merge with defaults to ensure all settings exist
+          // Use stored settings directly, only merge missing categories
           const defaults = this.getDefaults();
-          console.log('Default settings:', defaults);
-          const mergedSettings = this.mergeWithDefaults(parsed, defaults);
-          console.log('Merged settings:', mergedSettings);
+          const mergedSettings = { ...defaults };
+          
+          // Only add stored categories that exist, don't merge individual properties
+          for (const [category, categorySettings] of Object.entries(parsed)) {
+            if (defaults[category] && typeof categorySettings === 'object') {
+              mergedSettings[category] = categorySettings; // Use stored values directly
+            }
+          }
           
           set({ settings: mergedSettings });
         } else {
-          console.log('No stored settings found, using defaults');
           // No stored settings, ensure defaults are set
           const defaults = this.getDefaults();
           set({ settings: defaults });
@@ -301,6 +319,11 @@ const createSettingsStore = () => {
       }
     },
 
+    // Refresh settings from localStorage (useful when settings might have changed)
+    refreshFromStorage() {
+      this.initFromStorage();
+    },
+
     // Save settings to localStorage
     saveToStorage() {
       if (typeof window === 'undefined') return;
@@ -308,7 +331,8 @@ const createSettingsStore = () => {
       try {
         let currentState;
         subscribe(state => currentState = state)();
-        localStorage.setItem('system_settings', JSON.stringify(currentState.settings));
+        const settingsToSave = currentState.settings;
+        localStorage.setItem('system_settings', JSON.stringify(settingsToSave));
       } catch (error) {
         console.error('Error saving settings to storage:', error);
       }
@@ -320,10 +344,22 @@ const createSettingsStore = () => {
       
       for (const [category, categorySettings] of Object.entries(stored)) {
         if (defaults[category] && typeof categorySettings === 'object') {
+          if (category === 'search') {
+            console.log(`DETAILED MERGING ${category}:`, {
+              defaults: defaults[category],
+              stored: categorySettings,
+              'stored.safeSearch': categorySettings.safeSearch,
+              'defaults.safeSearch': defaults[category].safeSearch,
+              merged: { ...defaults[category], ...categorySettings },
+              'merged.safeSearch': { ...defaults[category], ...categorySettings }.safeSearch
+            });
+          }
+          // Prioritize stored values over defaults
           merged[category] = { ...defaults[category], ...categorySettings };
         }
       }
       
+      console.log('Final merged settings:', merged);
       return merged;
     },
 
@@ -468,6 +504,32 @@ const createSettingsStore = () => {
         return true;
       }
       return false;
+    },
+
+    // Set region and update all weather units accordingly
+    setRegion(region) {
+      if (['Imperial', 'Metric'].includes(region)) {
+        this.set('weather.region', region);
+        
+        // Update units based on region
+        if (region === 'Imperial') {
+          this.set('weather.temperatureUnit', 'fahrenheit');
+          this.set('weather.windSpeedUnit', 'mph');
+          this.set('weather.pressureUnit', 'inHg');
+        } else {
+          this.set('weather.temperatureUnit', 'celsius');
+          this.set('weather.windSpeedUnit', 'kmh');
+          this.set('weather.pressureUnit', 'hpa');
+        }
+        
+        return true;
+      }
+      return false;
+    },
+
+    // Get current region
+    getRegion() {
+      return this.get('weather.region');
     }
   };
 

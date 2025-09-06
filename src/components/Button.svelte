@@ -4,7 +4,7 @@
     export let className;
 </script>
 
-<button class={`bg-[#000] text-white text-base py-1 border-2 border-white w-fit px-6 ${className} font-[500]`} on:click={onClick}>
+<button class={`bg-[#000] text-white text-base py-1 border-2 border-white w-fit px-4 ${className} font-[300]`} on:click={onClick}>
     {text}
 </button>
 

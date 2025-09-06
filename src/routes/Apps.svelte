@@ -79,6 +79,13 @@
 			isSystemApp: true,
 			icon: 'material-symbols-light:weather-mix',
 			bgColor: 'bg-blue-900'
+		},
+		{
+			name: "Search",
+			content: '/search',
+			isSystemApp: true,
+			icon: 'mdi:magnify',
+			bgColor: 'bg-red-700'
 		}
 	];
 	let apps = [];

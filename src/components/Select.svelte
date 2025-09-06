@@ -5,9 +5,15 @@
 	export let selection;
 	export let data = [];
 	let open = false;
-	selection = data[0];
 	export let label = '';
 	export let className = '';
+	export let onSelectionChange = null;
+
+	// Set default selection only if none provided
+	$: if (selection === undefined && data.length > 0) {
+		selection = data[0];
+	}
+
 </script>
 
 <div class="flex flex-col gap-2 font-[400] {className}">
@@ -18,7 +24,7 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
                 transition:slide={{ duration: 300, easing: cubicOut }}
-                class="bg-white text-black pl-1 py-2 text-base border-[#ff00ff] border-2 flex flex-col gap-4"
+                class="bg-white text-black pl-2 py-2 text-base border-[#ff00ff] border-2 flex flex-col gap-4"
                 on:click={() => (open = false)}
             >
                 {#each data as item}
@@ -28,6 +34,9 @@
                         on:click={() => {
                             selection = item;
                             open = false;
+                            if (onSelectionChange) {
+                                onSelectionChange(item);
+                            }
                         }}
                         class={selection === item ? 'text-[#ff00ff]' : ''}
                     >
@@ -38,7 +47,7 @@
         {:else}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="bg-[#000] border-2 border-white text-base p-1" on:click={() => (open = true)}>
+            <div class="bg-[#000] border-2 border-white text-base p-1 pl-2" on:click={() => (open = true)}>
                 {selection}
             </div>
         {/if}

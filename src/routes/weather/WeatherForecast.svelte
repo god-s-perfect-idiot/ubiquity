@@ -98,6 +98,18 @@
 		console.log('Processed forecast data:', { dailyForecast, forecastArray });
 	}
 
+	// Unit formatting functions
+	function getTemperatureUnit() {
+		// Get temperature unit from the first forecast item or default to celsius
+		const firstItem = forecast[0];
+		if (firstItem && firstItem.temperatureUnit) {
+			return firstItem.temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+		}
+		// Fallback to store setting
+		const temperatureUnit = settingsStore.get('weather.temperatureUnit');
+		return temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+	}
+
 	// Function to get background color based on weather description
 	function getWeatherBackgroundColor(description) {
 		const weather = description.toLowerCase();
@@ -131,7 +143,7 @@
 					<div class="flex flex-col gap-1 text-left">
 						<span class="block text-sm font-semibold mb-1">{day.date}</span>
 						<div class="flex flex-row gap-2 items-center justify-center">
-							<span class="flex text-base">{day.avgTemp}°C</span>
+							<span class="flex text-base">{day.avgTemp}{getTemperatureUnit()}</span>
 							<span class="flex text-base">Humidity: {day.avgHumidity}%</span>
 						</div>
 					</div>
@@ -143,9 +155,6 @@
 							class="w-16 h-16"
 						/>
 						<span class="block text-base font-semibold">{day.mostCommonDescription}</span>
-						<!-- <div class="text-xl font-bold">
-							<span>{day.avgTemp}°C</span>
-						</div> -->
 					</div>
 				</div>
 			{/each}

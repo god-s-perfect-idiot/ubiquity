@@ -97,6 +97,24 @@
 		weatherActions.autoDetectAndFetch();
 	}
 
+	// Unit formatting functions
+	function getTemperatureUnit() {
+		return currentWeather?.temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+	}
+
+	function getWindSpeedUnit() {
+		const unit = currentWeather?.windSpeedUnit || 'kmh';
+		switch (unit) {
+			case 'mph': return 'mph';
+			case 'ms': return 'm/s';
+			default: return 'km/h';
+		}
+	}
+
+	function getPressureUnit() {
+		return currentWeather?.pressureUnit === 'inHg' ? 'inHg' : 'hPa';
+	}
+
 	// Reactive variables for weather data - use store subscription for real-time updates
 	let currentWeather, forecast, location, error, loading;
 	$: locationTitle = currentWeather?.city || location?.city || 'Unknown Location';
@@ -192,15 +210,15 @@
 			</div>
 
 			<div class="text-left">
-				<div class="flex items-center justify-center gap-4 mb-4">
+				<div class="flex items-center justify-start gap-2 mb-4">
 					<img
 						src={getWeatherIconUrl(currentWeather.icon)}
 						alt={currentWeather.description}
 						class="w-20 h-20"
 					/>
 					<div class="flex flex-col items-start">
-						<span class="text-5xl font-bold text-white">{currentWeather.temperature}°C</span>
-						<span class="text-lg text-gray-300">Feels like {currentWeather.feelsLike}°C</span>
+						<span class="text-5xl font-bold text-white">{currentWeather.temperature}{getTemperatureUnit()}</span>
+						<span class="text-lg text-gray-300">Feels like {currentWeather.feelsLike}{getTemperatureUnit()}</span>
 					</div>
 				</div>
 
@@ -218,7 +236,7 @@
 					<Icon icon="material-symbols:air" class="w-6 h-6 text-purple-400" />
 					<span class="text-gray-300">Wind</span>
 					<span class="text-white font-medium"
-						>{currentWeather.windSpeed} km/h {formatWindDirection(
+						>{currentWeather.windSpeed} {getWindSpeedUnit()} {formatWindDirection(
 							currentWeather.windDirection
 						)}</span
 					>
@@ -227,7 +245,7 @@
 				<div class="flex items-center justify-between p-3 bg-green-800">
 					<Icon icon="material-symbols:compress" class="w-6 h-6 text-green-400" />
 					<span class="text-gray-300">Pressure</span>
-					<span class="text-white font-medium">{currentWeather.pressure} hPa</span>
+					<span class="text-white font-medium">{currentWeather.pressure} {getPressureUnit()}</span>
 				</div>
 			</div>
 

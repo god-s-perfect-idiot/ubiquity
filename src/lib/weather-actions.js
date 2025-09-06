@@ -21,14 +21,17 @@ export const weatherActions = {
 			settingsStore.updateWeatherLocation(location);
 			console.log('Location updated in settings');
 			
-			// Fetch current weather
+			// Fetch current weather with correct units
 			console.log('Fetching weather data...');
-			const current = await getWeatherData(location.lat, location.lon);
+			const temperatureUnit = settingsStore.get('weather.temperatureUnit');
+			const windSpeedUnit = settingsStore.get('weather.windSpeedUnit');
+			const pressureUnit = settingsStore.get('weather.pressureUnit');
+			const current = await getWeatherData(location.lat, location.lon, temperatureUnit, windSpeedUnit, pressureUnit);
 			console.log('Weather data received:', current);
 			
-			// Fetch forecast
+			// Fetch forecast with correct units
 			console.log('Fetching forecast...');
-			const forecast = await getWeatherForecast(location.lat, location.lon);
+			const forecast = await getWeatherForecast(location.lat, location.lon, temperatureUnit, windSpeedUnit);
 			console.log('Forecast received:', forecast);
 			
 			// Update settings with weather data
@@ -66,11 +69,14 @@ export const weatherActions = {
 		const lastLocation = settingsStore.getLastLocation();
 		if (lastLocation) {
 			try {
-				// Fetch current weather
-				const current = await getWeatherData(lastLocation.lat, lastLocation.lon);
+				// Fetch current weather with correct units
+				const temperatureUnit = settingsStore.get('weather.temperatureUnit');
+				const windSpeedUnit = settingsStore.get('weather.windSpeedUnit');
+				const pressureUnit = settingsStore.get('weather.pressureUnit');
+				const current = await getWeatherData(lastLocation.lat, lastLocation.lon, temperatureUnit, windSpeedUnit, pressureUnit);
 				
-				// Fetch forecast
-				const forecast = await getWeatherForecast(lastLocation.lat, lastLocation.lon);
+				// Fetch forecast with correct units
+				const forecast = await getWeatherForecast(lastLocation.lat, lastLocation.lon, temperatureUnit, windSpeedUnit);
 				
 				// Update settings with weather data
 				settingsStore.updateWeatherData(current, forecast);

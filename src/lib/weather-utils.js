@@ -36,9 +36,12 @@ export async function getCurrentLocation() {
  * Get weather data for a specific location
  * @param {number} lat - Latitude
  * @param {number} lon - Longitude
+ * @param {string} temperatureUnit - 'celsius' or 'fahrenheit'
+ * @param {string} windSpeedUnit - 'kmh', 'mph', or 'ms'
+ * @param {string} pressureUnit - 'hpa' or 'inHg'
  * @returns {Promise<Object>}
  */
-export async function getWeatherData(lat, lon) {
+export async function getWeatherData(lat, lon, temperatureUnit = 'celsius', windSpeedUnit = 'kmh', pressureUnit = 'hpa') {
 	const url = `${WEATHER_BASE_URL}/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,pressure_msl,wind_speed_10m,wind_direction_10m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
 	
 	try {
@@ -52,21 +55,46 @@ export async function getWeatherData(lat, lon) {
 		// Get city name from reverse geocoding
 		const cityName = await getCityName(lat, lon);
 		
+		// Convert temperature based on unit
+		let temperature = Math.round(data.current.temperature_2m);
+		let feelsLike = Math.round(data.current.apparent_temperature);
+		if (temperatureUnit === 'fahrenheit') {
+			temperature = celsiusToFahrenheit(temperature);
+			feelsLike = celsiusToFahrenheit(feelsLike);
+		}
+
+		// Convert wind speed based on unit
+		let windSpeed = Math.round(data.current.wind_speed_10m * 3.6); // Convert m/s to km/h
+		if (windSpeedUnit === 'mph') {
+			windSpeed = kmhToMph(windSpeed);
+		} else if (windSpeedUnit === 'ms') {
+			windSpeed = Math.round(data.current.wind_speed_10m); // Keep in m/s
+		}
+
+		// Convert pressure based on unit
+		let pressure = Math.round(data.current.pressure_msl);
+		if (pressureUnit === 'inHg') {
+			pressure = hpaToInHg(pressure);
+		}
+
 		return {
-			temperature: Math.round(data.current.temperature_2m),
-			feelsLike: Math.round(data.current.apparent_temperature),
+			temperature,
+			feelsLike,
 			humidity: data.current.relative_humidity_2m,
-			pressure: Math.round(data.current.pressure_msl),
+			pressure,
 			description: getWeatherDescription(data.current.weather_code),
 			icon: getWeatherIcon(data.current.weather_code, data.current.is_day),
-			windSpeed: Math.round(data.current.wind_speed_10m * 3.6), // Convert m/s to km/h
+			windSpeed,
 			windDirection: data.current.wind_direction_10m,
 			city: cityName.city || 'Unknown Location',
 			country: cityName.country || 'Unknown',
 			sunrise: new Date(), // Open-Meteo doesn't provide sunrise/sunset in current endpoint
 			sunset: new Date(),  // We'll calculate this or use a different approach
 			timestamp: new Date(),
-			weatherCode: data.current.weather_code
+			weatherCode: data.current.weather_code,
+			temperatureUnit,
+			windSpeedUnit,
+			pressureUnit
 		};
 	} catch (error) {
 		throw new Error(`Failed to fetch weather data: ${error.message}`);
@@ -77,9 +105,11 @@ export async function getWeatherData(lat, lon) {
  * Get weather forecast for a specific location
  * @param {number} lat - Latitude
  * @param {number} lon - Longitude
+ * @param {string} temperatureUnit - 'celsius' or 'fahrenheit'
+ * @param {string} windSpeedUnit - 'kmh', 'mph', or 'ms'
  * @returns {Promise<Array>}
  */
-export async function getWeatherForecast(lat, lon) {
+export async function getWeatherForecast(lat, lon, temperatureUnit = 'celsius', windSpeedUnit = 'kmh') {
 	const url = `${WEATHER_BASE_URL}/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`;
 	
 	try {
@@ -91,17 +121,37 @@ export async function getWeatherForecast(lat, lon) {
 		const data = await response.json();
 		
 		// Convert hourly data to forecast array
-		return data.hourly.time.map((time, index) => ({
-			datetime: new Date(time),
-			temperature: Math.round(data.hourly.temperature_2m[index]),
-			feelsLike: Math.round(data.hourly.apparent_temperature[index]),
-			humidity: data.hourly.relative_humidity_2m[index],
-			description: getWeatherDescription(data.hourly.weather_code[index]),
-			icon: getWeatherIcon(data.hourly.weather_code[index], true), // Assume day for forecast
-			windSpeed: Math.round(data.hourly.wind_speed_10m[index] * 3.6),
-			windDirection: data.hourly.wind_direction_10m[index],
-			weatherCode: data.hourly.weather_code[index]
-		}));
+		return data.hourly.time.map((time, index) => {
+			// Convert temperature based on unit
+			let temperature = Math.round(data.hourly.temperature_2m[index]);
+			let feelsLike = Math.round(data.hourly.apparent_temperature[index]);
+			if (temperatureUnit === 'fahrenheit') {
+				temperature = celsiusToFahrenheit(temperature);
+				feelsLike = celsiusToFahrenheit(feelsLike);
+			}
+
+			// Convert wind speed based on unit
+			let windSpeed = Math.round(data.hourly.wind_speed_10m[index] * 3.6); // Convert m/s to km/h
+			if (windSpeedUnit === 'mph') {
+				windSpeed = kmhToMph(windSpeed);
+			} else if (windSpeedUnit === 'ms') {
+				windSpeed = Math.round(data.hourly.wind_speed_10m[index]); // Keep in m/s
+			}
+
+			return {
+				datetime: new Date(time),
+				temperature,
+				feelsLike,
+				humidity: data.hourly.relative_humidity_2m[index],
+				description: getWeatherDescription(data.hourly.weather_code[index]),
+				icon: getWeatherIcon(data.hourly.weather_code[index], true), // Assume day for forecast
+				windSpeed,
+				windDirection: data.hourly.wind_direction_10m[index],
+				weatherCode: data.hourly.weather_code[index],
+				temperatureUnit,
+				windSpeedUnit
+			};
+		});
 	} catch (error) {
 		throw new Error(`Failed to fetch weather forecast: ${error.message}`);
 	}
@@ -113,7 +163,7 @@ export async function getWeatherForecast(lat, lon) {
  * @param {number} lon - Longitude
  * @returns {Promise<{city: string, country: string}>}
  */
-async function getCityName(lat, lon) {
+export async function getCityName(lat, lon) {
 	try {
 		console.log('Getting city name for coordinates:', { lat, lon });
 		
@@ -302,4 +352,58 @@ export function formatDate(date) {
 		month: 'short', 
 		day: 'numeric' 
 	});
+}
+
+/**
+ * Convert temperature from Celsius to Fahrenheit
+ * @param {number} celsius - Temperature in Celsius
+ * @returns {number} - Temperature in Fahrenheit
+ */
+export function celsiusToFahrenheit(celsius) {
+	return Math.round((celsius * 9/5) + 32);
+}
+
+/**
+ * Convert temperature from Fahrenheit to Celsius
+ * @param {number} fahrenheit - Temperature in Fahrenheit
+ * @returns {number} - Temperature in Celsius
+ */
+export function fahrenheitToCelsius(fahrenheit) {
+	return Math.round((fahrenheit - 32) * 5/9);
+}
+
+/**
+ * Convert wind speed from km/h to mph
+ * @param {number} kmh - Wind speed in km/h
+ * @returns {number} - Wind speed in mph
+ */
+export function kmhToMph(kmh) {
+	return Math.round(kmh * 0.621371);
+}
+
+/**
+ * Convert wind speed from mph to km/h
+ * @param {number} mph - Wind speed in mph
+ * @returns {number} - Wind speed in km/h
+ */
+export function mphToKmh(mph) {
+	return Math.round(mph * 1.60934);
+}
+
+/**
+ * Convert pressure from hPa to inHg
+ * @param {number} hpa - Pressure in hPa
+ * @returns {number} - Pressure in inHg
+ */
+export function hpaToInHg(hpa) {
+	return Math.round(hpa * 0.02953 * 100) / 100;
+}
+
+/**
+ * Convert pressure from inHg to hPa
+ * @param {number} inHg - Pressure in inHg
+ * @returns {number} - Pressure in hPa
+ */
+export function inHgToHpa(inHg) {
+	return Math.round(inHg * 33.863886666667);
 }
