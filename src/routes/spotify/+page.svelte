@@ -573,7 +573,7 @@
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
 						on:click={playPrevious}
 					>
-						<Icon icon="mdi:skip-previous" width="32" height="32" />
+						<Icon icon="subway:left-arrow" width="32" height="32" />
 					</button>
 					<button
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
@@ -696,7 +696,7 @@
 				class:animate={isExpanded}
 			>
 				<button
-					class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+					class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
 					on:click={() => {
 						nowPlayingTrack = null;
 						isPlaying = false;
@@ -705,7 +705,7 @@
 						seekValue = 0;
 					}}
 				>
-					<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2" />
+					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
 				</button>
 				<span class="text-xs font-[400]">library</span>
 			</div>
@@ -716,9 +716,9 @@
 		>
 			<button
 				on:click={closePage}
-				class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+				class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
 			>
-				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2" />
+				<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2" />
 			</button>
 			<span class="text-xs font-[400]">close</span>
 		</div>

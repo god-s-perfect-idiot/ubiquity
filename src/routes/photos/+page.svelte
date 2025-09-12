@@ -87,15 +87,15 @@ import { kernel } from '../../kernel/store';
 	<div class="flex flex-row gap-12 w-full justify-center items-center">
 		{#if showPhotoView && selectedPhoto}
 			<div class="btn-animate flex flex-col gap-2 justify-center items-center" class:animate={isExpanded}>
-				<button on:click={closePhotoView} class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold">
-					<Icon icon="mdi:skip-previous" width="20" height="20" strokeWidth="2"/>
+				<button on:click={closePhotoView} class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold">
+					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2"/>
 				</button>
 				<span class="text-xs font-[400]">previous</span>
 			</div>
 		{/if}
 		<div class="btn-animate flex flex-col gap-2 justify-center items-center" class:animate={isExpanded}>
-			<button on:click={closePage} class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold">
-				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2"/>
+			<button on:click={closePage} class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold">
+				<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2"/>
 			</button>
 			<span class="text-xs font-[400]">close</span>
 		</div>

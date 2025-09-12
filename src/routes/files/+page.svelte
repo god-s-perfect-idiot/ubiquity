@@ -123,15 +123,9 @@
 			</button>
 			<span class="text-xs font-[400]">file</span>
 		</div>
-		<!-- <div class="btn-animate flex flex-col gap-2 justify-center items-center" class:animate={isExpanded}>
-			<button on:click={addNewFolder} class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold">
-				<Icon icon="carbon:folder" width="20" height="20" strokeWidth="2"/>
-			</button>
-			<span class="text-xs font-[400]">folder</span>
-		</div> -->
 		<div class="btn-animate flex flex-col gap-2 justify-center items-center" class:animate={isExpanded}>
-			<button on:click={closePage} class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold">
-				<Icon icon="carbon:close" width="20" height="20" strokeWidth="2"/>
+			<button on:click={closePage} class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold">
+				<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2"/>
 			</button>
 			<span class="text-xs font-[400]">close</span>
 		</div>

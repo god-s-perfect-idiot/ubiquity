@@ -198,7 +198,7 @@
 							on:click={closeVideoPlayer}
 							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
 						>
-							<Icon icon="carbon:close" width="24" height="24" />
+							<Icon icon="rivet-icons:close" width="24" height="24" />
 						</button>
 					</div>
 				</div>
@@ -279,7 +279,7 @@
 				on:click={closePage}
 				class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
 			>
-				<Icon icon="carbon:close" width="20" height="20" />
+				<Icon icon="rivet-icons:close" width="20" height="20" />
 			</button>
 			<span class="text-xs font-[400]">close</span>
 		</div>
