@@ -9,6 +9,8 @@
 	import { getFaviconUrls } from '../kernel/favicon-utils';
 	import Icon from '@iconify/svelte';
 
+	export let onBackClick = () => {};
+
 	const systemApps = [
 		{
 			name: 'Ubiquity',
@@ -67,21 +69,21 @@
 			bgColor: 'bg-purple-900'
 		},
 		{
-			name: "Spotify (Metro)",
+			name: 'Spotify (Metro)',
 			content: '/spotify',
 			isSystemApp: true,
 			icon: 'mdi:spotify',
 			bgColor: 'bg-green-700'
-		}, 
+		},
 		{
-			name: "Weather",
+			name: 'Weather',
 			content: '/weather',
 			isSystemApp: true,
 			icon: 'material-symbols-light:weather-mix',
 			bgColor: 'bg-blue-900'
 		},
 		{
-			name: "Search",
+			name: 'Search',
 			content: '/search',
 			isSystemApp: true,
 			icon: 'mdi:magnify',
@@ -231,80 +233,91 @@
 {:else}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div
-		class={`mt-4 flex gap-2 flex-col mb-16 
-    ${isEntering ? 'active-enter' : ''} 
-    ${showMenu !== null && !isEntering ? 'inactive' : ''} 
-    ${isExiting ? 'active-exit' : ''}`}
-		on:touchstart={handleOutsideTouch}
-		on:click={handleOutsideTouch}
-	>
-		{#each Object.entries(appList) as appEntry}
-			<div class={`flex flex-col gap-2`}>
-				<!-- Touch event handler for each app entry -->
-				<div
-					class={`ml-16 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1`}
-					id={appEntry[0].toUpperCase()}
-					on:click={() => {
-						showGrid = true;
-					}}
-				>
-					{appEntry[0]}
-				</div>
-				{#each appEntry[1] as app}
+	<div class="flex flex-row gap-2 w-full">
+		<button
+			class="fixed left-0 flex flex-col border h-10 w-10 mt-5 ml-6 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
+			on:click={onBackClick}
+		>
+			<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
+		</button>
+		<div
+			class={`mt-4 flex gap-2 flex-col mb-16 w-full 
+		${isEntering ? 'active-enter' : ''} 
+		${showMenu !== null && !isEntering ? 'inactive' : ''} 
+		${isExiting ? 'active-exit' : ''}`}
+			on:touchstart={handleOutsideTouch}
+			on:click={handleOutsideTouch}
+		>
+			{#each Object.entries(appList) as appEntry}
+				<div class={`flex flex-col gap-2`}>
+					<!-- Touch event handler for each app entry -->
 					<div
-						class="flex flex-col relative"
-						on:touchstart={() => handleTouchStart(app.name)}
-						on:touchend={handleTouchEnd}
-						on:touchcancel={handleTouchEnd}
-						on:touchMove={handleTouchEnd}
+						class={`ml-24 text-[#ff00ff] text-3xl lowercase border-2 w-12 h-12 border-[#ff00ff] justify-start items-end flex pl-1 pb-1`}
+						id={appEntry[0].toUpperCase()}
+						on:click={() => {
+							showGrid = true;
+						}}
 					>
-						<div
-							class={`ml-16 flex flex-row gap-4 items-center ${showMenu === app.name ? 'active' : ''}`}
-						>
-							{#if app.isSystemApp}
-								<span
-									class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300] ${app.bgColor}`}
-								>
-									<Icon icon={app.icon} width="32" height="32" />
-								</span>
-							{:else if faviconCache[app.name]}
-								<img
-									src={faviconCache[app.name].url}
-									alt={`${app.name} icon`}
-									class={`w-12 h-12 object-contain p-1 ${faviconCache[app.name].bgColor}`}
-									on:error={(e) => {
-										// Fallback to letter if image fails to load
-										e.target.style.display = 'none';
-										e.target.nextElementSibling.style.display = 'flex';
-									}}
-								/>
-								<span
-									class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300] hidden`}
-									>{app.name.charAt(0).toUpperCase()}</span
-								>
-							{:else}
-								<span
-									class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300]`}
-									>{app.name.charAt(0).toUpperCase()}</span
-								>
-							{/if}
-							<a
-								href={app.content}
-								on:click={(event) => showMenu !== null && event.preventDefault()}
-							>
-								{app.name}
-							</a>
-						</div>
-						{#if showMenu === app.name}
-							<div class="app-menu">
-								<AppMenu isSystemApp={app.isSystemApp} onRemove={() => handleRemoveApp(app.name)} />
-							</div>
-						{/if}
+						{appEntry[0]}
 					</div>
-				{/each}
-			</div>
-		{/each}
+					{#each appEntry[1] as app}
+						<div
+							class="flex flex-col relative"
+							on:touchstart={() => handleTouchStart(app.name)}
+							on:touchend={handleTouchEnd}
+							on:touchcancel={handleTouchEnd}
+							on:touchMove={handleTouchEnd}
+						>
+							<div
+								class={`ml-24 flex flex-row gap-4 items-center ${showMenu === app.name ? 'active' : ''}`}
+							>
+								{#if app.isSystemApp}
+									<span
+										class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300] ${app.bgColor}`}
+									>
+										<Icon icon={app.icon} width="32" height="32" />
+									</span>
+								{:else if faviconCache[app.name]}
+									<img
+										src={faviconCache[app.name].url}
+										alt={`${app.name} icon`}
+										class={`w-12 h-12 object-contain p-1 ${faviconCache[app.name].bgColor}`}
+										on:error={(e) => {
+											// Fallback to letter if image fails to load
+											e.target.style.display = 'none';
+											e.target.nextElementSibling.style.display = 'flex';
+										}}
+									/>
+									<span
+										class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300] hidden`}
+										>{app.name.charAt(0).toUpperCase()}</span
+									>
+								{:else}
+									<span
+										class={`w-12 h-12 bg-[#ff00ff] justify-center items-center flex text-white font-[300]`}
+										>{app.name.charAt(0).toUpperCase()}</span
+									>
+								{/if}
+								<a
+									href={app.content}
+									on:click={(event) => showMenu !== null && event.preventDefault()}
+								>
+									{app.name}
+								</a>
+							</div>
+							{#if showMenu === app.name}
+								<div class="app-menu">
+									<AppMenu
+										isSystemApp={app.isSystemApp}
+										onRemove={() => handleRemoveApp(app.name)}
+									/>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/each}
+		</div>
 	</div>
 {/if}
 
