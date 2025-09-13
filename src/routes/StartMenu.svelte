@@ -1,19 +1,57 @@
 <script>
 	import Icon from '@iconify/svelte';
+	import { settingsStore } from '../store/settings.js';
+	import { gridStore } from '../store/grid.js';
+	import GridContainer from '../components/GridContainer.svelte';
 
 	export let onBackClick = () => {};
+
+	let gridContainer;
+	let showMoreCols = false;
+	let cols = 4; // Default to 4 columns
+	let rows = 6; // Keep 6 rows for both layouts
+
+	// Subscribe to settings changes
+	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
+	$: cols = showMoreCols ? 6 : 4;
+
+	// Handle click to exit edit mode
+	function handleContainerClick(event) {
+		// Check if we're in edit mode and clicked outside grid items
+		const target = event.target.closest('.grid-item, button');
+		if (!target && $gridStore.editMode) {
+			gridStore.setEditMode(false);
+		}
+	}
+
+	// Handle keyboard events for accessibility
+	function handleKeyDown(event) {
+		if (event.key === 'Escape' && $gridStore.editMode) {
+			gridStore.setEditMode(false);
+		}
+	}
 </script>
 
-<div class="flex flex-col gap-2 w-full h-screen]">
-	<div class="ml-24 mt-4">
-		<h1 class="text-3xl text-[#ff00ff]">Start Menu</h1>
-		<p class="text-white">This is the start menu placeholder</p>
+<div 
+	class="w-full h-screen flex flex-col" 
+	on:click={handleContainerClick}
+	on:keydown={handleKeyDown}
+	role="button"
+	aria-label="Click to exit edit mode"
+	tabindex="0"
+>
+	<!-- Grid container - only takes space it needs -->
+	<div bind:this={gridContainer} class="w-full">
+		<GridContainer {cols} {rows} />
 	</div>
 
-	<button
-		class="self-end mr-4 flex flex-col border h-10 w-10 mt-5 ml-6 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
-		on:click={onBackClick}
-	>
-		<Icon icon="subway:right-arrow" width="18" height="18" strokeWidth="2" />
-	</button>
+	<!-- Back button positioned horizontally under the grid -->
+	<div class="flex justify-end pr-4">
+		<button
+			class="flex flex-col border h-10 w-10 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
+			on:click={onBackClick}
+		>
+			<Icon icon="subway:right-arrow" width="18" height="18" strokeWidth="2" />
+		</button>
+	</div>
 </div>
