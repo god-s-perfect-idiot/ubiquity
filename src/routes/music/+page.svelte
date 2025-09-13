@@ -250,7 +250,7 @@
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
 						on:click={playPrevious}
 					>
-						<Icon icon="subway:left-arrow" width="32" height="32" />
+						<Icon icon="mdi:skip-previous" width="32" height="32" />
 					</button>
 					<button
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
@@ -300,71 +300,67 @@
 				></audio>
 			</div>
 		</div>
+	{:else if showGrid}
+		<LetterGrid
+			items={music}
+			itemNameKey="name"
+			{showGrid}
+			{isExiting}
+			onLetterClick={handleLetterClick}
+		/>
 	{:else}
-		<div>
-			{#if showGrid}
-				<LetterGrid
-					items={music}
-					itemNameKey="name"
-					{showGrid}
-					{isExiting}
-					onLetterClick={handleLetterClick}
-				/>
-			{:else}
-				<div
-					class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
-					class:page-exit={isExiting}
-				>
-					<span class="text-6xl font-[300] h-[10%]"> music </span>
-					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
-						{#each Object.entries(musicList) as musicEntry}
-							<div class="flex flex-col gap-6">
-								<button
-									class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
-									id={musicEntry[0].toUpperCase()}
-									on:click={() => {
-										showGrid = true;
-									}}
-									on:touchstart={handleTouchStart}
-									on:touchend={(event) => {
-										handleTouchEnd(event);
-										if (isTap()) {
-											showGrid = true;
-										}
-									}}
+		<div
+			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
+			class:page-exit={isExiting}
+		>
+			<span class="text-6xl font-[300] h-[10%]"> music </span>
+			<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
+				{#each Object.entries(musicList) as musicEntry}
+					<div class="flex flex-col gap-6">
+						<button
+							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
+							id={musicEntry[0].toUpperCase()}
+							on:click={() => {
+								showGrid = true;
+							}}
+							on:touchstart={handleTouchStart}
+							on:touchend={(event) => {
+								handleTouchEnd(event);
+								if (isTap()) {
+									showGrid = true;
+								}
+							}}
+						>
+							{musicEntry[0]}
+						</button>
+						{#each musicEntry[1] as song}
+							<button
+								class="flex flex-row gap-4 items-center"
+								on:click={() => {
+									const songIndex = queue.findIndex((s) => s.name === song.name);
+									if (songIndex !== -1) {
+										playSong(songIndex);
+									}
+								}}
+								on:touchstart={handleTouchStart}
+								on:touchend={(event) => {
+									handleTouchEnd(event);
+									handleSongTap(song);
+								}}
+							>
+								<span
+									class="p-1 flex justify-center items-center rounded-full border-2 border-white"
 								>
-									{musicEntry[0]}
-								</button>
-								{#each musicEntry[1] as song}
-									<button
-										class="flex flex-row gap-4 items-center"
-										on:click={() => {
-											const songIndex = queue.findIndex((s) => s.name === song.name);
-											if (songIndex !== -1) {
-												playSong(songIndex);
-											}
-										}}
-										on:touchstart={handleTouchStart}
-										on:touchend={(event) => {
-											handleTouchEnd(event);
-											handleSongTap(song);
-										}}
-									>
-										<span
-											class="p-1 flex justify-center items-center rounded-full border-2 border-white"
-										>
-											<Icon icon="mdi:play" width="26" height="26" />
-										</span>
-										<span class="text-2xl font-[300] truncate max-w-64" title={song.name}
-											>{song.name}</span
-										>
-									</button>
-								{/each}
-							</div>
+									<Icon icon="mdi:play" width="26" height="26" />
+								</span>
+								<span class="text-2xl font-[300] truncate max-w-64" title={song.name}
+									>{song.name}</span
+								>
+							</button>
 						{/each}
 					</div>
-				</div>
-			{/if}
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
