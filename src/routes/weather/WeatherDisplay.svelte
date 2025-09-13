@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { settingsStore } from '../../store/settings.js';
+	import { weatherStore } from '../../store/weather.js';
 	import { weatherActions } from '../../lib/weather-actions.js';
 	import {
 		getWeatherIconUrl,
@@ -18,7 +19,7 @@
 	export let locationTitle;
 
 	// Auto-detect location and fetch weather on component mount
-	$: if (!settingsStore.getLastLocation() && !settingsStore.getWeatherError() && !loading) {
+	$: if (!weatherStore.getCurrentState().lastLocation && !weatherStore.getCurrentState().error && !weatherStore.getCurrentState().loading) {
 		weatherActions.autoDetectAndFetch();
 	}
 
@@ -26,9 +27,10 @@
 	let refreshInterval;
 
 	onMount(() => {
-		const interval = settingsStore.getWeatherRefreshInterval() * 60 * 1000; // Convert to milliseconds
+		const interval = settingsStore.get('weather.refreshInterval') * 60 * 1000; // Convert to milliseconds
 		refreshInterval = setInterval(() => {
-			if (settingsStore.getLastLocation() && settingsStore.isWeatherAutoRefreshEnabled()) {
+			const weatherState = weatherStore.getCurrentState();
+			if (weatherState.lastLocation && settingsStore.get('weather.autoRefresh')) {
 				weatherActions.refresh();
 			}
 		}, interval);
@@ -83,16 +85,8 @@
 	
 	function handleClearCache() {
 		console.log('Clearing weather cache...');
-		// Clear the error
-		settingsStore.clearWeatherError();
 		// Clear weather data
-		settingsStore.updateSettings({
-			'weather.currentWeather': null,
-			'weather.forecast': [],
-			'weather.lastLocation': null,
-			'weather.lastUpdated': null,
-			'weather.error': null
-		});
+		weatherStore.clear();
 		// Force a fresh start
 		weatherActions.autoDetectAndFetch();
 	}
@@ -115,39 +109,39 @@
 		return currentWeather?.pressureUnit === 'inHg' ? 'inHg' : 'hPa';
 	}
 
-	// Reactive variables for weather data - use store subscription for real-time updates
+	// Reactive variables for weather data - use weather store subscription for real-time updates
 	let currentWeather, forecast, location, error, loading;
 	$: locationTitle = currentWeather?.city || location?.city || 'Unknown Location';
 	
-	// Subscribe to settings store for real-time updates and initialize weather
+	// Subscribe to weather store for real-time updates and initialize weather
 	onMount(() => {
-		console.log('WeatherDisplay mounted, setting up store subscription...');
+		console.log('WeatherDisplay mounted, setting up weather store subscription...');
 		
-		// Subscribe to store changes
-		const unsubscribe = settingsStore.subscribe((state) => {
-			currentWeather = state.settings?.weather?.currentWeather || null;
-			forecast = state.settings?.weather?.forecast || [];
-			location = state.settings?.weather?.lastLocation || null;
-			error = state.settings?.weather?.error || null;
-			loading = !currentWeather && !error && !location;
+		// Subscribe to weather store changes
+		const unsubscribe = weatherStore.subscribe((state) => {
+			currentWeather = state.currentWeather;
+			forecast = state.forecast;
+			location = state.lastLocation;
+			error = state.error;
+			loading = state.loading;
 			
 			console.log('Weather state updated:', { currentWeather, forecast, location, error, loading });
 		});
 		
 		// Get initial state
-		const initialState = settingsStore.getAll();
-		currentWeather = initialState?.weather?.currentWeather || null;
-		forecast = initialState?.weather?.forecast || [];
-		location = initialState?.weather?.lastLocation || null;
-		error = initialState?.weather?.error || null;
-		loading = !currentWeather && !error && !location;
+		const initialState = weatherStore.getCurrentState();
+		currentWeather = initialState.currentWeather;
+		forecast = initialState.forecast;
+		location = initialState.lastLocation;
+		error = initialState.error;
+		loading = initialState.loading;
 		
 		console.log('Initial weather state:', { currentWeather, forecast, location, error, loading });
 		
 		// Clear any old errors and force a fresh start
 		if (error && error.includes('API key')) {
 			console.log('Clearing old API key error...');
-			settingsStore.clearWeatherError();
+			weatherStore.clearError();
 		}
 		
 		// Check if location name needs updating (if it's "Unknown Location")

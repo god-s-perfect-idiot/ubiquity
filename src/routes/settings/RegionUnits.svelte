@@ -1,6 +1,7 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
 	import { settingsStore } from '../../store/settings';
+	import { weatherStore } from '../../store/weather';
 	export let isExiting = false;
 	import Select from '../../components/Select.svelte';
 	import Button from '../../components/Button.svelte';
@@ -12,10 +13,12 @@
 	let units = 'Metric';
 	let loading = true;
 	let unsubscribe;
+	let settingsUnsubscribe;
 
 	// Function to update location from store
 	async function updateLocationFromStore() {
-		const coordinates = settingsStore.getLastLocation();
+		const weatherState = weatherStore.getCurrentState();
+		const coordinates = weatherState.lastLocation;
 		if (coordinates) {
 			try {
 				loading = true;
@@ -41,7 +44,8 @@
 		const success = settingsStore.setRegion(newUnits);
 		if (success) {
 			// Refresh weather data with new units
-			if (settingsStore.getLastLocation()) {
+			const weatherState = weatherStore.getCurrentState();
+			if (weatherState.lastLocation) {
 				await weatherActions.refresh();
 			}
 		}
@@ -54,17 +58,20 @@
 		// Load current region setting
 		units = settingsStore.getRegion() || 'Metric';
 		
-		// Subscribe to store changes for reactive updates
-		unsubscribe = settingsStore.subscribe(async (state) => {
+		// Subscribe to weather store changes for reactive updates
+		unsubscribe = weatherStore.subscribe(async (state) => {
 			// Check if location has changed
-			const currentLocation = state.settings?.weather?.lastLocation;
+			const currentLocation = state.lastLocation;
 			if (currentLocation) {
 				await updateLocationFromStore();
 			} else {
 				location = { city: 'not detected', country: 'not detected' };
 				loading = false;
 			}
-			
+		});
+		
+		// Subscribe to settings store for region changes
+		const settingsUnsubscribe = settingsStore.subscribe(async (state) => {
 			// Update units if region changed
 			const currentRegion = state.settings?.weather?.region;
 			if (currentRegion) {
@@ -76,6 +83,9 @@
 	onDestroy(() => {
 		if (unsubscribe) {
 			unsubscribe();
+		}
+		if (settingsUnsubscribe) {
+			settingsUnsubscribe();
 		}
 	});
 </script>
@@ -98,13 +108,7 @@
 						text="remove data"
 						onClick={async () => {
 							// Clear weather data and location
-							settingsStore.updateSettings({
-								'weather.currentWeather': null,
-								'weather.forecast': [],
-								'weather.lastLocation': null,
-								'weather.lastUpdated': null,
-								'weather.error': null
-							});
+							weatherStore.clear();
 							// Update location display
 							location = { city: 'not detected', country: 'not detected' };
 						}}

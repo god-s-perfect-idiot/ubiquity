@@ -1,5 +1,6 @@
 import { getCurrentLocation, getWeatherData, getWeatherForecast } from './weather-utils.js';
 import { settingsStore } from '../store/settings.js';
+import { weatherStore } from '../store/weather.js';
 
 /**
  * Weather actions that integrate with the settings store
@@ -11,15 +12,16 @@ export const weatherActions = {
 	async autoDetectAndFetch() {
 		try {
 			console.log('Starting weather detection...');
-			console.log('Current settings state:', settingsStore.getAll());
+			weatherStore.setLoading(true);
+			weatherStore.clearError();
 			
 			// Get current location
 			const location = await getCurrentLocation();
 			console.log('Location detected:', location);
 			
-			// Update location in settings
-			settingsStore.updateWeatherLocation(location);
-			console.log('Location updated in settings');
+			// Update location in weather store
+			weatherStore.setLocation(location);
+			console.log('Location updated in weather store');
 			
 			// Fetch current weather with correct units
 			console.log('Fetching weather data...');
@@ -34,9 +36,9 @@ export const weatherActions = {
 			const forecast = await getWeatherForecast(location.lat, location.lon, temperatureUnit, windSpeedUnit);
 			console.log('Forecast received:', forecast);
 			
-			// Update settings with weather data
-			settingsStore.updateWeatherData(current, forecast);
-			console.log('Weather data updated in settings');
+			// Update weather store with data
+			weatherStore.setWeatherData(current, forecast);
+			console.log('Weather data updated in weather store');
 			
 			// Enable location services after successful detection
 			settingsStore.set('weather.locationServices', true);
@@ -44,20 +46,20 @@ export const weatherActions = {
 			console.log('Location services enabled');
 			
 			console.log('Weather setup complete!');
-			console.log('Final settings state:', settingsStore.getAll());
 			
 		} catch (error) {
 			console.error('Weather error:', error);
+			weatherStore.setLoading(false);
 			
 			// Handle specific geolocation errors
 			if (error.message.includes('denied') || error.message.includes('permission')) {
-				settingsStore.setWeatherError('Location permission denied. Please allow location access and try again.');
+				weatherStore.setError('Location permission denied. Please allow location access and try again.');
 			} else if (error.message.includes('timeout')) {
-				settingsStore.setWeatherError('Location detection timed out. Please try again.');
+				weatherStore.setError('Location detection timed out. Please try again.');
 			} else if (error.message.includes('unavailable')) {
-				settingsStore.setWeatherError('Location service unavailable. Please check your device settings.');
+				weatherStore.setError('Location service unavailable. Please check your device settings.');
 			} else {
-				settingsStore.setWeatherError(error.message);
+				weatherStore.setError(error.message);
 			}
 		}
 	},
@@ -66,9 +68,14 @@ export const weatherActions = {
 	 * Refresh weather data for current location
 	 */
 	async refresh() {
-		const lastLocation = settingsStore.getLastLocation();
+		const weatherState = weatherStore.getCurrentState();
+		const lastLocation = weatherState.lastLocation;
+		
 		if (lastLocation) {
 			try {
+				weatherStore.setLoading(true);
+				weatherStore.clearError();
+				
 				// Fetch current weather with correct units
 				const temperatureUnit = settingsStore.get('weather.temperatureUnit');
 				const windSpeedUnit = settingsStore.get('weather.windSpeedUnit');
@@ -78,11 +85,11 @@ export const weatherActions = {
 				// Fetch forecast with correct units
 				const forecast = await getWeatherForecast(lastLocation.lat, lastLocation.lon, temperatureUnit, windSpeedUnit);
 				
-				// Update settings with weather data
-				settingsStore.updateWeatherData(current, forecast);
+				// Update weather store with data
+				weatherStore.setWeatherData(current, forecast);
 				
 			} catch (error) {
-				settingsStore.setWeatherError(error.message);
+				weatherStore.setError(error.message);
 			}
 		} else {
 			// No location stored, try to detect again
@@ -94,13 +101,7 @@ export const weatherActions = {
 	 * Clear weather data
 	 */
 	clear() {
-		settingsStore.updateSettings({
-			'weather.currentWeather': null,
-			'weather.forecast': [],
-			'weather.lastLocation': null,
-			'weather.lastUpdated': null,
-			'weather.error': null
-		});
+		weatherStore.clear();
 	},
 
 	/**
@@ -110,7 +111,7 @@ export const weatherActions = {
 		settingsStore.toggleLocationServices();
 		
 		// Clear any existing errors first
-		settingsStore.clearWeatherError();
+		weatherStore.clearError();
 		
 		// Check if location permissions are now available
 		if (navigator.permissions && navigator.permissions.query) {
@@ -124,7 +125,7 @@ export const weatherActions = {
 					await weatherActions.autoDetectAndFetch();
 				} else {
 					console.log('Location permission denied, showing error...');
-					settingsStore.setWeatherError('Location permission denied. Please enable location access in your browser settings.');
+					weatherStore.setError('Location permission denied. Please enable location access in your browser settings.');
 				}
 			} catch (error) {
 				console.log('Permission API not supported, proceeding with location request...');
@@ -142,7 +143,7 @@ export const weatherActions = {
 	 */
 	disableLocationServices() {
 		settingsStore.toggleLocationServices();
-		settingsStore.clearWeatherError();
+		weatherStore.clearError();
 	},
 
 	/**
@@ -150,7 +151,7 @@ export const weatherActions = {
 	 */
 	async changeTemperatureUnit(unit) {
 		const success = settingsStore.setTemperatureUnit(unit);
-		if (success && settingsStore.getCurrentWeather()) {
+		if (success && weatherStore.getCurrentState().currentWeather) {
 			// Refresh data to get new units
 			await weatherActions.refresh();
 		}
@@ -162,7 +163,7 @@ export const weatherActions = {
 	 */
 	async changeWindSpeedUnit(unit) {
 		const success = settingsStore.setWindSpeedUnit(unit);
-		if (success && settingsStore.getCurrentWeather()) {
+		if (success && weatherStore.getCurrentState().currentWeather) {
 			// Refresh data to get new units
 			await weatherActions.refresh();
 		}
@@ -174,7 +175,7 @@ export const weatherActions = {
 	 */
 	async changePressureUnit(unit) {
 		const success = settingsStore.setPressureUnit(unit);
-		if (success && settingsStore.getCurrentWeather()) {
+		if (success && weatherStore.getCurrentState().currentWeather) {
 			// Refresh data to get new units
 			await weatherActions.refresh();
 		}
@@ -205,7 +206,9 @@ export const weatherActions = {
 	 * Update only the location name without fetching new weather data
 	 */
 	async updateLocationOnly() {
-		const lastLocation = settingsStore.getLastLocation();
+		const weatherState = weatherStore.getCurrentState();
+		const lastLocation = weatherState.lastLocation;
+		
 		if (lastLocation) {
 			try {
 				console.log('Updating location name only...');
@@ -215,7 +218,7 @@ export const weatherActions = {
 				const cityInfo = await getCityName(lastLocation.lat, lastLocation.lon);
 				
 				// Update the current weather with new city info
-				const currentWeather = settingsStore.getCurrentWeather();
+				const currentWeather = weatherState.currentWeather;
 				if (currentWeather) {
 					const updatedWeather = {
 						...currentWeather,
@@ -223,9 +226,7 @@ export const weatherActions = {
 						country: cityInfo.country
 					};
 					
-					settingsStore.updateSettings({
-						'weather.currentWeather': updatedWeather
-					});
+					weatherStore.setWeatherData(updatedWeather, weatherState.forecast);
 					
 					console.log('Location updated:', cityInfo);
 				}

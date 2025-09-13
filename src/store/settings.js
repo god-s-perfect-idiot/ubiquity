@@ -12,7 +12,8 @@ const createSettingsStore = () => {
         accentColor: '#3b82f6', // Primary accent color
         borderRadius: 'medium', // 'none', 'small', 'medium', 'large'
         animations: true, // Enable/disable animations
-        compactMode: false // Compact UI mode
+        compactMode: false, // Compact UI mode
+        showMoreCols: false // Show 6 columns instead of 4 in start menu (false = 4 cols, true = 6 cols)
       },
       
       // System settings
@@ -67,7 +68,7 @@ const createSettingsStore = () => {
         colorBlindness: 'none' // 'none', 'protanopia', 'deuteranopia', 'tritanopia'
       },
       
-      // Weather settings
+      // Weather settings (only preferences, no data persistence)
       weather: {
         locationServices: false, // Enable location services for weather
         region: 'Metric', // 'Imperial' or 'Metric' - determines unit system
@@ -75,12 +76,7 @@ const createSettingsStore = () => {
         windSpeedUnit: 'kmh', // 'kmh', 'mph', or 'ms'
         pressureUnit: 'hpa', // 'hpa' or 'inHg'
         autoRefresh: true, // Auto-refresh weather data
-        refreshInterval: 10, // Refresh interval in minutes
-        lastLocation: null, // Last known location coordinates
-        lastUpdated: null, // Last weather update timestamp
-        currentWeather: null, // Current weather data
-        forecast: [], // Weather forecast data
-        error: null // Last error message
+        refreshInterval: 10 // Refresh interval in minutes
       },
 
       // Search settings
@@ -220,7 +216,8 @@ const createSettingsStore = () => {
           accentColor: '#3b82f6',
           borderRadius: 'medium',
           animations: true,
-          compactMode: false
+          compactMode: false,
+          showMoreCols: false
         },
         system: {
           language: 'en',
@@ -271,12 +268,7 @@ const createSettingsStore = () => {
           windSpeedUnit: 'kmh',
           pressureUnit: 'hpa',
           autoRefresh: true,
-          refreshInterval: 10,
-          lastLocation: null,
-          lastUpdated: null,
-          currentWeather: null,
-          forecast: [],
-          error: null
+          refreshInterval: 10
         },
         search: {
           defaultEngine: 'DUCKDUCKGO',
@@ -410,27 +402,7 @@ const createSettingsStore = () => {
       return true;
     },
 
-    // Weather-specific methods
-    // Get current weather data
-    getCurrentWeather() {
-      return this.get('weather.currentWeather');
-    },
-
-    // Get weather forecast
-    getWeatherForecast() {
-      return this.get('weather.forecast');
-    },
-
-    // Get last known location
-    getLastLocation() {
-      return this.get('weather.lastLocation');
-    },
-
-    // Get weather error
-    getWeatherError() {
-      return this.get('weather.error');
-    },
-
+    // Weather-specific methods (only for preferences, not data)
     // Check if weather auto-refresh is enabled
     isWeatherAutoRefreshEnabled() {
       return this.get('weather.autoRefresh');
@@ -439,37 +411,6 @@ const createSettingsStore = () => {
     // Get weather refresh interval
     getWeatherRefreshInterval() {
       return this.get('weather.refreshInterval');
-    },
-
-    // Update weather data
-    updateWeatherData(currentWeather, forecast) {
-      this.updateSettings({
-        'weather.currentWeather': currentWeather,
-        'weather.forecast': forecast,
-        'weather.lastUpdated': new Date().toISOString(),
-        'weather.error': null
-      });
-    },
-
-    // Update weather location
-    updateWeatherLocation(location) {
-      this.updateSettings({
-        'weather.lastLocation': location
-      });
-    },
-
-    // Set weather error
-    setWeatherError(error) {
-      this.updateSettings({
-        'weather.error': error
-      });
-    },
-
-    // Clear weather error
-    clearWeatherError() {
-      this.updateSettings({
-        'weather.error': null
-      });
     },
 
     // Toggle location services
