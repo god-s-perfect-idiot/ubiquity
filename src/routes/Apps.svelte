@@ -233,7 +233,7 @@
 {:else}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="flex flex-row gap-2 w-full">
+	<div class="flex flex-row gap-2 w-full h-screen">
 		<button
 			class="fixed left-0 flex flex-col border h-10 w-10 mt-5 ml-6 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
 			on:click={onBackClick}
@@ -241,7 +241,7 @@
 			<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
 		</button>
 		<div
-			class={`mt-4 flex gap-2 flex-col mb-16 w-full 
+			class={`pt-4 flex gap-2 flex-col pb-16 overflow-y-auto w-full h-full 
 		${isEntering ? 'active-enter' : ''} 
 		${showMenu !== null && !isEntering ? 'inactive' : ''} 
 		${isExiting ? 'active-exit' : ''}`}
