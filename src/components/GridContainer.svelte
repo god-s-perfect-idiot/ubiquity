@@ -66,7 +66,7 @@
 		setTimeout(() => {
 			gridStore.removeItem(itemId);
 			removingItemId = null;
-		}, 350); // Slightly longer to ensure animation completes
+		}, 300); // Slightly longer to ensure animation completes
 	}
 
 	// Handle grid background click (exit edit mode)
@@ -319,6 +319,25 @@
 		return items.findIndex(item => item.id === draggedItem.id);
 	}
 
+	// Reactive statements for placeholder sizing
+	$: placeholderWidth = draggedItem ? (() => {
+		const sizeMap = {
+			'1x1': 'calc(25% - 6px)',
+			'2x2': 'calc(50% - 8px)',
+			'4x2': 'calc(100% - 8px)'
+		};
+		return sizeMap[draggedItem.size] || sizeMap['1x1'];
+	})() : 'calc(25% - 6px)';
+
+	$: placeholderAspectRatio = draggedItem ? (() => {
+		const aspectRatioMap = {
+			'1x1': '1',
+			'2x2': '1',
+			'4x2': '2'
+		};
+		return aspectRatioMap[draggedItem.size] || aspectRatioMap['1x1'];
+	})() : '1';
+
 	// No need for position-based functions with flexbox
 </script>
 
@@ -335,9 +354,12 @@
 	>
 		<!-- Grid items -->
 		{#each items as item, index (item.id)}
-			<!-- Drop indicator before this item -->
+			<!-- Drop placeholder before this item -->
 			{#if dropIndicatorPosition === index && editMode && draggedItem}
-				<div class="drop-indicator w-full h-1 bg-blue-400 rounded-full opacity-75 my-1"></div>
+				<div class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center" 
+					 style="width: {placeholderWidth}; aspect-ratio: {placeholderAspectRatio};">
+					<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
+				</div>
 			{/if}
 			
 			<GridItem
@@ -357,9 +379,12 @@
 			/>
 		{/each}
 		
-		<!-- Drop indicator at the end -->
+		<!-- Drop placeholder at the end -->
 		{#if dropIndicatorPosition === items.length && editMode && draggedItem}
-			<div class="drop-indicator w-full h-1 bg-blue-400 rounded-full opacity-75 my-1"></div>
+			<div class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center" 
+				 style="width: {placeholderWidth}; aspect-ratio: {placeholderAspectRatio};">
+				<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
+			</div>
 		{/if}
 	</div>
 
@@ -369,6 +394,14 @@
 <style>
 	.grid-container {
 		overflow: hidden;
+	}
+
+	.drop-placeholder {
+		transition: all 200ms ease-in-out;
+		pointer-events: none;
+		user-select: none;
+		min-height: 60px;
+		min-width: 60px;
 	}
 
 </style>
