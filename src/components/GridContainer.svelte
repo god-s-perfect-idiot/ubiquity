@@ -6,6 +6,7 @@
 
 	export let cols = 4;
 	export let rows = 6;
+	export let scrollContainer = null;
 
 	// No need to calculate rows with flexbox
 
@@ -18,6 +19,8 @@
 	let isTouchDragging = false;
 	let dropIndicatorPosition = null;
 	let removingItemId = null;
+	let autoScrollInterval = null;
+	let autoScrollSpeed = 100; // pixels per frame
 
 	// Subscribe to grid store
 	$: gridState = $gridStore;
@@ -97,6 +100,9 @@
 			handleTouchDragEnd();
 		}
 		
+		// Stop auto-scrolling
+		stopAutoScroll();
+		
 		gridStore.clearDragState();
 		draggedItem = null;
 		dragOverPosition = null;
@@ -120,6 +126,19 @@
 			
 			// Update drop indicator for touch drag
 			updateDropIndicator(touchPosition);
+			
+			// Check for auto-scroll
+			checkAutoScroll(touchPosition);
+		}
+	}
+
+	// Handle auto-scroll check from touch drag
+	function handleAutoScrollCheck(event) {
+		if (!editMode || !draggedItem) return;
+		
+		const { touchPosition } = event.detail;
+		if (touchPosition) {
+			checkAutoScroll(touchPosition);
 		}
 	}
 
@@ -131,6 +150,9 @@
 		
 		// Update drop indicator position
 		updateDropIndicator({ x: event.clientX, y: event.clientY });
+		
+		// Check for auto-scroll
+		checkAutoScroll({ x: event.clientX, y: event.clientY });
 	}
 
 	// Handle drop - simplified for flexbox
@@ -338,6 +360,70 @@
 		return aspectRatioMap[draggedItem.size] || aspectRatioMap['1x1'];
 	})() : '1';
 
+	// Auto-scroll functionality
+	function checkAutoScroll(position) {
+		if (!scrollContainer || !draggedItem) return;
+		
+		const containerRect = scrollContainer.getBoundingClientRect();
+		const maxScrollThreshold = 120; // pixels from edge to trigger auto-scroll
+		
+		// Calculate distance from edges
+		const distanceFromTop = position.y - containerRect.top;
+		const distanceFromBottom = containerRect.bottom - position.y;
+		
+		// Check if position is near edges
+		const nearTop = distanceFromTop < maxScrollThreshold;
+		const nearBottom = distanceFromBottom < maxScrollThreshold;
+		
+		// Stop existing auto-scroll
+		stopAutoScroll();
+		
+		// Start auto-scroll if near edges with distance-based speed
+		if (nearTop && scrollContainer.scrollTop > 0) {
+			// Calculate speed based on how close to the edge (closer = faster)
+			const speedMultiplier = Math.max(0.3, (maxScrollThreshold - distanceFromTop) / maxScrollThreshold);
+			startAutoScroll('up', speedMultiplier);
+		} else if (nearBottom && scrollContainer.scrollTop < scrollContainer.scrollHeight - scrollContainer.clientHeight) {
+			// Calculate speed based on how close to the edge (closer = faster)
+			const speedMultiplier = Math.max(0.3, (maxScrollThreshold - distanceFromBottom) / maxScrollThreshold);
+			startAutoScroll('down', speedMultiplier);
+		}
+	}
+	
+	function startAutoScroll(direction, speedMultiplier = 1) {
+		if (autoScrollInterval) return;
+		
+		autoScrollInterval = setInterval(() => {
+			if (!scrollContainer || !draggedItem) {
+				stopAutoScroll();
+				return;
+			}
+			
+			// Apply speed multiplier for graceful acceleration
+			const adjustedSpeed = autoScrollSpeed * speedMultiplier;
+			const scrollAmount = direction === 'up' ? -adjustedSpeed : adjustedSpeed;
+			scrollContainer.scrollTop += scrollAmount;
+			
+			// Stop if we've reached the limits
+			if ((direction === 'up' && scrollContainer.scrollTop <= 0) ||
+				(direction === 'down' && scrollContainer.scrollTop >= scrollContainer.scrollHeight - scrollContainer.clientHeight)) {
+				stopAutoScroll();
+			}
+		}, 8); // ~120fps for smoother, faster scrolling
+	}
+	
+	function stopAutoScroll() {
+		if (autoScrollInterval) {
+			clearInterval(autoScrollInterval);
+			autoScrollInterval = null;
+		}
+	}
+	
+	// Clean up on destroy
+	onDestroy(() => {
+		stopAutoScroll();
+	});
+
 	// No need for position-based functions with flexbox
 </script>
 
@@ -375,6 +461,7 @@
 				on:dragStart={handleDragStart}
 				on:dragEnd={handleDragEnd}
 				on:dragOver={handleItemDragOver}
+				on:autoScrollCheck={handleAutoScrollCheck}
 				on:drop={handleItemDrop}
 			/>
 		{/each}

@@ -124,22 +124,13 @@
 		dragStartPosition = { x: touch.clientX, y: touch.clientY };
 		currentPosition = { x: touch.clientX, y: touch.clientY };
 		hasMoved = false;
-
-		if (editMode) {
-			// In edit mode, don't start drag immediately - wait for movement
-			event.preventDefault();
-			event.stopPropagation();
-			isPressed = true;
-			return;
-		}
-
-		event.preventDefault();
-		event.stopPropagation();
 		isPressed = true;
 
 		// Start long press timer
 		pressTimer = setTimeout(() => {
-			if (isPressed) {
+			if (isPressed && !hasMoved) {
+				// Only prevent default when we're actually doing a long press
+				event.preventDefault();
 				dispatch('longPress', { itemId: item.id });
 			}
 		}, 500); // 500ms for long press
@@ -147,7 +138,7 @@
 
 	// Handle touch move
 	function handleTouchMove(event) {
-		if (!editMode || !isPressed) return;
+		if (!isPressed) return;
 
 		const touch = event.touches[0];
 		currentPosition = { x: touch.clientX, y: touch.clientY };
@@ -157,27 +148,39 @@
 		const deltaY = currentPosition.y - dragStartPosition.y;
 		const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-		// If moved enough, start dragging
-		if (distance > dragThreshold && !isDraggingTouch) {
-			hasMoved = true;
-			isDraggingTouch = true;
-
-			// Create dragging element
-			createDraggingElement();
-
-			// Dispatch drag start to show visual feedback
-			dispatch('dragStart', { item });
-		}
-
-		if (isDraggingTouch) {
+		// Only handle dragging in edit mode
+		if (editMode) {
+			// In edit mode, prevent scrolling for any movement to avoid conflicts
 			event.preventDefault();
 			event.stopPropagation();
 
-			// Update dragging element position
-			updateDraggingElementPosition(currentPosition);
+			// If moved enough, start dragging
+			if (distance > dragThreshold && !isDraggingTouch) {
+				hasMoved = true;
+				isDraggingTouch = true;
 
-			// Dispatch drag over event for visual feedback
-			dispatch('dragOver', { item, event, touchPosition: currentPosition });
+				// Create dragging element
+				createDraggingElement();
+
+				// Dispatch drag start to show visual feedback
+				dispatch('dragStart', { item });
+			}
+
+			if (isDraggingTouch) {
+				// Update dragging element position
+				updateDraggingElementPosition(currentPosition);
+
+				// Dispatch drag over event for visual feedback
+				dispatch('dragOver', { item, event, touchPosition: currentPosition });
+				
+				// Also dispatch a custom event for auto-scroll
+				dispatch('autoScrollCheck', { touchPosition: currentPosition });
+			}
+		} else {
+			// In non-edit mode, just track if we've moved enough to cancel long press
+			if (distance > dragThreshold) {
+				hasMoved = true;
+			}
 		}
 	}
 
@@ -207,20 +210,9 @@
 			return;
 		}
 
-		if (editMode) {
-			// In edit mode, clean up state
-			isPressed = false;
-			hasMoved = false;
-			if (pressTimer) {
-				clearTimeout(pressTimer);
-				pressTimer = null;
-			}
-			return;
-		}
-
-		event.preventDefault();
-		event.stopPropagation();
+		// Clean up state without preventing default for scrolling
 		isPressed = false;
+		hasMoved = false;
 		if (pressTimer) {
 			clearTimeout(pressTimer);
 			pressTimer = null;

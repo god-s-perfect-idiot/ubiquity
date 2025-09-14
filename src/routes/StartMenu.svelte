@@ -7,6 +7,7 @@
 	export let onBackClick = () => {};
 
 	let gridContainer;
+	let scrollContainer;
 	let showMoreCols = false;
 	let cols = 4; // Default to 4 columns
 	let rows = 6; // Keep 6 rows for both layouts
@@ -32,21 +33,26 @@
 	}
 </script>
 
-<div 
-	class="w-full h-screen flex flex-col" 
+<div
+	class="w-full h-screen flex flex-col overflow-hidden overflow-y-auto scroll-smooth flex-1"
+	bind:this={scrollContainer}
 	on:click={handleContainerClick}
 	on:keydown={handleKeyDown}
 	role="button"
 	aria-label="Click to exit edit mode"
 	tabindex="0"
+	style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;"
 >
-	<!-- Grid container - only takes space it needs -->
-	<div bind:this={gridContainer} class="w-full">
-		<GridContainer {cols} {rows} />
+	<!-- Scrollable area for grid content -->
+	<div>
+		<!-- Grid container - only takes space it needs -->
+		<div bind:this={gridContainer} class="w-full">
+			<GridContainer {cols} {rows} {scrollContainer} />
+		</div>
 	</div>
 
 	<!-- Back button positioned horizontally under the grid -->
-	<div class="flex justify-end pr-4">
+	<div class="flex justify-end pr-4 pb-4 flex-shrink-0">
 		<button
 			class="flex flex-col border h-10 w-10 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
 			on:click={onBackClick}
@@ -55,3 +61,11 @@
 		</button>
 	</div>
 </div>
+
+<style>
+	/* Enhanced scrolling styles for StartMenu */
+	.scroll-smooth {
+		scroll-behavior: smooth;
+		-webkit-overflow-scrolling: touch;
+	}
+</style>
