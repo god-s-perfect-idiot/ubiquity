@@ -17,6 +17,7 @@
 	let touchDragPosition = null;
 	let isTouchDragging = false;
 	let dropIndicatorPosition = null;
+	let removingItemId = null;
 
 	// Subscribe to grid store
 	$: gridState = $gridStore;
@@ -54,6 +55,18 @@
 				gridStore.setEditMode(false);
 			}
 		}
+	}
+
+	// Handle item removal
+	function handleItemRemove(event) {
+		const itemId = event.detail.itemId;
+		removingItemId = itemId;
+		
+		// Remove item after animation completes
+		setTimeout(() => {
+			gridStore.removeItem(itemId);
+			removingItemId = null;
+		}, 350); // Slightly longer to ensure animation completes
 	}
 
 	// Handle grid background click (exit edit mode)
@@ -313,7 +326,7 @@
 	<!-- Grid background -->
 	<div 
 		class="flex flex-wrap w-full items-start transition-all duration-500 ease-in-out p-4"
-		style="gap: {editMode ? '16px' : '8px'};"
+		style="gap: {editMode ? '16px' : '8px'}; opacity: {editMode ? '0.8' : '1'};"
 		on:click={handleGridClick}
 		on:dragover={handleDragOver}
 		role="grid"
@@ -333,8 +346,10 @@
 				isSelected={selectedItemId === item.id}
 				isDragging={draggedItem?.id === item.id}
 				isDragOver={dragOverItemId === item.id && draggedItem?.id !== item.id}
+				isRemoving={removingItemId === item.id}
 				on:longPress={handleLongPress}
 				on:click={handleItemClick}
+				on:remove={handleItemRemove}
 				on:dragStart={handleDragStart}
 				on:dragEnd={handleDragEnd}
 				on:dragOver={handleItemDragOver}

@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher, onDestroy } from 'svelte';
+	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { gridStore } from '../store/grid.js';
 
@@ -8,6 +8,7 @@
 	export let isSelected = false;
 	export let isDragging = false;
 	export let isDragOver = false;
+	export let isRemoving = false;
 
 	const dispatch = createEventDispatcher();
 
@@ -21,6 +22,33 @@
 	let dragThreshold = 10; // Minimum pixels to move before considering it a drag
 	let draggingElement = null;
 	let dragElementPosition = { x: 0, y: 0 };
+	let wasSelected = false;
+	let isDeselecting = false;
+	let isSelecting = false;
+	let previousEditMode = false;
+
+	// Track selection state changes for smooth animations
+	$: {
+		// Handle selection animation
+		if (editMode && isSelected && !wasSelected) {
+			isSelecting = true;
+			setTimeout(() => {
+				isSelecting = false;
+			}, 300);
+		}
+		
+		// Handle deselection animation
+		if (editMode && !isSelected && wasSelected) {
+			isDeselecting = true;
+			setTimeout(() => {
+				isDeselecting = false;
+			}, 300);
+		}
+		
+		// Update previous states
+		wasSelected = isSelected;
+		previousEditMode = editMode;
+	}
 
 	// Handle mouse down for long press detection
 	function handleMouseDown(event) {
@@ -250,8 +278,10 @@
 
 	// Handle remove button click
 	function handleRemove() {
-		gridStore.removeItem(item.id);
+		// Dispatch remove event to parent
+		dispatch('remove', { itemId: item.id });
 	}
+
 
 	// Handle drag start
 	function handleDragStart(event) {
@@ -375,31 +405,23 @@
 </script>
 
 <div
-	class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected ? 'selected' : ''} {isDragging
+	class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected ? 'selected' : ''} {isRemoving
+		? 'animate-removal'
+		: isDragging
 		? 'opacity-50 scale-95'
-		: editMode && isSelected && !isDragging
-		? 'scale-105 opacity-100'
-		: editMode && !isSelected && !isDragging
-		? 'animate-float opacity-75'
+		: editMode && isSelected && !isDragging && isSelecting
+		? 'animate-selected'
+		: editMode && isSelected && !isDragging && !isSelecting
+		? 'selected-state'
+		: editMode && !isSelected && !isDragging && isDeselecting
+		? 'animate-deselected'
+		: editMode && !isSelected && !isDragging && !isDeselecting
+		? 'animate-float-edit'
 		: !editMode && !isDragging
 		? 'opacity-100'
-		: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''}"
+		: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''} {editMode ? 'edit-mode' : 'normal-mode'} size-{item.size}"
 	data-item-id={item.id}
-	style="width: {editMode
-		? item.size === '1x1'
-			? 'calc(23% - 12px)'
-			: item.size === '2x2'
-				? 'calc(48% - 12px)'
-				: 'calc(96% - 12px)'
-		: item.size === '1x1'
-			? 'calc(25% - 6px)'
-			: item.size === '2x2'
-				? 'calc(50% - 8px)'
-				: 'calc(100% - 8px)'}; aspect-ratio: {item.size === '1x1'
-		? '1'
-		: item.size === '2x2'
-			? '1'
-			: '2'}; align-self: flex-start; transform-origin: center; {editMode && !isSelected
+	style="align-self: flex-start; transform-origin: center; {editMode && !isSelected
 		? `animation-delay: ${0.5 + (item.id.charCodeAt(0) % 4) * 0.2}s;`
 		: ''}"
 	on:mousedown={handleMouseDown}
@@ -488,6 +510,36 @@
 	.grid-item {
 		min-height: 60px;
 		min-width: 60px;
+		transition: transform 300ms ease-in-out, opacity 300ms ease-in-out, width 300ms ease-in-out, aspect-ratio 300ms ease-in-out;
+	}
+
+	/* Size classes for different tile sizes */
+	.size-1x1 {
+		width: calc(25% - 6px);
+		aspect-ratio: 1;
+	}
+
+	.size-2x2 {
+		width: calc(50% - 8px);
+		aspect-ratio: 1;
+	}
+
+	.size-4x2 {
+		width: calc(100% - 8px);
+		aspect-ratio: 2;
+	}
+
+	/* Edit mode size adjustments */
+	.edit-mode.size-1x1 {
+		width: calc(23% - 12px);
+	}
+
+	.edit-mode.size-2x2 {
+		width: calc(48% - 12px);
+	}
+
+	.edit-mode.size-4x2 {
+		width: calc(96% - 12px);
 	}
 
 	.grid-item:hover {
@@ -499,6 +551,7 @@
 		transform: scale(0.98);
 	}
 
+	/* Original float animation for non-edit mode */
 	@keyframes float {
 		0%,
 		100% {
@@ -518,13 +571,141 @@
 	.animate-float {
 		animation: float 8s ease-in-out infinite;
 	}
-	
-	.grid-item {
-		transition: transform 500ms ease-in-out, opacity 500ms ease-in-out, width 500ms ease-in-out, aspect-ratio 500ms ease-in-out;
+
+	/* Edit mode float animation - for non-selected items */
+	@keyframes float-edit {
+		0%,
+		100% {
+			transform: translateY(0px) translateX(0px) scale(0.9);
+		}
+		25% {
+			transform: translateY(-8px) translateX(5px) scale(0.9);
+		}
+		50% {
+			transform: translateY(-3px) translateX(-6px) scale(0.9);
+		}
+		75% {
+			transform: translateY(-6px) translateX(3px) scale(0.9);
+		}
 	}
-	
+
+	.animate-float-edit {
+		animation: float-edit 6s ease-in-out infinite;
+		opacity: 0.6;
+	}
+
+	/* Selected item animation - smooth scale and opacity */
+	@keyframes selected {
+		from {
+			transform: scale(0.9);
+			opacity: 0.6;
+		}
+		to {
+			transform: scale(1.05);
+			opacity: 1;
+		}
+	}
+
+	/* Deselected item animation - smooth transition back to float state */
+	@keyframes deselected {
+		from {
+			transform: scale(1.05);
+			opacity: 1;
+		}
+		to {
+			transform: scale(0.9);
+			opacity: 0.6;
+		}
+	}
+
+	.animate-selected {
+		animation: selected 300ms ease-out forwards !important;
+		transition: none !important;
+	}
+
+	.animate-deselected {
+		animation: deselected 300ms ease-out forwards !important;
+		transition: none !important;
+	}
+
+	/* Selected state - final state after animation */
+	.selected-state {
+		opacity: 1 !important;
+		transform: scale(1.05) !important;
+		animation: none !important;
+	}
+
+	/* Removal animation - scale to 0 */
+	@keyframes removal {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(0);
+			opacity: 0;
+		}
+	}
+
+	.animate-removal {
+		animation: removal 300ms ease-in forwards !important;
+		pointer-events: none !important;
+	}
+
+	/* Ensure selected items don't have float animation */
 	.grid-item.selected {
 		animation: none !important;
+	}
+
+	/* Ensure dragging items don't have other animations */
+	.grid-item.opacity-50.scale-95 {
+		animation: none !important;
+	}
+
+	/* Ensure deselection animation doesn't interfere with other states */
+	.animate-deselected {
+		animation: deselected 300ms ease-out forwards !important;
+	}
+
+	/* Ensure deselection animation has proper priority */
+	.grid-item.animate-deselected {
+		animation: deselected 300ms ease-out forwards !important;
+		transition: none !important;
+	}
+
+	/* Ensure removal animation has highest priority */
+	.grid-item.animate-removal {
+		animation: removal 300ms ease-in forwards !important;
+		pointer-events: none !important;
+		opacity: 1 !important;
+		transform: scale(1) !important;
+	}
+
+	/* Additional specificity for removal animation */
+	div.animate-removal {
+		animation: removal 300ms ease-in forwards !important;
+		pointer-events: none !important;
+	}
+
+	/* Ensure selection animation has proper priority */
+	.grid-item.animate-selected {
+		animation: selected 300ms ease-out forwards !important;
+		transition: none !important;
+	}
+
+	/* Ensure float animation works properly */
+	.grid-item.animate-float-edit {
+		animation: float-edit 6s ease-in-out infinite !important;
+		opacity: 0.6 !important;
+	}
+
+	/* Vary animation timing for different items */
+	.animate-float-edit:nth-child(odd) {
+		animation-duration: 5.5s;
+	}
+
+	.animate-float-edit:nth-child(even) {
+		animation-duration: 6.5s;
 	}
 
 	.animate-float:nth-child(odd) {
@@ -533,21 +714,5 @@
 
 	.animate-float:nth-child(even) {
 		animation-duration: 8.5s;
-	}
-
-	@keyframes float {
-		0%,
-		100% {
-			transform: translateY(0px) translateX(0px);
-		}
-		25% {
-			transform: translateY(-10px) translateX(6px);
-		}
-		50% {
-			transform: translateY(-4px) translateX(-8px);
-		}
-		75% {
-			transform: translateY(-7px) translateX(4px);
-		}
 	}
 </style>
