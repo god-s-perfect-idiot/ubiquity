@@ -575,12 +575,12 @@
 	}
 
 	.size-2x2 {
-		width: calc(50% - 8px);
+		width: calc(50% - 4px);
 		aspect-ratio: 1;
 	}
 
 	.size-4x2 {
-		width: calc(100% - 8px);
+		width: calc(100% - 0px);
 		aspect-ratio: 2;
 	}
 

@@ -344,7 +344,7 @@
 <div class="grid-container w-full relative flex-1" bind:this={gridContainer}>
 	<!-- Grid background -->
 	<div 
-		class="flex flex-wrap w-full items-start transition-all duration-500 ease-in-out p-4"
+		class="flex flex-wrap w-full items-start transition-all duration-300 ease-in-out p-4"
 		style="gap: {editMode ? '16px' : '8px'}; opacity: {editMode ? '0.8' : '1'};"
 		on:click={handleGridClick}
 		on:dragover={handleDragOver}
