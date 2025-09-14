@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onDestroy } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { gridStore } from '../store/grid.js';
 
@@ -14,10 +14,20 @@
 	let isPressed = false;
 	let pressTimer = null;
 	let dragStartPosition = null;
+	let isDraggingTouch = false;
+	let dragOffset = { x: 0, y: 0 };
+	let currentPosition = { x: 0, y: 0 };
+	let hasMoved = false;
+	let dragThreshold = 10; // Minimum pixels to move before considering it a drag
+	let draggingElement = null;
+	let dragElementPosition = { x: 0, y: 0 };
 
 	// Handle mouse down for long press detection
 	function handleMouseDown(event) {
-		if (editMode) return;
+		if (editMode) {
+			// In edit mode, don't prevent default to allow drag to work
+			return;
+		}
 
 		event.preventDefault();
 		event.stopPropagation();
@@ -34,6 +44,16 @@
 
 	// Handle mouse up
 	function handleMouseUp(event) {
+		if (editMode) {
+			// In edit mode, don't interfere with drag operations
+			isPressed = false;
+			if (pressTimer) {
+				clearTimeout(pressTimer);
+				pressTimer = null;
+			}
+			return;
+		}
+
 		event.preventDefault();
 		event.stopPropagation();
 		isPressed = false;
@@ -45,6 +65,16 @@
 
 	// Handle mouse leave
 	function handleMouseLeave(event) {
+		if (editMode) {
+			// In edit mode, don't interfere with drag operations
+			isPressed = false;
+			if (pressTimer) {
+				clearTimeout(pressTimer);
+				pressTimer = null;
+			}
+			return;
+		}
+
 		event.preventDefault();
 		event.stopPropagation();
 		isPressed = false;
@@ -62,16 +92,22 @@
 			return;
 		}
 
+		const touch = event.touches[0];
+		dragStartPosition = { x: touch.clientX, y: touch.clientY };
+		currentPosition = { x: touch.clientX, y: touch.clientY };
+		hasMoved = false;
+
 		if (editMode) {
-			// In edit mode, don't prevent default to allow click events
+			// In edit mode, don't start drag immediately - wait for movement
+			event.preventDefault();
+			event.stopPropagation();
+			isPressed = true;
 			return;
 		}
 
 		event.preventDefault();
 		event.stopPropagation();
 		isPressed = true;
-		const touch = event.touches[0];
-		dragStartPosition = { x: touch.clientX, y: touch.clientY };
 
 		// Start long press timer
 		pressTimer = setTimeout(() => {
@@ -79,6 +115,42 @@
 				dispatch('longPress', { itemId: item.id });
 			}
 		}, 500); // 500ms for long press
+	}
+
+	// Handle touch move
+	function handleTouchMove(event) {
+		if (!editMode || !isPressed) return;
+
+		const touch = event.touches[0];
+		currentPosition = { x: touch.clientX, y: touch.clientY };
+		
+		// Calculate distance moved from start position
+		const deltaX = currentPosition.x - dragStartPosition.x;
+		const deltaY = currentPosition.y - dragStartPosition.y;
+		const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+		
+		// If moved enough, start dragging
+		if (distance > dragThreshold && !isDraggingTouch) {
+			hasMoved = true;
+			isDraggingTouch = true;
+			
+			// Create dragging element
+			createDraggingElement();
+			
+			// Dispatch drag start to show visual feedback
+			dispatch('dragStart', { item });
+		}
+		
+		if (isDraggingTouch) {
+			event.preventDefault();
+			event.stopPropagation();
+			
+			// Update dragging element position
+			updateDraggingElementPosition(currentPosition);
+			
+			// Dispatch drag over event for visual feedback
+			dispatch('dragOver', { item, event, touchPosition: currentPosition });
+		}
 	}
 
 	// Handle touch end
@@ -89,9 +161,28 @@
 			return;
 		}
 
-		if (editMode) {
-			// In edit mode, don't prevent default to allow click events
+		if (isDraggingTouch && editMode) {
+			event.preventDefault();
+			event.stopPropagation();
+			cleanup();
+			dispatch('dragEnd', { item });
+			hasMoved = false;
+			return;
+		}
+
+		if (editMode && isPressed && !hasMoved) {
+			// This was a tap in edit mode - select the item
+			event.preventDefault();
+			event.stopPropagation();
+			dispatch('click', { itemId: item.id });
 			isPressed = false;
+			return;
+		}
+
+		if (editMode) {
+			// In edit mode, clean up state
+			isPressed = false;
+			hasMoved = false;
 			if (pressTimer) {
 				clearTimeout(pressTimer);
 				pressTimer = null;
@@ -172,10 +263,73 @@
 		dispatch('dragStart', { item });
 	}
 
+	// Create dragging element
+	function createDraggingElement() {
+		if (draggingElement) return;
+		
+		// Create a simple dragging indicator
+		draggingElement = document.createElement('div');
+		draggingElement.className = `grid-item-drag absolute pointer-events-none z-50 ${item.bgColor} text-white rounded-lg`;
+		draggingElement.style.width = '80px';
+		draggingElement.style.height = '80px';
+		draggingElement.style.transform = 'scale(0.9)';
+		draggingElement.style.opacity = '0.8';
+		draggingElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
+		draggingElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.4)';
+		draggingElement.style.display = 'flex';
+		draggingElement.style.alignItems = 'center';
+		draggingElement.style.justifyContent = 'center';
+		draggingElement.style.fontSize = '32px';
+		draggingElement.innerHTML = '📱'; // Simple emoji indicator
+		
+		document.body.appendChild(draggingElement);
+		
+		// Set initial position
+		dragElementPosition = { x: currentPosition.x - 40, y: currentPosition.y - 40 };
+		draggingElement.style.left = `${dragElementPosition.x}px`;
+		draggingElement.style.top = `${dragElementPosition.y}px`;
+	}
+
+	// Update dragging element position
+	function updateDraggingElementPosition(position) {
+		if (!draggingElement) return;
+		
+		dragElementPosition = { x: position.x - 40, y: position.y - 40 };
+		draggingElement.style.left = `${dragElementPosition.x}px`;
+		draggingElement.style.top = `${dragElementPosition.y}px`;
+	}
+
+	// Remove dragging element
+	function removeDraggingElement() {
+		if (draggingElement) {
+			document.body.removeChild(draggingElement);
+			draggingElement = null;
+		}
+	}
+
+
 	// Handle drag end
 	function handleDragEnd() {
+		isDraggingTouch = false;
+		removeDraggingElement();
 		dispatch('dragEnd', { item });
 	}
+
+	// Cleanup function to ensure dragging element is removed
+	function cleanup() {
+		removeDraggingElement();
+		isDraggingTouch = false;
+		isPressed = false;
+		if (pressTimer) {
+			clearTimeout(pressTimer);
+			pressTimer = null;
+		}
+	}
+
+	// Ensure cleanup on component destroy
+	onDestroy(() => {
+		cleanup();
+	});
 
 	// Handle drag over
 	function handleDragOver(event) {
@@ -194,7 +348,7 @@
 		event.preventDefault();
 		const draggedItemId = event.dataTransfer.getData('text/plain');
 
-		if (draggedItemId !== item.id) {
+		if (draggedItemId && draggedItemId !== item.id) {
 			dispatch('drop', { targetItem: item, draggedItemId });
 		}
 	}
@@ -221,17 +375,22 @@
 </script>
 
 <div
-	class="grid-item relative {item.bgColor} text-white cursor-pointer transition-all duration-500 ease-in-out {isDragging
+	class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected ? 'selected' : ''} {isDragging
 		? 'opacity-50 scale-95'
-		: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''} {editMode && !isSelected
+		: editMode && isSelected && !isDragging
+		? 'scale-105 opacity-100'
+		: editMode && !isSelected && !isDragging
 		? 'animate-float opacity-75'
-		: 'opacity-100'}"
-	style="width: {editMode && !isSelected
+		: !editMode && !isDragging
+		? 'opacity-100'
+		: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''}"
+	data-item-id={item.id}
+	style="width: {editMode
 		? item.size === '1x1'
-			? 'calc(23% - 6px)'
+			? 'calc(23% - 12px)'
 			: item.size === '2x2'
-				? 'calc(46% - 8px)'
-				: 'calc(92% - 8px)'
+				? 'calc(48% - 12px)'
+				: 'calc(96% - 12px)'
 		: item.size === '1x1'
 			? 'calc(25% - 6px)'
 			: item.size === '2x2'
@@ -240,13 +399,14 @@
 		? '1'
 		: item.size === '2x2'
 			? '1'
-			: '2'}; align-self: flex-start; {editMode && !isSelected
+			: '2'}; align-self: flex-start; transform-origin: center; {editMode && !isSelected
 		? `animation-delay: ${0.5 + (item.id.charCodeAt(0) % 4) * 0.2}s;`
 		: ''}"
 	on:mousedown={handleMouseDown}
 	on:mouseup={handleMouseUp}
 	on:mouseleave={handleMouseLeave}
 	on:touchstart={handleTouchStart}
+	on:touchmove={handleTouchMove}
 	on:touchend={handleTouchEnd}
 	on:click={handleClick}
 	on:keydown={handleKeyDown}
@@ -282,7 +442,7 @@
 			</button>
 		{:else}
 			<button
-				class="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-0 scale-75 pointer-events-none"
+				class="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-0 hover:opacity-100 scale-75 hover:scale-100 pointer-events-none group-hover:pointer-events-auto"
 				on:click|stopPropagation={handleResize}
 			>
 				<Icon icon="mdi:close" width="12" height="12" />
@@ -306,7 +466,7 @@
 			</button>
 		{:else}
 			<button
-				class="absolute bottom-1 right-1 w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-0 scale-75 pointer-events-none"
+				class="absolute bottom-1 right-1 w-6 h-6 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-0 hover:opacity-100 scale-75 hover:scale-100 pointer-events-none group-hover:pointer-events-auto"
 				on:click|stopPropagation={handleResize}
 			>
 				<span class="text-xs">{getSizeText(item.size)}</span>
@@ -358,6 +518,14 @@
 	.animate-float {
 		animation: float 8s ease-in-out infinite;
 	}
+	
+	.grid-item {
+		transition: transform 500ms ease-in-out, opacity 500ms ease-in-out, width 500ms ease-in-out, aspect-ratio 500ms ease-in-out;
+	}
+	
+	.grid-item.selected {
+		animation: none !important;
+	}
 
 	.animate-float:nth-child(odd) {
 		animation-duration: 7.5s;
@@ -365,5 +533,21 @@
 
 	.animate-float:nth-child(even) {
 		animation-duration: 8.5s;
+	}
+
+	@keyframes float {
+		0%,
+		100% {
+			transform: translateY(0px) translateX(0px);
+		}
+		25% {
+			transform: translateY(-10px) translateX(6px);
+		}
+		50% {
+			transform: translateY(-4px) translateX(-8px);
+		}
+		75% {
+			transform: translateY(-7px) translateX(4px);
+		}
 	}
 </style>

@@ -77,8 +77,55 @@ function createGridStore() {
       });
     },
 
-    // Move item - simplified for flexbox (just reorder array)
-    moveItem(itemId, newIndex) {
+    // Move item - improved to handle different sizes and grid positions
+    moveItem(itemId, targetItemId) {
+      update(state => {
+        const items = [...state.items];
+        const draggedItemIndex = items.findIndex(item => item.id === itemId);
+        const targetItemIndex = items.findIndex(item => item.id === targetItemId);
+        
+        if (draggedItemIndex === -1 || targetItemIndex === -1) return state;
+
+        const draggedItem = items[draggedItemIndex];
+        const targetItem = items[targetItemIndex];
+
+        // Remove the dragged item
+        items.splice(draggedItemIndex, 1);
+
+        // Find the new index for the target item (it may have shifted after removing the dragged item)
+        const newTargetIndex = items.findIndex(item => item.id === targetItemId);
+        
+        // Insert the dragged item at the target position
+        items.splice(newTargetIndex, 0, draggedItem);
+
+        return {
+          ...state,
+          items
+        };
+      });
+    },
+
+    // Optimize grid layout to minimize gaps and improve visual order
+    optimizeLayout() {
+      update(state => {
+        const { cols } = state.gridSize;
+        const items = [...state.items];
+        
+        // Sort items by size (larger items first) for better packing
+        const sortedItems = items.sort((a, b) => {
+          const sizeOrder = { '4x2': 3, '2x2': 2, '1x1': 1 };
+          return sizeOrder[b.size] - sizeOrder[a.size];
+        });
+
+        return {
+          ...state,
+          items: sortedItems
+        };
+      });
+    },
+
+    // Move item by index (legacy support)
+    moveItemByIndex(itemId, newIndex) {
       update(state => {
         const items = [...state.items];
         const itemIndex = items.findIndex(item => item.id === itemId);
@@ -87,6 +134,27 @@ function createGridStore() {
 
         const [item] = items.splice(itemIndex, 1);
         items.splice(newIndex, 0, item);
+
+        return {
+          ...state,
+          items
+        };
+      });
+    },
+
+    // Move item to a specific position index
+    moveItemToPosition(itemId, positionIndex) {
+      update(state => {
+        const items = [...state.items];
+        const itemIndex = items.findIndex(item => item.id === itemId);
+        
+        if (itemIndex === -1) return state;
+
+        const [item] = items.splice(itemIndex, 1);
+        
+        // Clamp position to valid range
+        const clampedPosition = Math.max(0, Math.min(items.length, positionIndex));
+        items.splice(clampedPosition, 0, item);
 
         return {
           ...state,

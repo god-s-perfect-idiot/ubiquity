@@ -12,7 +12,11 @@
 	let gridContainer;
 	let draggedItem = null;
 	let dragOverPosition = null;
+	let dragOverItemId = null;
 	let editMode = false;
+	let touchDragPosition = null;
+	let isTouchDragging = false;
+	let dropIndicatorPosition = null;
 
 	// Subscribe to grid store
 	$: gridState = $gridStore;
@@ -67,27 +71,240 @@
 	function handleDragStart(event) {
 		draggedItem = event.detail.item;
 		gridStore.setDraggedItem(draggedItem.id);
+		
+		// Check if this is a touch drag (will have touchPosition in subsequent events)
+		isTouchDragging = false; // Will be set to true when touch move happens
+		dropIndicatorPosition = null; // Clear any existing indicator
 	}
 
 	// Handle drag end
 	function handleDragEnd(event) {
+		// Handle touch drag end if we have touch position
+		if (touchDragPosition) {
+			handleTouchDragEnd();
+		}
+		
 		gridStore.clearDragState();
 		draggedItem = null;
 		dragOverPosition = null;
+		dragOverItemId = null;
+		touchDragPosition = null;
+		isTouchDragging = false;
+		dropIndicatorPosition = null;
+	}
+
+	// Handle item drag over
+	function handleItemDragOver(event) {
+		if (!editMode || !draggedItem) return;
+		
+		const { item, touchPosition } = event.detail;
+		dragOverItemId = item.id;
+		
+		// Store touch position for mobile drag
+		if (touchPosition) {
+			touchDragPosition = touchPosition;
+			isTouchDragging = true;
+			
+			// Update drop indicator for touch drag
+			updateDropIndicator(touchPosition);
+		}
 	}
 
 	// Handle drag over - simplified for flexbox
 	function handleDragOver(event) {
 		if (!editMode || !draggedItem) return;
-		// With flexbox, we don't need complex position calculations
+		event.preventDefault();
+		event.dataTransfer.dropEffect = 'move';
+		
+		// Update drop indicator position
+		updateDropIndicator({ x: event.clientX, y: event.clientY });
 	}
 
 	// Handle drop - simplified for flexbox
 	function handleDrop(event) {
 		if (!editMode || !draggedItem) return;
-		// With flexbox, items automatically reorder
+		event.preventDefault();
+		
+		// Check if dropping on an existing item or empty space
+		const elementAtPoint = document.elementFromPoint(event.clientX, event.clientY);
+		const targetGridItem = elementAtPoint?.closest('.grid-item');
+		
+		if (targetGridItem) {
+			// Dropping on an existing item - handled by handleItemDrop
+			return;
+		} else {
+			// Dropping in empty space
+			const emptyPosition = findBestEmptyPosition({ x: event.clientX, y: event.clientY });
+			if (emptyPosition !== -1) {
+				gridStore.moveItemToPosition(draggedItem.id, emptyPosition);
+			}
+		}
 	}
 
+	// Handle item drop for reordering
+	function handleItemDrop(event) {
+		if (!editMode || !draggedItem) return;
+		
+		const { targetItem, draggedItemId } = event.detail;
+		
+		if (draggedItemId !== targetItem.id) {
+			// Move the dragged item to the target position
+			gridStore.moveItem(draggedItemId, targetItem.id);
+			
+			// Optional: Optimize layout after move to reduce gaps
+			// gridStore.optimizeLayout();
+		}
+	}
+
+	// Handle touch drag end - detect drop target
+	function handleTouchDragEnd() {
+		if (!editMode || !draggedItem || !touchDragPosition) return;
+		
+		// Find the item at the touch position
+		const elementAtPoint = document.elementFromPoint(touchDragPosition.x, touchDragPosition.y);
+		const targetGridItem = elementAtPoint?.closest('.grid-item');
+		
+		if (targetGridItem) {
+			// Dropping on an existing item
+			const targetItemId = targetGridItem.dataset.itemId || 
+				targetGridItem.querySelector('[data-item-id]')?.dataset.itemId;
+			
+			if (targetItemId && targetItemId !== draggedItem.id) {
+				// Move the dragged item to the target position
+				gridStore.moveItem(draggedItem.id, targetItemId);
+			}
+		} else {
+			// Dropping in empty space - find the best position
+			const emptyPosition = findBestEmptyPosition(touchDragPosition);
+			if (emptyPosition !== -1) {
+				// Move the dragged item to the empty position
+				gridStore.moveItemToPosition(draggedItem.id, emptyPosition);
+			}
+		}
+	}
+
+	// Find the best empty position based on actual DOM element positions
+	function findBestEmptyPosition(touchPosition) {
+		if (!gridContainer) return -1;
+		
+		// Get all grid items and their positions
+		const gridItems = gridContainer.querySelectorAll('.grid-item');
+		const itemPositions = Array.from(gridItems).map((item, index) => {
+			const rect = item.getBoundingClientRect();
+			const itemId = item.dataset.itemId;
+			return {
+				id: itemId,
+				index: index,
+				left: rect.left,
+				right: rect.right,
+				top: rect.top,
+				bottom: rect.bottom,
+				centerX: rect.left + rect.width / 2,
+				centerY: rect.top + rect.height / 2
+			};
+		});
+		
+		// Sort items by their visual reading order (top to bottom, left to right)
+		const sortedItems = itemPositions.sort((a, b) => {
+			// First sort by row (top position) with some tolerance for flexbox
+			const rowDiff = Math.abs(a.top - b.top);
+			if (rowDiff > 30) { // Different rows
+				return a.top - b.top;
+			}
+			// Then sort by column (left position)
+			return a.left - b.left;
+		});
+		
+		// Find the closest item to the touch position
+		let closestItem = null;
+		let minDistance = Infinity;
+		
+		for (const item of sortedItems) {
+			const distance = Math.sqrt(
+				Math.pow(touchPosition.x - item.centerX, 2) + 
+				Math.pow(touchPosition.y - item.centerY, 2)
+			);
+			
+			if (distance < minDistance) {
+				minDistance = distance;
+				closestItem = item;
+			}
+		}
+		
+		if (!closestItem) {
+			// No items found, place at the end
+			return items.length;
+		}
+		
+		// Find the visual position of the closest item in the sorted array
+		const visualIndex = sortedItems.findIndex(item => item.id === closestItem.id);
+		
+		// Determine if we should place before or after the closest item
+		const isLeftOfCenter = touchPosition.x < closestItem.centerX;
+		const isAboveCenter = touchPosition.y < closestItem.centerY;
+		
+		let targetVisualIndex;
+		
+		// Simplified positioning logic
+		if (isLeftOfCenter || isAboveCenter) {
+			// Left or above the item - place before it
+			targetVisualIndex = visualIndex;
+		} else {
+			// Right or below the item - place after it
+			targetVisualIndex = visualIndex + 1;
+		}
+		
+		// Convert visual index back to DOM index for the indicator
+		if (targetVisualIndex < sortedItems.length) {
+			const targetItem = sortedItems[targetVisualIndex];
+			return targetItem.index;
+		} else {
+			// Place at the end
+			return items.length;
+		}
+	}
+
+	// Update drop indicator position
+	function updateDropIndicator(position) {
+		if (!editMode || !draggedItem) return;
+		
+		// Find the best position for the drop indicator
+		const bestPosition = findBestEmptyPosition(position);
+		
+		// Only show indicator if we're not hovering over the dragged item itself
+		// and if the position is different from the dragged item's current position
+		if (bestPosition !== -1 && 
+			!isHoveringOverDraggedItem(position) && 
+			bestPosition !== getCurrentDraggedItemIndex()) {
+			dropIndicatorPosition = bestPosition;
+		} else {
+			dropIndicatorPosition = null;
+		}
+	}
+
+	// Check if the position is over the currently dragged item
+	function isHoveringOverDraggedItem(position) {
+		if (!draggedItem) return false;
+		
+		const gridItems = gridContainer.querySelectorAll('.grid-item');
+		for (const item of gridItems) {
+			if (item.dataset.itemId === draggedItem.id) {
+				const rect = item.getBoundingClientRect();
+				return position.x >= rect.left && 
+					   position.x <= rect.right && 
+					   position.y >= rect.top && 
+					   position.y <= rect.bottom;
+			}
+		}
+		return false;
+	}
+
+	// Get the current index of the dragged item
+	function getCurrentDraggedItemIndex() {
+		if (!draggedItem) return -1;
+		
+		return items.findIndex(item => item.id === draggedItem.id);
+	}
 
 	// No need for position-based functions with flexbox
 </script>
@@ -95,12 +312,8 @@
 <div class="grid-container w-full relative flex-1" bind:this={gridContainer}>
 	<!-- Grid background -->
 	<div 
-		class="flex flex-wrap w-full items-start transition-all duration-300 ease-in-out"
-		class:gap-2={!editMode}
-		class:gap-6={editMode}
-		class:p-4={!editMode}
-		class:px-6={editMode}
-		class:py-4={editMode}
+		class="flex flex-wrap w-full items-start transition-all duration-500 ease-in-out p-4"
+		style="gap: {editMode ? '16px' : '8px'};"
 		on:click={handleGridClick}
 		on:dragover={handleDragOver}
 		role="grid"
@@ -108,21 +321,31 @@
 		on:keydown={(e) => e.preventDefault()}
 	>
 		<!-- Grid items -->
-		{#each items as item (item.id)}
+		{#each items as item, index (item.id)}
+			<!-- Drop indicator before this item -->
+			{#if dropIndicatorPosition === index && editMode && draggedItem}
+				<div class="drop-indicator w-full h-1 bg-blue-400 rounded-full opacity-75 my-1"></div>
+			{/if}
+			
 			<GridItem
 				{item}
 				{editMode}
 				isSelected={selectedItemId === item.id}
 				isDragging={draggedItem?.id === item.id}
-				isDragOver={false}
+				isDragOver={dragOverItemId === item.id && draggedItem?.id !== item.id}
 				on:longPress={handleLongPress}
 				on:click={handleItemClick}
 				on:dragStart={handleDragStart}
 				on:dragEnd={handleDragEnd}
-				on:dragOver={handleDragOver}
-				on:drop={handleDrop}
+				on:dragOver={handleItemDragOver}
+				on:drop={handleItemDrop}
 			/>
 		{/each}
+		
+		<!-- Drop indicator at the end -->
+		{#if dropIndicatorPosition === items.length && editMode && draggedItem}
+			<div class="drop-indicator w-full h-1 bg-blue-400 rounded-full opacity-75 my-1"></div>
+		{/if}
 	</div>
 
 
