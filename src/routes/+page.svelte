@@ -29,7 +29,7 @@
 <div class="relative w-full h-screen overflow-hidden">
 	<!-- Apps Component -->
 	<div 
-		class="absolute inset-0 transition-transform duration-500 ease-in-out"
+		class="absolute inset-0 transition-transform duration-500 ease-in-out h-full"
 		class:slide-out-right={showMenu}
 	>
 		<Apps onBackClick={onBackClick} />

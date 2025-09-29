@@ -233,21 +233,22 @@
 {:else}
 	<!-- svelte-ignore a11y-click-events-have-key-events -->
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
-	<div class="flex flex-row gap-2 w-full h-screen">
+	<div class="flex flex-row gap-2 w-full h-full">
 		<button
 			class="fixed left-0 flex flex-col border h-10 w-10 mt-5 ml-6 justify-center items-center border-white rounded-full !border-2 p-2 font-bold"
 			on:click={onBackClick}
 		>
 			<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
 		</button>
-		<div
-			class={`pt-4 flex gap-2 flex-col pb-16 overflow-y-auto w-full h-full 
-		${isEntering ? 'active-enter' : ''} 
-		${showMenu !== null && !isEntering ? 'inactive' : ''} 
-		${isExiting ? 'active-exit' : ''}`}
-			on:touchstart={handleOutsideTouch}
-			on:click={handleOutsideTouch}
-		>
+		<div class="flex-1 overflow-y-auto pb-32 overflow-x-hidden">
+			<div
+				class={`mt-4 flex gap-2 flex-col w-full
+			${isEntering ? 'active-enter' : ''} 
+			${showMenu !== null && !isEntering ? 'inactive' : ''} 
+			${isExiting ? 'active-exit' : ''}`}
+				on:touchstart={handleOutsideTouch}
+				on:click={handleOutsideTouch}
+			>
 			{#each Object.entries(appList) as appEntry}
 				<div class={`flex flex-col gap-2`}>
 					<!-- Touch event handler for each app entry -->
@@ -317,6 +318,7 @@
 					{/each}
 				</div>
 			{/each}
+			</div>
 		</div>
 	</div>
 {/if}
