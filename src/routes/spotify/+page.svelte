@@ -573,7 +573,7 @@
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
 						on:click={playPrevious}
 					>
-						<Icon icon="subway:left-arrow" width="32" height="32" />
+						<Icon icon="mdi:skip-previous" width="32" height="32" />
 					</button>
 					<button
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
