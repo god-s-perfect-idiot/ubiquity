@@ -4,7 +4,8 @@
 	import BottomControls from '../../components/BottomControls.svelte';
 	import { goto } from '$app/navigation';
 	import Listing from './Listing.svelte';
-	import { onMount } from "svelte";
+	import Publish from './Publish.svelte';
+	import { onMount } from 'svelte';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -45,9 +46,9 @@
 		isExpanded = false;
 	};
 
-    onMount(() => {
-        isExpanded = false;
-    });
+	onMount(() => {
+		isExpanded = false;
+	});
 </script>
 
 {#if subPage === 'categories'}
@@ -102,15 +103,17 @@
 		</div>
 	</div>
 {:else if subPage === 'apps'}
-	<Listing listingType="apps" {toggleBottomBar} isExiting={isExiting} {showSearch} />
+	<Listing listingType="apps" {toggleBottomBar} {isExiting} {showSearch} />
 {:else if subPage === 'music'}
-	<Listing listingType="music" {toggleBottomBar} isExiting={isExiting} {showSearch} />
+	<Listing listingType="music" {toggleBottomBar} {isExiting} {showSearch} />
 {:else if subPage === 'videos'}
-	<Listing listingType="videos" {toggleBottomBar} isExiting={isExiting} {showSearch} />
+	<Listing listingType="videos" {toggleBottomBar} {isExiting} {showSearch} />
 {:else if subPage === 'documents'}
-	<Listing listingType="documents" {toggleBottomBar} isExiting={isExiting} {showSearch} />
+	<Listing listingType="documents" {toggleBottomBar} {isExiting} {showSearch} />
 {:else if subPage === 'photos'}
-	<Listing listingType="photos" {toggleBottomBar} isExiting={isExiting} {showSearch} />
+	<Listing listingType="photos" {toggleBottomBar} {isExiting} {showSearch} />
+{:else if subPage === 'publish'}
+	<Publish />
 {/if}
 
 {#if !hiddenBottomBar}
@@ -144,6 +147,21 @@
 						<Icon icon="mdi:search" width="18" height="18" strokeWidth="2" />
 					</button>
 					<span class="text-xs font-[400]">search</span>
+				</div>
+			{:else}
+				<div
+					class="btn-animate flex flex-col gap-2 justify-center items-center"
+					class:animate={isExpanded}
+				>
+					<button
+						on:click={() => {
+							changeSubPage('publish');
+						}}
+						class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
+					>
+						<Icon icon="ic:baseline-publish" width="18" height="18" strokeWidth="2" />
+					</button>
+					<span class="text-xs font-[400]">Publish</span>
 				</div>
 			{/if}
 			<div
