@@ -337,6 +337,12 @@
 	.active {
 		transform: scale(1.05);
 		z-index: 20;
+		transition: transform 0.3s ease-out, z-index 0.3s ease-out;
+	}
+	
+	/* Add transition for the default state to ensure smooth exit animation */
+	.ml-24.flex.flex-row.gap-4.items-center {
+		transition: transform 0.3s ease-out, z-index 0.3s ease-out;
 	}
 
 	@keyframes shrink {
