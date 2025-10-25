@@ -3,6 +3,7 @@
     import { onMount, onDestroy } from 'svelte';
     
     let isExiting = false;
+    let iconError = false;
 
     export let item = null;
     export let toggleBottomBar = () => {};
@@ -16,6 +17,23 @@
         setTimeout(() => {
             exit();
         }, 200);
+    };
+
+    const handleIconError = () => {
+        iconError = true;
+    };
+
+    const getFirstLetter = (name) => {
+        return name ? name.charAt(0).toLowerCase() : '?';
+    };
+
+    const isValidUrl = (url) => {
+        try {
+            new URL(url);
+            return true;
+        } catch {
+            return false;
+        }
     };
 
     onMount(() => {
@@ -33,8 +51,19 @@
         <span class="text-6xl font-[300] flex-shrink-0 break-words">{item.name}</span>
         <div class="flex flex-col gap-4 mt-12 flex-1 overflow-y-auto pb-16">
             <div class="flex flex-col gap-4 items-start">
-                <div class="w-40 h-40 flex items-center justify-center" style="background-color: {item.background}; text-color: white;">
-                    <img src={item.icon} alt={item.name} class="w-36 h-36 object-contain" />
+                <div class="w-40 h-40 flex items-center justify-center" style="background-color: {item.background};">
+                    {#if iconError || !isValidUrl(item.icon)}
+                        <div class="w-full h-full flex items-end justify-start pl-4 pb-4 text-white text-5xl font-[300] lowercase">
+                            {getFirstLetter(item.name)}
+                        </div>
+                    {:else}
+                        <img 
+                            src={item.icon} 
+                            alt="" 
+                            class="w-36 h-36 object-contain" 
+                            onerror={handleIconError}
+                        />
+                    {/if}
                 </div>
                 <div class="flex flex-col gap-1 items-start">
                     <span class="text-base font-[300] text-[#7e7e7e]">{item.owner}</span>

@@ -113,7 +113,7 @@
 {:else if subPage === 'photos'}
 	<Listing listingType="photos" {toggleBottomBar} {isExiting} {showSearch} />
 {:else if subPage === 'publish'}
-	<Publish />
+	<Publish {toggleBottomBar} {changeSubPage}/>
 {/if}
 
 {#if !hiddenBottomBar}
