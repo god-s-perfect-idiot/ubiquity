@@ -26,6 +26,9 @@
 	let isDeselecting = false;
 	let isSelecting = false;
 	let previousEditMode = false;
+	let animationPattern = 0;
+	let animationDelay = 0;
+	let animationDuration = 6;
 
 	// Track selection state changes for smooth animations
 	$: {
@@ -48,6 +51,22 @@
 		// Update previous states
 		wasSelected = isSelected;
 		previousEditMode = editMode;
+	}
+
+	// Debug: Log when editMode changes
+	$: console.log(`Item ${item.id}: editMode = ${editMode}`);
+
+	// Also subscribe directly to grid store for edit mode
+	$: storeEditMode = $gridStore.editMode;
+	$: console.log(`Item ${item.id}: storeEditMode = ${storeEditMode}`);
+
+	// Reactive icon size based on edit mode
+	$: iconSize = editMode ? 36 : 48;
+	$: console.log('EditMode changed:', editMode, 'IconSize:', iconSize);
+
+	// Function to get icon size
+	function getIconSize() {
+		return editMode ? 36 : 48;
 	}
 
 	// Handle mouse down for long press detection
@@ -172,7 +191,7 @@
 
 				// Dispatch drag over event for visual feedback
 				dispatch('dragOver', { item, event, touchPosition: currentPosition });
-				
+
 				// Also dispatch a custom event for auto-scroll
 				dispatch('autoScrollCheck', { touchPosition: currentPosition });
 			}
@@ -264,6 +283,7 @@
 	function handleResize() {
 		// Only allow resize if this item is selected
 		if (isSelected) {
+			console.log(`Resizing item ${item.id} from ${item.size} to next size`);
 			gridStore.updateItemSize(item.id);
 		}
 	}
@@ -381,6 +401,16 @@
 		cleanup();
 	});
 
+	// Initialize random animation properties
+	onMount(() => {
+		// Generate random animation pattern (0-3)
+		animationPattern = Math.floor(Math.random() * 4);
+		// Generate random delay (0-0.3 seconds) - shorter delay for immediate start
+		animationDelay = Math.random() * 0.3;
+		// Generate random duration (4-8 seconds)
+		animationDuration = 8 + Math.random() * 4;
+	});
+
 	// Handle drag over
 	function handleDragOver(event) {
 		if (!editMode) return;
@@ -413,15 +443,17 @@
 		return sizeMap[size] || size;
 	}
 
-	// Get item dimensions for CSS
-	function getItemDimensions() {
+	// Get item dimensions for CSS Grid - make it reactive
+	$: itemDimensions = (() => {
 		const sizeMap = {
-			'1x1': { width: '1fr', height: '1fr' },
-			'2x2': { width: '2fr', height: '2fr' },
-			'4x2': { width: '4fr', height: '2fr' }
+			'1x1': { gridColumn: 'span 1', gridRow: 'span 1' },
+			'2x2': { gridColumn: 'span 2', gridRow: 'span 2' },
+			'4x2': { gridColumn: 'span 4', gridRow: 'span 2' }
 		};
-		return sizeMap[item.size] || sizeMap['1x1'];
-	}
+		const dimensions = sizeMap[item.size] || sizeMap['1x1'];
+		console.log(`Item ${item.id} dimensions updated: ${item.size} -> ${dimensions.gridColumn} x ${dimensions.gridRow}`);
+		return dimensions;
+	})();
 
 	// Get icon path for SVG (simplified version for common icons)
 	function getIconPath(iconName) {
@@ -454,30 +486,30 @@
 	}
 </script>
 
-<div
-	class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected
-		? 'selected'
-		: ''} {isRemoving
-		? 'animate-removal'
-		: isDragging
-			? 'opacity-50 scale-95'
-			: editMode && isSelected && !isDragging && isSelecting
-				? 'animate-selected'
-				: editMode && isSelected && !isDragging && !isSelecting
-					? 'selected-state'
-					: editMode && !isSelected && !isDragging && isDeselecting
-						? 'animate-deselected'
-						: editMode && !isSelected && !isDragging && !isDeselecting
-							? 'animate-float-edit'
-							: !editMode && !isDragging
-								? 'opacity-100'
-								: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''} {editMode
-		? 'edit-mode'
-		: 'normal-mode'} size-{item.size}"
-	data-item-id={item.id}
-	style="align-self: flex-start; transform-origin: center; {editMode && !isSelected
-		? `animation-delay: ${0.5 + (item.id.charCodeAt(0) % 4) * 0.2}s;`
-		: ''}"
+	<div
+		class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected
+			? 'selected'
+			: ''} {isRemoving
+			? 'animate-removal'
+			: isDragging
+				? 'opacity-50 scale-95'
+				: editMode && isSelected && !isDragging && isSelecting
+					? 'animate-selected'
+					: editMode && isSelected && !isDragging && !isSelecting
+						? 'selected-state'
+						: editMode && !isSelected && !isDragging && isDeselecting
+							? 'animate-deselected'
+							: editMode && !isSelected && !isDragging && !isDeselecting
+								? `animate-float-edit-${animationPattern + 1}`
+								: !editMode && !isDragging
+									? 'opacity-100'
+									: ''} {isDragOver ? 'ring-2 ring-white ring-opacity-50' : ''} {editMode
+			? 'edit-mode'
+			: 'normal-mode'} size-{item.size}"
+		data-item-id={item.id}
+		style="grid-column: {itemDimensions.gridColumn}; grid-row: {itemDimensions.gridRow}; transform-origin: center; --icon-scale: {editMode ? '0.75' : '1'}; {editMode && !isSelected
+			? `animation-delay: ${animationDelay}s; animation-duration: ${animationDuration}s;`
+			: ''}"
 	on:mousedown={handleMouseDown}
 	on:mouseup={handleMouseUp}
 	on:mouseleave={handleMouseLeave}
@@ -495,12 +527,14 @@
 	tabindex="0"
 >
 	<!-- Main content -->
-	 
-	<div class="relative flex flex-col items-center justify-center h-full p-2">
+
+	<div class="relative flex flex-col items-center justify-center w-full h-full p-2">
 		<div class="flex flex-col items-center justify-center h-full w-full">
-			<Icon icon={item.icon} width="48" height="48" />
+			<div class="icon-container" style="transform: scale({storeEditMode ? '0.75' : '1'}) !important; transition: transform 200ms ease-in-out !important; background: {storeEditMode ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,0,0.1)'};">
+				<Icon icon={item.icon} width="48" height="48" />
+			</div>
 			{#if item.size !== '1x1'}
-				<span class="absolute bottom-2 left-2 text-sm mt-2 text-center font-medium"
+				<span class="absolute bottom-2 left-2 text-sm mt-2 font-medium"
 					>{item.name}</span
 				>
 			{/if}
@@ -543,7 +577,9 @@
 
 	<!-- Drag indicator (when dragging) -->
 	{#if isDragging}
-		<div class="absolute inset-0 border-opacity-50 flex items-center justify-center bg-black h-1 w-1">
+		<div
+			class="absolute inset-0 border-opacity-50 flex items-center justify-center bg-black h-1 w-1"
+		>
 			<!-- <Icon icon={item.icon} width="24" height="24" class="text-white opacity-50" /> -->
 		</div>
 	{/if}
@@ -555,39 +591,24 @@
 		min-width: 60px;
 		transition:
 			transform 300ms ease-in-out,
-			opacity 300ms ease-in-out,
-			width 300ms ease-in-out,
-			aspect-ratio 300ms ease-in-out;
+			opacity 300ms ease-in-out;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		box-sizing: border-box;
+		overflow: visible;
 	}
 
-	/* Size classes for different tile sizes */
-	.size-1x1 {
-		width: calc(25% - 6px);
-		aspect-ratio: 1;
+	/* Size classes for different tile sizes - now handled by CSS Grid */
+	/* Grid positioning is handled by grid-row and grid-column properties */
+
+	/* Icon transition for edit mode */
+	.grid-item :global(svg) {
+		transition: width 200ms ease-in-out, height 200ms ease-in-out;
 	}
 
-	.size-2x2 {
-		width: calc(50% - 4px);
-		aspect-ratio: 1;
-	}
-
-	.size-4x2 {
-		width: calc(100% - 0px);
-		aspect-ratio: 2;
-	}
-
-	/* Edit mode size adjustments */
-	.edit-mode.size-1x1 {
-		width: calc(23% - 12px);
-	}
-
-	.edit-mode.size-2x2 {
-		width: calc(48% - 12px);
-	}
-
-	.edit-mode.size-4x2 {
-		width: calc(96% - 12px);
-	}
+	/* Removed conflicting CSS - using inline styles instead */
 
 	.grid-item:hover {
 		transform: scale(1.02);
@@ -619,26 +640,64 @@
 		animation: float 8s ease-in-out infinite;
 	}
 
-	/* Edit mode float animation - for non-selected items */
-	@keyframes float-edit {
-		0%,
-		100% {
-			transform: translateY(0px) translateX(0px) scale(0.9);
-		}
-		25% {
-			transform: translateY(-8px) translateX(5px) scale(0.9);
-		}
-		50% {
-			transform: translateY(-3px) translateX(-6px) scale(0.9);
-		}
-		75% {
-			transform: translateY(-6px) translateX(3px) scale(0.9);
-		}
+	/* Edit mode float animation patterns - for non-selected items */
+	@keyframes float-edit-1 {
+		0%, 100% { transform: translateY(0px) translateX(0px) scale(0.9); }
+		25% { transform: translateY(-8px) translateX(5px) scale(0.9); }
+		50% { transform: translateY(-3px) translateX(-6px) scale(0.9); }
+		75% { transform: translateY(-6px) translateX(3px) scale(0.9); }
 	}
 
-	.animate-float-edit {
-		animation: float-edit 6s ease-in-out infinite;
+	@keyframes float-edit-2 {
+		0%, 100% { transform: translateY(0px) translateX(0px) scale(0.9); }
+		20% { transform: translateY(-6px) translateX(-4px) scale(0.9); }
+		40% { transform: translateY(-2px) translateX(7px) scale(0.9); }
+		60% { transform: translateY(-9px) translateX(-2px) scale(0.9); }
+		80% { transform: translateY(-4px) translateX(5px) scale(0.9); }
+	}
+
+	@keyframes float-edit-3 {
+		0%, 100% { transform: translateY(0px) translateX(0px) scale(0.9); }
+		30% { transform: translateY(-5px) translateX(8px) scale(0.9); }
+		60% { transform: translateY(-7px) translateX(-3px) scale(0.9); }
+		90% { transform: translateY(-2px) translateX(6px) scale(0.9); }
+	}
+
+	@keyframes float-edit-4 {
+		0%, 100% { transform: translateY(0px) translateX(0px) scale(0.9); }
+		15% { transform: translateY(-4px) translateX(-7px) scale(0.9); }
+		35% { transform: translateY(-8px) translateX(4px) scale(0.9); }
+		55% { transform: translateY(-1px) translateX(-5px) scale(0.9); }
+		75% { transform: translateY(-6px) translateX(2px) scale(0.9); }
+		95% { transform: translateY(-3px) translateX(-8px) scale(0.9); }
+	}
+
+	.animate-float-edit-1 {
+		animation: float-edit-1 ease-in-out infinite;
 		opacity: 0.6;
+		transform: scale(0.9);
+		transition: transform 200ms ease-out;
+	}
+
+	.animate-float-edit-2 {
+		animation: float-edit-2 ease-in-out infinite;
+		opacity: 0.6;
+		transform: scale(0.9);
+		transition: transform 200ms ease-out;
+	}
+
+	.animate-float-edit-3 {
+		animation: float-edit-3 ease-in-out infinite;
+		opacity: 0.6;
+		transform: scale(0.9);
+		transition: transform 200ms ease-out;
+	}
+
+	.animate-float-edit-4 {
+		animation: float-edit-4 ease-in-out infinite;
+		opacity: 0.6;
+		transform: scale(0.9);
+		transition: transform 200ms ease-out;
 	}
 
 	/* Selected item animation - smooth scale and opacity */

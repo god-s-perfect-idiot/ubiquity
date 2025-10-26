@@ -5,10 +5,10 @@
 	import Icon from '@iconify/svelte';
 
 	export let cols = 4;
-	export let rows = 6;
 	export let scrollContainer = null;
 
-	// No need to calculate rows with flexbox
+	// Calculate required rows based on items and their sizes
+	let calculatedRows = 6;
 
 	let gridContainer;
 	let draggedItem = null;
@@ -27,12 +27,81 @@
 	$: editMode = gridState.editMode;
 	$: selectedItemId = gridState.selectedItemId;
 	$: items = gridState.items;
+
+	// Debug edit mode changes
+	$: console.log('GridContainer editMode changed:', editMode);
+
+	// Calculate required rows based on items
+	function calculateRequiredRows(items, cols) {
+		if (!items || items.length === 0) return 4; // Default minimum
+		
+		// Simulate CSS Grid auto-placement more accurately
+		const grid = Array(cols).fill(0); // Track occupied cells per column
+		let maxRow = 0;
+		
+		console.log('Calculating rows for', items.length, 'items with', cols, 'columns');
+		
+		for (const item of items) {
+			const size = item.size || '1x1';
+			const [width, height] = size.split('x').map(Number);
+			
+			console.log(`Placing item ${item.name} (${size}) - width: ${width}, height: ${height}`);
+			
+			// Find the first available position (CSS Grid auto-placement behavior)
+			let bestRow = 0;
+			let bestCol = 0;
+			let found = false;
+			
+			// Try each row until we find a position that fits
+			for (let row = 0; row <= maxRow + 2 && !found; row++) {
+				for (let col = 0; col <= cols - width; col++) {
+					// Check if this position is available
+					let canPlace = true;
+					for (let c = col; c < col + width; c++) {
+						if (grid[c] > row) {
+							canPlace = false;
+							break;
+						}
+					}
+					
+					if (canPlace) {
+						bestRow = row;
+						bestCol = col;
+						found = true;
+						break;
+					}
+				}
+			}
+			
+			// Place the item
+			for (let col = bestCol; col < bestCol + width; col++) {
+				grid[col] = bestRow + height;
+			}
+			
+			maxRow = Math.max(maxRow, bestRow + height);
+			console.log(`Placed at row ${bestRow}, col ${bestCol}. Max row now: ${maxRow}`);
+		}
+		
+		const result = Math.max(maxRow, 4);
+		console.log('Final calculated rows:', result);
+		return result;
+	}
+
+	// Reactive calculation of rows
+	$: calculatedRows = calculateRequiredRows(items, cols);
+	
+	// Debug logging
+	$: console.log('Calculated rows:', calculatedRows, 'Items:', items.length, 'Item sizes:', items.map(i => i.size));
+	
+	// Update grid size when calculatedRows changes
+	$: if (calculatedRows) {
+		gridStore.setGridSize(cols, calculatedRows);
+	}
 	
 	
 
 	// Initialize grid size
 	onMount(() => {
-		gridStore.setGridSize(cols, rows);
 		// Initialize with default items if empty
 		if (items.length === 0) {
 			gridStore.initializeDefaultItems();
@@ -342,23 +411,23 @@
 	}
 
 	// Reactive statements for placeholder sizing
-	$: placeholderWidth = draggedItem ? (() => {
+	$: placeholderGridColumn = draggedItem ? (() => {
 		const sizeMap = {
-			'1x1': 'calc(25% - 6px)',
-			'2x2': 'calc(50% - 8px)',
-			'4x2': 'calc(100% - 8px)'
+			'1x1': 'span 1',
+			'2x2': 'span 2',
+			'4x2': 'span 4'
 		};
 		return sizeMap[draggedItem.size] || sizeMap['1x1'];
-	})() : 'calc(25% - 6px)';
+	})() : 'span 1';
 
-	$: placeholderAspectRatio = draggedItem ? (() => {
-		const aspectRatioMap = {
-			'1x1': '1',
-			'2x2': '1',
-			'4x2': '2'
+	$: placeholderGridRow = draggedItem ? (() => {
+		const sizeMap = {
+			'1x1': 'span 1',
+			'2x2': 'span 2',
+			'4x2': 'span 2'
 		};
-		return aspectRatioMap[draggedItem.size] || aspectRatioMap['1x1'];
-	})() : '1';
+		return sizeMap[draggedItem.size] || sizeMap['1x1'];
+	})() : 'span 1';
 
 	// Auto-scroll functionality
 	function checkAutoScroll(position) {
@@ -430,8 +499,8 @@
 <div class="grid-container w-full relative flex-1" bind:this={gridContainer}>
 	<!-- Grid background -->
 	<div 
-		class="flex flex-wrap w-full items-start transition-all duration-300 ease-in-out p-4"
-		style="gap: {editMode ? '16px' : '8px'}; opacity: {editMode ? '0.8' : '1'};"
+		class="grid w-full transition-all duration-300 ease-in-out p-4"
+		style="grid-template-columns: repeat({cols}, 1fr); grid-template-rows: repeat({calculatedRows}, minmax(90px, auto)); gap: {editMode ? '16px' : '8px'}; opacity: {editMode ? '0.8' : '1'};"
 		on:click={handleGridClick}
 		on:dragover={handleDragOver}
 		role="grid"
@@ -443,7 +512,7 @@
 			<!-- Drop placeholder before this item -->
 			{#if dropIndicatorPosition === index && editMode && draggedItem}
 				<div class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center" 
-					 style="width: {placeholderWidth}; aspect-ratio: {placeholderAspectRatio};">
+					 style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};">
 					<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
 				</div>
 			{/if}
@@ -469,7 +538,7 @@
 		<!-- Drop placeholder at the end -->
 		{#if dropIndicatorPosition === items.length && editMode && draggedItem}
 			<div class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center" 
-				 style="width: {placeholderWidth}; aspect-ratio: {placeholderAspectRatio};">
+				 style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};">
 				<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
 			</div>
 		{/if}
@@ -489,6 +558,7 @@
 		user-select: none;
 		min-height: 60px;
 		min-width: 60px;
+		border-radius: 8px;
 	}
 
 </style>

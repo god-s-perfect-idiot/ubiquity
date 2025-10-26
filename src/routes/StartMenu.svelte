@@ -8,13 +8,7 @@
 
 	let gridContainer;
 	let scrollContainer;
-	let showMoreCols = false;
-	let cols = 4; // Default to 4 columns
-	let rows = 6; // Keep 6 rows for both layouts
-
-	// Subscribe to settings changes
-	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
-	$: cols = showMoreCols ? 6 : 4;
+	let cols = 4; // Fixed to 4 columns
 
 	// Handle click to exit edit mode
 	function handleContainerClick(event) {
@@ -47,7 +41,7 @@
 	<div>
 		<!-- Grid container - only takes space it needs -->
 		<div bind:this={gridContainer} class="w-full">
-			<GridContainer {cols} {rows} {scrollContainer} />
+			<GridContainer {cols} {scrollContainer} />
 		</div>
 	</div>
 
