@@ -25,12 +25,12 @@
 	export let toggleBottomBar = () => {};
 	export let changeSubPage = () => {};
 
-	const itemTypes = ['app', 'music', 'photo', 'video', 'document'];
+	const itemTypes = ['app', 'music', 'image', 'video', 'document'];
 
 	const categories = {
 		app: ['productivity', 'entertainment', 'utility', 'game', 'development'],
 		music: ['pop', 'rock', 'classical', 'jazz', 'electronic', 'hip-hop'],
-		photo: ['nature', 'portrait', 'landscape', 'abstract', 'street'],
+		image: ['nature', 'portrait', 'landscape', 'abstract', 'street'],
 		video: ['tutorial', 'entertainment', 'documentary', 'music-video', 'short-film'],
 		document: ['pdf', 'text', 'presentation', 'spreadsheet', 'code']
 	};

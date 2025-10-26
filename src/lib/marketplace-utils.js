@@ -189,7 +189,7 @@ export function convertToKernelFile(item) {
 	return {
 		name: item.name,
 		content: item.source,
-		type: item.type === 'photo' ? 'image' : item.type
+		type: item.type === 'image' ? 'image' : item.type
 	};
 }
 
@@ -202,7 +202,7 @@ export function getDefaultIcon(type) {
 	const defaultIcons = {
 		app: '/icons/app-default.svg',
 		music: '/icons/music-default.svg',
-		photo: '/icons/photo-default.svg',
+		image: '/icons/photo-default.svg',
 		video: '/icons/video-default.svg',
 		document: '/icons/document-default.svg'
 	};
@@ -219,7 +219,7 @@ export function getDefaultBackground(type) {
 	const defaultBackgrounds = {
 		app: '#007AFF',
 		music: '#FF3B30',
-		photo: '#34C759',
+		image: '#34C759',
 		video: '#FF9500',
 		document: '#5856D6'
 	};

@@ -62,7 +62,7 @@ export async function POST({ request }) {
 		}
 
 		// Validate type
-		const validTypes = ['app', 'music', 'photo', 'video', 'document'];
+		const validTypes = ['app', 'music', 'image', 'video', 'document'];
 		if (!validTypes.includes(itemData.type)) {
 			return json({ 
 				success: false, 

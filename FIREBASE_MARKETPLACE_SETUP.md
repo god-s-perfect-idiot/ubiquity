@@ -91,7 +91,7 @@ The marketplace collection stores items with the following structure:
 
 ```javascript
 {
-  type: 'app' | 'music' | 'photo' | 'video' | 'document',
+  type: 'app' | 'music' | 'image' | 'video' | 'document',
   name: 'Item Name',
   description: 'Item description',
   owner: 'Owner Name',

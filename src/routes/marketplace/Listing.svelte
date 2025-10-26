@@ -50,7 +50,15 @@
 	const loadMarketplaceItems = async () => {
 		try {
 			isLoading = true;
-			const type = listingType === 'photos' ? 'photo' : listingType.slice(0, -1); // Remove 's' from plural
+			// Map plural listing types to singular item types
+			const typeMapping = {
+				'apps': 'app',
+				'music': 'music',
+				'videos': 'video',
+				'documents': 'document',
+				'photos': 'image'
+			};
+			const type = typeMapping[listingType] || listingType.slice(0, -1);
 			marketplaceItems = await fetchMarketplaceItems({ type });
 		} catch (error) {
 			console.error('Error loading marketplace items:', error);

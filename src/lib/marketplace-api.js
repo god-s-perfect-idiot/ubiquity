@@ -17,7 +17,7 @@ const MARKETPLACE_COLLECTION = 'marketplace';
 
 // Marketplace item schema
 export const MARKETPLACE_ITEM_SCHEMA = {
-	type: 'string', // 'app', 'music', 'photo', 'video', 'document'
+	type: 'string', // 'app', 'music', 'image', 'video', 'document'
 	name: 'string',
 	description: 'string',
 	owner: 'string', // user who published it
