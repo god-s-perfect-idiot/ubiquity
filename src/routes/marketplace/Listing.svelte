@@ -195,11 +195,11 @@
 	/>
 {:else}
 	<div class="page-holder">
-		<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
-			<span class="text-6xl font-[300] flex-shrink-0">{listingType}</span>
+		<div class="page pt-4 flex flex-col h-screen" class:page-exit={isExiting}>
+			<span class="text-6xl font-[300] flex-shrink-0 px-4">{listingType}</span>
 			{#if searchQuery.length > 0}
 				<div
-					class="flex flex-col gap-2 pt-4"
+					class="flex flex-col gap-2 pt-4 px-4"
 					in:slide={{ duration: 300, axis: 'y' }}
 					out:slide={{ duration: 300, axis: 'y' }}
 				>
@@ -210,7 +210,7 @@
 					</span>
 				</div>
 			{/if}
-			<div class="flex flex-col gap-4 mt-8 flex-1 overflow-y-auto pb-16">
+			<div class="flex flex-col gap-4 mt-8 flex-1 overflow-y-auto pb-16 px-4">
 				{#if isLoading}
 					<div class="flex flex-col items-center justify-center py-12 h-full my-16">
 						<Loader />

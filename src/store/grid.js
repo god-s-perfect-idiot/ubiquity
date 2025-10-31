@@ -288,6 +288,80 @@ function createGridStore() {
 					icon: 'mdi:calendar',
 					bgColor: 'bg-cyan-500',
 					size: '4x2'
+				},
+				{
+					id: 'app-j',
+					name: 'Me',
+					src: '/settings',
+					icon: 'mdi:account',
+					bgColor: 'bg-blue-500',
+					size: '2x2'
+				},
+				{
+					id: 'app-k',
+					name: 'Paula',
+					src: '/settings',
+					icon: 'mdi:message',
+					bgColor: 'bg-green-500',
+					size: '1x1'
+				},
+				{
+					id: 'app-l',
+					name: 'Messages',
+					src: '/settings',
+					icon: 'mdi:chat',
+					bgColor: 'bg-purple-500',
+					size: '1x1'
+				},
+				{
+					id: 'app-m',
+					name: 'IE',
+					src: '/settings',
+					icon: 'mdi:earth',
+					bgColor: 'bg-orange-500',
+					size: '2x2'
+				},
+				// Row 2: Mixed sizes
+				{
+					id: 'app-n',
+					name: 'Email',
+					src: '/settings',
+					icon: 'mdi:email',
+					bgColor: 'bg-red-500',
+					size: '1x1'
+				},
+				{
+					id: 'app-o',
+					name: 'Store',
+					src: '/settings',
+					icon: 'mdi:store',
+					bgColor: 'bg-yellow-500',
+					size: '1x1'
+				},
+				{
+					id: 'app-p',
+					name: 'Popcorn',
+					src: '/settings',
+					icon: 'mdi:popcorn',
+					bgColor: 'bg-pink-500',
+					size: '1x1'
+				},
+				{
+					id: 'app-q',
+					name: 'Office',
+					src: '/settings',
+					icon: 'mdi:office-building',
+					bgColor: 'bg-indigo-500',
+					size: '2x2'
+				},
+				// Row 3: Wide tile spanning full width
+				{
+					id: 'app-r',
+					name: 'Calendar',
+					src: '/settings',
+					icon: 'mdi:calendar',
+					bgColor: 'bg-cyan-500',
+					size: '4x2'
 				}
 			];
 

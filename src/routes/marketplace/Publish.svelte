@@ -36,7 +36,11 @@
 	};
 
 	$: availableCategories = categories[itemType] || [];
-	$: category = availableCategories[0] || '';
+	
+	// Reset category when item type changes
+	$: if (availableCategories.length > 0 && !availableCategories.includes(category)) {
+		category = availableCategories[0];
+	}
 
 	const close = () => {
 		isExiting = true;
@@ -95,7 +99,7 @@
 {/if}
 {#if !isSubmitting}
 	<div class="flex flex-col gap-4 bg-black rounded-lg h-screen page-holder">
-		<span class="mt-4 text-6xl font-[300] mb-2 page px-4" class:page-exit={isExiting}>publish item</span>
+		<span class="mt-4 text-6xl font-[300] mb-2 page px-4" class:page-exit={isExiting}>publish</span>
 		<div class="flex flex-col gap-6 page overflow-y-auto pb-20 px-4" class:page-exit={isExiting}>
 			<Input bind:content={itemName} label="Item Name" />
 			<Input bind:content={description} label="Description" />

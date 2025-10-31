@@ -314,7 +314,7 @@
 
 		// Create dragging element that matches the actual item
 		draggingElement = document.createElement('div');
-		draggingElement.className = `grid-item-drag absolute pointer-events-none z-50 ${item.bgColor} text-white`;
+		draggingElement.className = `grid-item-drag absolute pointer-events-none z-50 text-white`;
 		draggingElement.style.width = `${rect.width}px`;
 		draggingElement.style.height = `${rect.height}px`;
 		draggingElement.style.transform = 'scale(0.9)';
@@ -487,7 +487,7 @@
 </script>
 
 	<div
-		class="grid-item relative group {item.bgColor} text-white cursor-pointer {editMode && isSelected
+		class="grid-item relative group text-white cursor-pointer {editMode && isSelected
 			? 'selected'
 			: ''} {isRemoving
 			? 'animate-removal'
@@ -598,6 +598,9 @@
 		align-items: center;
 		box-sizing: border-box;
 		overflow: visible;
+		background: transparent !important;
+		background-color: transparent !important;
+		background-image: none !important;
 	}
 
 	/* Size classes for different tile sizes - now handled by CSS Grid */
@@ -830,6 +833,12 @@
 		animation-duration: 8.5s;
 	}
 
+	/* Override any Tailwind background classes */
+	.grid-item[class*="bg-"] {
+		background: transparent !important;
+		background-color: transparent !important;
+	}
+
 	/* Dragging element styles */
 	.grid-item-drag {
 		border-radius: 0 !important;
@@ -837,5 +846,7 @@
 		-webkit-user-select: none;
 		-moz-user-select: none;
 		-ms-user-select: none;
+		background: transparent !important;
+		background-color: transparent !important;
 	}
 </style>
