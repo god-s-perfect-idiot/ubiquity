@@ -47,7 +47,7 @@
 	</div>
 
 	<!-- Back button positioned horizontally under the grid -->
-	<div class="flex justify-end pr-4 pb-4 flex-shrink-0">
+	<div class="flex justify-end pr-4 pb-4 flex-shrink-0 z-20">
 		<button
 			class="flex flex-col border h-10 w-10 justify-center items-center border-white rounded-full !border-2 p-2 font-bold bg-black bg-opacity-50 backdrop-blur-sm"
 			on:click={onBackClick}
