@@ -2,6 +2,9 @@
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { gridStore } from '../store/grid.js';
+	import { appInfoStore } from '../store/appInfo.js';
+	import { getFaviconUrl, getAppBackgroundColor } from '../kernel/favicon-utils.js';
+	import { accentColorStore, getAccentColor, textColorClassStore, backgroundClassStore, borderColorClassStore, backgroundThemeStore } from '../utils/theme';
 
 	export let item;
 	export let editMode = false;
@@ -29,6 +32,13 @@
 	let animationPattern = 0;
 	let animationDelay = 0;
 	let animationDuration = 6;
+	
+	// Get accent color reactively
+	$: accentColor = $accentColorStore;
+	$: textColorClass = $textColorClassStore;
+	$: bgClass = $backgroundClassStore;
+	$: borderClass = $borderColorClassStore;
+	$: backgroundTheme = $backgroundThemeStore;
 
 	// Track selection state changes for smooth animations
 	$: {
@@ -314,13 +324,18 @@
 
 		// Create dragging element that matches the actual item
 		draggingElement = document.createElement('div');
-		draggingElement.className = `grid-item-drag absolute pointer-events-none z-50 text-white`;
+		// Use reactive bgColor, with fallback to accent color
+		const dragBgColor = bgColor || $accentColorStore;
+		draggingElement.className = 'grid-item-drag absolute pointer-events-none z-50 text-white';
+		if (dragBgColor.startsWith('#')) {
+			draggingElement.style.backgroundColor = dragBgColor;
+		} else {
+			draggingElement.className += ` ${dragBgColor}`;
+		}
 		draggingElement.style.width = `${rect.width}px`;
 		draggingElement.style.height = `${rect.height}px`;
 		draggingElement.style.transform = 'scale(0.9)';
 		draggingElement.style.opacity = '0.8';
-		// draggingElement.style.border = '3px solid rgba(255, 255, 255, 0.8)';
-		draggingElement.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.4)';
 		draggingElement.style.display = 'flex';
 		draggingElement.style.alignItems = 'center';
 		draggingElement.style.justifyContent = 'center';
@@ -328,21 +343,77 @@
 		draggingElement.style.padding = '8px';
 		draggingElement.style.boxSizing = 'border-box';
 
-		// Create the icon element
+		// Create the icon element - use same logic as main display
 		const iconElement = document.createElement('div');
-		iconElement.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-			<path d="${getIconPath(item.icon)}"/>
-		</svg>`;
+		iconElement.style.width = '48px';
+		iconElement.style.height = '48px';
+		iconElement.style.display = 'flex';
+		iconElement.style.alignItems = 'center';
+		iconElement.style.justifyContent = 'center';
+		
+		// Use iconSrc if available (image icon), otherwise use Iconify
+		if (iconSrc) {
+			const img = document.createElement('img');
+			img.src = iconSrc;
+			img.alt = `${item.name} icon`;
+			img.style.width = '48px';
+			img.style.height = '48px';
+			img.style.objectFit = 'contain';
+			img.onerror = () => {
+				// Fallback to Iconify if image fails - use Iconify CDN API with CSS filter for color
+				img.style.display = 'none';
+				const iconName = item.icon || 'mdi:application';
+				const iconParts = iconName.split(':');
+				if (iconParts.length === 2) {
+					const [prefix, name] = iconParts;
+					const isLightBg = (dragBgColor && dragBgColor.startsWith('#') && isWhiteOrLightColor(dragBgColor)) || (dragBgColor && (dragBgColor.includes('white') || dragBgColor === 'bg-white'));
+					const iconifyUrl = `https://api.iconify.design/${prefix}/${name}.svg?width=48&height=48`;
+					const iconifyImg = document.createElement('img');
+					iconifyImg.src = iconifyUrl;
+					iconifyImg.style.width = '48px';
+					iconifyImg.style.height = '48px';
+					iconifyImg.style.objectFit = 'contain';
+					// Use CSS filter to make icon white or black based on background
+					// brightness(0) makes it black, brightness(0) invert(1) makes it white
+					iconifyImg.style.filter = isLightBg ? 'brightness(0)' : 'brightness(0) invert(1)';
+					iconElement.appendChild(iconifyImg);
+				}
+			};
+			iconElement.appendChild(img);
+		} else {
+			// Use Iconify icon - use Iconify CDN API with CSS filter for color
+			const iconName = item.icon || 'mdi:application';
+			const iconParts = iconName.split(':');
+			if (iconParts.length === 2) {
+				const [prefix, name] = iconParts;
+				const isLightBg = (dragBgColor && dragBgColor.startsWith('#') && isWhiteOrLightColor(dragBgColor)) || (dragBgColor && (dragBgColor.includes('white') || dragBgColor === 'bg-white'));
+				const iconifyUrl = `https://api.iconify.design/${prefix}/${name}.svg?width=48&height=48`;
+				const iconifyImg = document.createElement('img');
+				iconifyImg.src = iconifyUrl;
+				iconifyImg.style.width = '48px';
+				iconifyImg.style.height = '48px';
+				iconifyImg.style.objectFit = 'contain';
+				// Use CSS filter to make icon white or black based on background
+				// brightness(0) makes it black, brightness(0) invert(1) makes it white
+				iconifyImg.style.filter = isLightBg ? 'brightness(0)' : 'brightness(0) invert(1)';
+				iconElement.appendChild(iconifyImg);
+			}
+		}
+		
 		draggingElement.appendChild(iconElement);
 
 		// Add item name if it's not 1x1
 		if (item.size !== '1x1') {
 			const nameElement = document.createElement('div');
 			nameElement.textContent = item.name;
-			nameElement.style.fontSize = '12px';
+			nameElement.style.fontSize = '16px';
 			nameElement.style.fontWeight = '500';
-			nameElement.style.marginTop = '4px';
-			nameElement.style.textAlign = 'center';
+			nameElement.style.textAlign = 'left';
+			nameElement.style.position = 'absolute';
+			nameElement.style.bottom = '8px';
+			nameElement.style.left = '8px';
+			nameElement.style.padding = '0';
+			nameElement.style.margin = '0';
 			draggingElement.appendChild(nameElement);
 		}
 
@@ -455,6 +526,153 @@
 		return dimensions;
 	})();
 
+	// Helper to extract color from Tailwind class
+	function extractColorFromClass(bgColor) {
+		if (!bgColor) return null;
+		const match = bgColor.match(/bg-\[#([0-9a-fA-F]{6})\]/);
+		return match ? `#${match[1]}` : null;
+	}
+
+	// Helper to check if color is black
+	function isBlackColor(color) {
+		if (!color || !color.startsWith('#')) return false;
+		const hex = color.replace('#', '');
+		if (hex.length !== 6) return false;
+		const r = parseInt(hex.substr(0, 2), 16);
+		const g = parseInt(hex.substr(2, 2), 16);
+		const b = parseInt(hex.substr(4, 2), 16);
+		return r < 15 && g < 15 && b < 15;
+	}
+
+	// Helper to check if color is white or light (unreadable with white text)
+	function isWhiteOrLightColor(color) {
+		if (!color || !color.startsWith('#')) return false;
+		const hex = color.replace('#', '');
+		if (hex.length !== 6) return false;
+		const r = parseInt(hex.substr(0, 2), 16);
+		const g = parseInt(hex.substr(2, 2), 16);
+		const b = parseInt(hex.substr(4, 2), 16);
+		
+		// Calculate relative luminance (simplified)
+		// If any RGB value is high enough, it's likely light
+		// Using threshold of 200 for each channel (out of 255)
+		// This catches white and very light colors
+		return r > 200 && g > 200 && b > 200;
+	}
+
+	// Helper to check if color is white
+	function isWhiteColor(color) {
+		if (!color || !color.startsWith('#')) return false;
+		const hex = color.replace('#', '');
+		if (hex.length !== 6) return false;
+		const r = parseInt(hex.substr(0, 2), 16);
+		const g = parseInt(hex.substr(2, 2), 16);
+		const b = parseInt(hex.substr(4, 2), 16);
+		// Check if it's white or very close to white (all channels > 240)
+		return r > 240 && g > 240 && b > 240;
+	}
+
+	// Get iconSrc and bgColor from appInfo store (reactive)
+	$: iconSrc = (() => {
+		// Look up appInfo by name, src, or URL
+		const appInfo = appInfoStore.getAppInfo(item.name) || 
+			appInfoStore.getAppInfo(item.src) || 
+			(item.src && item.src.startsWith('http') ? appInfoStore.getAppInfo(item.src) : null);
+		
+		// Get iconSrc from appInfo
+		if (appInfo?.iconSrc) {
+			return appInfo.iconSrc;
+		} else if (appInfo?.icon && (appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))) {
+			return appInfo.icon;
+		} else if (item.src && item.src.startsWith('http')) {
+			// Fallback to favicon for external URLs
+			return getFaviconUrl(item.src);
+		}
+		return null;
+	})();
+
+	$: bgColor = (() => {
+		// Look up appInfo by name, src, or URL
+		const appInfo = appInfoStore.getAppInfo(item.name) || 
+			appInfoStore.getAppInfo(item.src) || 
+			(item.src && item.src.startsWith('http') ? appInfoStore.getAppInfo(item.src) : null);
+		
+		let finalBgColor = null;
+		
+		// Get bgColor from appInfo
+		if (appInfo?.bgColor || appInfo?.backgroundColor) {
+			const bgColorValue = appInfo.bgColor || appInfo.backgroundColor;
+			// Extract color value if it's a Tailwind class
+			const colorValue = extractColorFromClass(bgColorValue);
+			if (colorValue) {
+				if (!isBlackColor(colorValue)) {
+					finalBgColor = colorValue;
+				}
+			} else if (bgColorValue.startsWith('#')) {
+				if (!isBlackColor(bgColorValue)) {
+					finalBgColor = bgColorValue;
+				}
+			} else {
+				// It's a Tailwind class - check if it's white or black
+				if (bgColorValue.includes('white') || bgColorValue === 'bg-white') {
+					// In light mode, use gray instead of white
+					finalBgColor = backgroundTheme === 'light' ? '#eeeeee' : '#ffffff';
+				} else if (bgColorValue.includes('black') || bgColorValue === 'bg-black') {
+					// In dark mode, use dark gray instead of black
+					finalBgColor = backgroundTheme === 'dark' ? '#2a2a2a' : '#000000';
+				} else {
+					// Return the class as-is for other Tailwind classes
+					finalBgColor = bgColorValue;
+				}
+			}
+		}
+		
+		// Fallback to favicon background color for external URLs
+		if (!finalBgColor && item.src && item.src.startsWith('http')) {
+			const faviconBgColor = getAppBackgroundColor(item.src);
+			const colorValue = extractColorFromClass(faviconBgColor);
+			if (colorValue) {
+				if (!isBlackColor(colorValue)) {
+					finalBgColor = colorValue;
+				}
+			} else if (faviconBgColor.startsWith('#')) {
+				if (!isBlackColor(faviconBgColor)) {
+					finalBgColor = faviconBgColor;
+				}
+			} else {
+				// It's a Tailwind class - check if it's white or black
+				if (faviconBgColor.includes('white') || faviconBgColor === 'bg-white') {
+					// In light mode, use gray instead of white
+					finalBgColor = backgroundTheme === 'light' ? '#bebebe' : '#ffffff';
+				} else if (faviconBgColor.includes('black') || faviconBgColor === 'bg-black') {
+					// In dark mode, use dark gray instead of black
+					finalBgColor = backgroundTheme === 'dark' ? '#2a2a2a' : '#000000';
+				} else {
+					finalBgColor = faviconBgColor;
+				}
+			}
+		}
+		
+		// Default fallback - use accent color
+		if (!finalBgColor) {
+			finalBgColor = accentColor;
+		}
+		
+		// Theme-aware adjustments: handle white/black backgrounds
+		if (finalBgColor && finalBgColor.startsWith('#')) {
+			// In light mode: if background is white, use gray shade
+			if (backgroundTheme === 'light' && isWhiteColor(finalBgColor)) {
+				return '#eeeeee'; // Light gray for visibility on white background
+			}
+			// In dark mode: if background is black, use a readable color
+			if (backgroundTheme === 'dark' && isBlackColor(finalBgColor)) {
+				return '#2a2a2a'; // Dark gray for visibility on black background
+			}
+		}
+		
+		return finalBgColor;
+	})();
+
 	// Get icon path for SVG (simplified version for common icons)
 	function getIconPath(iconName) {
 		// This is a simplified mapping - in a real app you'd use a proper icon library
@@ -487,7 +705,7 @@
 </script>
 
 	<div
-		class="grid-item relative group text-white cursor-pointer {editMode && isSelected
+		class="grid-item relative group {((bgColor && bgColor.startsWith('#')) ? isWhiteOrLightColor(bgColor) : (bgColor && (bgColor.includes('white') || bgColor === 'bg-white'))) ? 'text-black' : 'text-white'} cursor-pointer {(bgColor && bgColor.startsWith('#')) ? '' : (bgColor || '')} {editMode && isSelected
 			? 'selected'
 			: ''} {isRemoving
 			? 'animate-removal'
@@ -507,7 +725,7 @@
 			? 'edit-mode'
 			: 'normal-mode'} size-{item.size}"
 		data-item-id={item.id}
-		style="grid-column: {itemDimensions.gridColumn}; grid-row: {itemDimensions.gridRow}; transform-origin: center; --icon-scale: {editMode ? '0.75' : '1'}; {editMode && !isSelected
+		style="grid-column: {itemDimensions.gridColumn}; grid-row: {itemDimensions.gridRow}; transform-origin: center; --icon-scale: {editMode ? '0.75' : '1'}; {(bgColor && bgColor.startsWith('#')) ? `background-color: ${bgColor} !important;` : (!bgColor || (!bgColor.startsWith('#') && !bgColor.includes('bg-'))) ? `background-color: ${accentColor} !important;` : ''} {editMode && !isSelected
 			? `animation-delay: ${animationDelay}s; animation-duration: ${animationDuration}s;`
 			: ''}"
 	on:mousedown={handleMouseDown}
@@ -528,13 +746,31 @@
 >
 	<!-- Main content -->
 
-	<div class="relative flex flex-col items-center justify-center w-full h-full p-2">
+		<div class="relative flex flex-col items-center justify-center w-full h-full p-2">
 		<div class="flex flex-col items-center justify-center h-full w-full">
-			<div class="icon-container" style="transform: scale({storeEditMode ? '0.75' : '1'}) !important; transition: transform 200ms ease-in-out !important; background: {storeEditMode ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,0,0.1)'};">
-				<Icon icon={item.icon} width="48" height="48" />
+			<div class="icon-container" style="transform: scale({storeEditMode ? '0.75' : '1'}) !important; transition: transform 200ms ease-in-out !important;">
+				{#if iconSrc}
+					<!-- Use image icon from appInfo if available -->
+					<img
+						src={iconSrc}
+						alt={`${item.name} icon`}
+						class="w-12 h-12 object-contain"
+						on:error={(e) => {
+							// Fallback to iconify icon if image fails to load
+							e.target.style.display = 'none';
+							const iconElement = e.target.nextElementSibling;
+							if (iconElement) iconElement.style.display = 'block';
+						}}
+					/>
+					<Icon icon={item.icon} width="48" height="48" style="display: none;" />
+				{:else}
+					<!-- Use iconify icon as fallback -->
+					<!-- System apps always use white icons, regardless of theme -->
+					<Icon icon={item.icon} width="48" height="48" class={item.isSystemApp ? 'text-white' : ((bgColor && bgColor.startsWith('#') && isWhiteOrLightColor(bgColor)) || (bgColor && (bgColor.includes('white') || bgColor === 'bg-white')) ? 'text-black' : 'text-white')} />
+				{/if}
 			</div>
 			{#if item.size !== '1x1'}
-				<span class="absolute bottom-2 left-2 text-sm mt-2 font-medium"
+				<span class="absolute bottom-2 left-2 text-sm mt-2 font-medium" style="user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; -webkit-touch-callout: none;"
 					>{item.name}</span
 				>
 			{/if}
@@ -547,7 +783,7 @@
 		{#if !isDragging}
 			{#if isSelected}
 				<button
-					class="absolute -top-2 -right-2 w-8 h-8 bg-black border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-100 scale-100 z-20"
+					class="absolute -top-2 -right-2 w-8 h-8 {bgClass} border-2 {borderClass} rounded-full flex items-center justify-center {textColorClass} text-xs font-bold transition-all duration-300 ease-in-out opacity-100 scale-100 z-20"
 					on:click={handleRemove}
 				>
 					<Icon icon="ri:unpin-fill" width="18" height="18" />
@@ -559,7 +795,7 @@
 		{#if isSelected}
 			{#if !isDragging}
 				<button
-					class="absolute -bottom-2 -right-2 w-8 h-8 bg-black border-2 border-white rounded-full flex items-center justify-center text-white text-xs font-bold transition-all duration-300 ease-in-out opacity-100 scale-100 z-20"
+					class="absolute -bottom-2 -right-2 w-8 h-8 {bgClass} border-2 {borderClass} rounded-full flex items-center justify-center {textColorClass} text-xs font-bold transition-all duration-300 ease-in-out opacity-100 scale-100 z-20"
 					on:click={handleResize}
 				>
 					<Icon
@@ -578,7 +814,7 @@
 	<!-- Drag indicator (when dragging) -->
 	{#if isDragging}
 		<div
-			class="absolute inset-0 border-opacity-50 flex items-center justify-center bg-black h-1 w-1"
+			class="absolute inset-0 border-opacity-50 flex items-center justify-center {bgClass} h-1 w-1"
 		>
 			<!-- <Icon icon={item.icon} width="24" height="24" class="text-white opacity-50" /> -->
 		</div>
@@ -598,9 +834,15 @@
 		align-items: center;
 		box-sizing: border-box;
 		overflow: visible;
-		background: transparent !important;
-		background-color: transparent !important;
+		/* Windows Phone 8.1 style - solid colored backgrounds, no rounded corners */
 		background-image: none !important;
+		border-radius: 0 !important;
+		/* Disable text selection on long press */
+		user-select: none;
+		-webkit-user-select: none;
+		-moz-user-select: none;
+		-ms-user-select: none;
+		-webkit-touch-callout: none;
 	}
 
 	/* Size classes for different tile sizes - now handled by CSS Grid */
@@ -615,7 +857,6 @@
 
 	.grid-item:hover {
 		transform: scale(1.02);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.grid-item:active {
@@ -833,20 +1074,16 @@
 		animation-duration: 8.5s;
 	}
 
-	/* Override any Tailwind background classes */
-	.grid-item[class*="bg-"] {
-		background: transparent !important;
-		background-color: transparent !important;
-	}
+	/* Windows Phone 8.1 solid colors - ensure Tailwind bg classes work */
+	/* Colors are applied via Tailwind classes */
 
-	/* Dragging element styles */
+	/* Dragging element styles - Windows Phone 8.1 style */
 	.grid-item-drag {
 		border-radius: 0 !important;
 		user-select: none;
 		-webkit-user-select: none;
 		-moz-user-select: none;
 		-ms-user-select: none;
-		background: transparent !important;
-		background-color: transparent !important;
+		/* Background color will be set dynamically based on item */
 	}
 </style>

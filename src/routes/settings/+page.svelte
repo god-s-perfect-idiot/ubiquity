@@ -6,14 +6,23 @@
 	import Accounts from './Accounts.svelte';
 	import RegionUnits from './RegionUnits.svelte';
 	import Search from './Search.svelte';
-	import { onMount } from "svelte";
+	import { onMount } from 'svelte';
 	import Display from './Display.svelte';
+	import Theme from './Theme.svelte';
+	import { accentColorStore, borderColorClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let isExpanded = false;
 	let isUnmounting = false;
 	let isExiting = false;
 	let currentPage = 'settings';
-    let hiddenBottomBar = false;
+	let hiddenBottomBar = false;
+	
+	// Get accent color reactively from store
+	$: accentColor = $accentColorStore;
+	$: borderClass = $borderColorClassStore;
+	$: backgroundTheme = $backgroundThemeStore;
+	// Invert disabled text color: use light gray in light mode, dark gray in dark mode
+	$: disabledTextColor = backgroundTheme === 'light' ? '#bebebe' : '#414141';
 
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
@@ -46,9 +55,9 @@
 		isExpanded = false;
 	};
 
-    onMount(() => {
-        isExpanded = false;
-    });
+	onMount(() => {
+		isExpanded = false;
+	});
 </script>
 
 {#if currentPage === 'settings'}
@@ -57,63 +66,60 @@
 			<span class="text-6xl font-[300]">settings</span>
 			<div class="flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-16">
 				<div class="flex flex-col gap-3 items-start">
-					<span class="text-2xl font-[300] text-[#ff00ff] mt-2">personalization</span>
-					<button class="flex flex-col items-start" on:click={() => changePage('display')}>
-						<span class="text-3xl font-[300]">display</span>
-						<span class="text-sm font-[300] text-[#818181]"
+					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">personalization</span>
+					<button class="flex flex-col items-start" on:click={() => {}}>
+						<!-- changePage('display') }> -->
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">display</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>change display settings.</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">theme</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+					<button class="flex flex-col items-start" on:click={() => {changePage('theme')}}>
+						<span class="text-3xl font-[300]" >start + theme</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>choose light or dark theme. Change accent color.</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">icon pack</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">icon pack</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>change app pack and app icon overrides</span
 						>
 					</button>
 				</div>
 				<div class="flex flex-col gap-3 items-start">
-					<span class="text-2xl font-[300] text-[#ff00ff] mt-2">on this device</span>
+					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">on this device</span>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">apps</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">apps</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>check installed apps</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">storage</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">storage</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>explore local storage usage</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">security</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">security</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>set your pin code and encryption for your data</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">ubiquity experience</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">ubiquity experience</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>ubiquity device ID and other unique features</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => changePage('search')}>
 						<span class="text-3xl font-[300]">search</span>
-						<span class="text-sm font-[300] text-[#818181]"
-							>change search engine and settings</span
-						>
+						<span class="text-sm font-[300] text-[#818181]">change search engine and settings</span>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => changePage('accounts')}>
 						<span class="text-3xl font-[300]">accounts</span>
-						<span class="text-sm font-[300] text-[#818181]"
-							>google and other accounts</span
-						>
+						<span class="text-sm font-[300] text-[#818181]">google and other accounts</span>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => changePage('region+units')}>
 						<span class="text-3xl font-[300]">region+units</span>
@@ -123,26 +129,26 @@
 					</button>
 				</div>
 				<div class="flex flex-col gap-3 items-start">
-					<span class="text-2xl font-[300] text-[#ff00ff] mt-2">extras+info</span>
+					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">extras+info</span>
 					<button class="flex flex-col items-start" on:click={() => changePage('data')}>
 						<span class="text-3xl font-[300]">data</span>
 						<span class="text-sm font-[300] text-[#818181]">system data related information</span>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">backups+restore</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">backups+restore</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>backup and restore your data</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">google services</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">google services</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>login to google services for importing data</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300] !text-[#414141]">device information</span>
-						<span class="text-sm font-[300] text-[#818181] !text-[#414141]"
+						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">device information</span>
+						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>get device level information using navigator</span
 						>
 					</button>
@@ -155,48 +161,50 @@
 		</div>
 	</div>
 {:else if currentPage === 'data'}
-	<Data isExiting={isExiting} />
+	<Data {isExiting} />
 {:else if currentPage === 'accounts'}
-	<Accounts isExiting={isExiting} {hideBottomBar}/>
+	<Accounts {isExiting} {hideBottomBar} />
 {:else if currentPage === 'region+units'}
-	<RegionUnits isExiting={isExiting} {hideBottomBar}/>
+	<RegionUnits {isExiting} {hideBottomBar} />
 {:else if currentPage === 'search'}
-	<Search isExiting={isExiting} {hideBottomBar}/>
+	<Search {isExiting} {hideBottomBar} />
 {:else if currentPage === 'display'}
-	<Display isExiting={isExiting} {hideBottomBar}/>
+	<Display {isExiting} {hideBottomBar} />
+{:else if currentPage === 'theme'}
+	<Theme {isExiting} {hideBottomBar} />
 {/if}
 
 {#if !hiddenBottomBar}
-<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
-	<div class="flex flex-row gap-12 justify-center items-center">
-		{#if currentPage !== 'settings'}
+	<BottomControls expanded={isExpanded} unmounting={isUnmounting} on:toggle={handleToggle}>
+		<div class="flex flex-row gap-12 justify-center items-center">
+			{#if currentPage !== 'settings'}
+				<div
+					class="btn-animate flex flex-col gap-2 justify-center items-center"
+					class:animate={isExpanded}
+				>
+					<button
+						on:click={goToTopPage}
+						class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
+					>
+						<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="4" />
+					</button>
+					<span class="text-xs font-[400]">back</span>
+				</div>
+			{/if}
 			<div
 				class="btn-animate flex flex-col gap-2 justify-center items-center"
 				class:animate={isExpanded}
 			>
 				<button
-					on:click={goToTopPage}
-					class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
+					on:click={closePage}
+					class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
 				>
-					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="4" />
+					<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2" />
 				</button>
-				<span class="text-xs font-[400]">back</span>
+				<span class="text-xs font-[400]">close</span>
 			</div>
-		{/if}
-		<div
-			class="btn-animate flex flex-col gap-2 justify-center items-center"
-			class:animate={isExpanded}
-		>
-			<button
-				on:click={closePage}
-				class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
-			>
-				<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2" />
-			</button>
-			<span class="text-xs font-[400]">close</span>
 		</div>
-	</div>
-</BottomControls>
+	</BottomControls>
 {/if}
 
 <style>

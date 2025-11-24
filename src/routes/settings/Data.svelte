@@ -5,6 +5,11 @@
 	import { addToast } from '../../store/toast';
 	import { accountsStore } from '../../store/accounts';
 	import { settingsStore } from '../../store/settings';
+	import { homescreenStore } from '../../store/homescreen';
+	import { appInfoStore } from '../../store/appInfo';
+	import { borderColorClassStore } from '../../utils/theme';
+	
+	$: borderClass = $borderColorClassStore;
 
 	const addData = () => {
 		addTestDataToFS();
@@ -30,6 +35,8 @@
 		kernel.fs.resetFS();
 		removeAccounts();
 		settingsStore.resetAll();
+		homescreenStore.resetAll();
+		appInfoStore.resetAll();
 		addToast('Data reset successfully');
 	};
 		
@@ -42,7 +49,7 @@
 			<div class="flex flex-col gap-4">
 				<button
 					type="button"
-					class="border-2 border-white px-4 py-2 w-fit text-base"
+					class="border-2 {borderClass} px-4 py-2 w-fit text-base"
 					on:click={resetAccounts}>remove all accounts</button
 				>
 				<span class="flex flex-col gap-4 items-start text-sm text-[#a1a1a1]">

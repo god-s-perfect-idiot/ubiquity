@@ -3,12 +3,15 @@
 	import Icon from '@iconify/svelte';
 	import Loader from '../../components/Loader.svelte';
 	import Button from '../../components/Button.svelte';
+	import { textColorClassStore } from '../../utils/theme';
 
 	export let results = [];
 	export let loading = false;
 	export let error = null;
 	export let onResultClick = null;
 	export let finalSearchQuery = '';
+	
+	$: textClass = $textColorClassStore;
 
 	function handleResultClick(result) {
 		if (onResultClick) {

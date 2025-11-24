@@ -5,6 +5,9 @@
 	import WeatherForecast from './WeatherForecast.svelte';
 	import Icon from '@iconify/svelte';
 	import { onMount } from "svelte";
+	import { borderColorClassStore } from '../../utils/theme';
+	
+	$: borderClass = $borderColorClassStore;
     
 	console.log('Weather page loading...');
 
@@ -57,7 +60,7 @@
 		>
 			<button
 				on:click={closePage}
-				class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
+				class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
 			>
 				<Icon icon="rivet-icons:close" width="18" height="18" strokeWidth="2" />
 			</button>

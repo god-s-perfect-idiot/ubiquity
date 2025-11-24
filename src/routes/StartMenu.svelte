@@ -3,12 +3,22 @@
 	import { settingsStore } from '../store/settings.js';
 	import { gridStore } from '../store/grid.js';
 	import GridContainer from '../components/GridContainer.svelte';
+	import { backgroundClassStore, accentColorStore, backgroundThemeStore, borderColorClassStore } from '../utils/theme';
 
 	export let onBackClick = () => {};
 
 	let gridContainer;
 	let scrollContainer;
 	let cols = 4; // Fixed to 4 columns
+	
+	// Get theme-aware background reactively
+	$: bgClass = $backgroundClassStore;
+	$: accentColor = $accentColorStore;
+	$: bgColorValue = $backgroundThemeStore === 'light' ? '#ffffff' : '#000000';
+	$: borderClass = $borderColorClassStore;
+	
+	// Reactive statement to track edit mode
+	$: isInEditMode = $gridStore.editMode;
 
 	// Handle click to exit edit mode
 	function handleContainerClick(event) {
@@ -28,20 +38,20 @@
 </script>
 
 <div
-	class="w-full h-screen flex flex-col overflow-hidden overflow-y-auto scroll-smooth flex-1 relative"
+	class="w-full h-screen flex flex-col overflow-hidden overflow-y-auto scroll-smooth flex-1 relative {bgClass}"
+	style="--accent-color: {accentColor}; --bg-color: {bgColorValue}; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;"
 	bind:this={scrollContainer}
 	on:click={handleContainerClick}
 	on:keydown={handleKeyDown}
 	role="button"
 	aria-label="Click to exit edit mode"
 	tabindex="0"
-	style="scroll-behavior: smooth; -webkit-overflow-scrolling: touch;"
 >
 	
 	<!-- Scrollable area for grid content -->
 	<div class="relative z-10">
-		<!-- Grid container with black margins -->
-		<div bind:this={gridContainer} class="w-full" >
+		<!-- Grid container -->
+		<div bind:this={gridContainer} class="w-full">
 			<GridContainer {cols} {scrollContainer} />
 		</div>
 	</div>
@@ -49,8 +59,14 @@
 	<!-- Back button positioned horizontally under the grid -->
 	<div class="flex justify-end pr-4 pb-4 flex-shrink-0 z-20">
 		<button
-			class="flex flex-col border h-10 w-10 justify-center items-center border-white rounded-full !border-2 p-2 font-bold bg-black bg-opacity-50 backdrop-blur-sm"
-			on:click={onBackClick}
+			class="flex flex-col border h-10 w-10 justify-center items-center {borderClass} rounded-full !border-2 p-2 font-bold {bgClass} hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:{bgClass}"
+			on:click={() => {
+				if (!isInEditMode) {
+					onBackClick();
+				}
+			}}
+			disabled={isInEditMode}
+			aria-label={isInEditMode ? "Back button disabled in edit mode" : "Go back"}
 		>
 			<Icon icon="subway:right-arrow" width="18" height="18" strokeWidth="2" />
 		</button>
@@ -64,65 +80,86 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
-	/* Make grid container transparent so background shows through */
+	/* Windows Phone 8.1 style - theme-aware background */
 	:global(.grid-container) {
-		background: transparent;
+		background: var(--bg-color, #000000);
 	}
 
-	/* Grid container - transparent */
+	/* Grid container - theme-aware background */
 	:global(.grid-container .grid) {
-		background: transparent;
+		background: var(--bg-color, #000000);
 	}
 
-	/* Force all grid items to be completely transparent - maximum specificity */
-	:global(.grid-container .grid .grid-item),
-	:global(.grid-container .grid .grid-item.bg-blue-500),
-	:global(.grid-container .grid .grid-item.bg-green-500),
-	:global(.grid-container .grid .grid-item.bg-purple-500),
-	:global(.grid-container .grid .grid-item.bg-orange-500),
-	:global(.grid-container .grid .grid-item.bg-red-500),
-	:global(.grid-container .grid .grid-item.bg-yellow-500),
-	:global(.grid-container .grid .grid-item.bg-pink-500),
-	:global(.grid-container .grid .grid-item.bg-indigo-500),
-	:global(.grid-container .grid .grid-item.bg-cyan-500),
-	:global(.grid-container .grid .grid-item.group),
-	:global(.grid-container .grid .grid-item.relative),
-	:global(.grid-container .grid .grid-item.text-white),
-	:global(.grid-container .grid .grid-item.cursor-pointer) {
-		background: transparent !important;
-		background-color: transparent !important;
+	/* Windows Phone 8.1 tiles - solid colored backgrounds */
+	:global(.grid-container .grid .grid-item) {
+		background: var(--tile-bg-color, #0078d4) !important;
+		background-color: var(--tile-bg-color, #0078d4) !important;
 		background-image: none !important;
-		backdrop-filter: blur(1px);
-		border: 1px solid rgba(255, 255, 255, 0.3);
+		border: none !important;
 		transition: all 0.2s ease-in-out;
 	}
 
-	/* Override any possible Tailwind background classes */
-	:global(.grid-item[class*="bg-"]) {
-		background: transparent !important;
-		background-color: transparent !important;
+	/* Apply solid colors based on bgColor class */
+	:global(.grid-container .grid .grid-item.bg-blue-500) {
+		background: #0078d4 !important;
+		background-color: #0078d4 !important;
 	}
 
-	/* Nuclear option - override everything */
-	:global(div.grid-item) {
-		background: transparent !important;
-		background-color: transparent !important;
-		background-image: none !important;
+	:global(.grid-container .grid .grid-item.bg-green-500) {
+		background: #107c10 !important;
+		background-color: #107c10 !important;
 	}
 
-	/* Override any inherited styles */
-	:global(.grid-item *),
-	:global(.grid-item::before),
-	:global(.grid-item::after) {
-		background: transparent !important;
-		background-color: transparent !important;
+	:global(.grid-container .grid .grid-item.bg-purple-500) {
+		background: #5c2d91 !important;
+		background-color: #5c2d91 !important;
 	}
 
-	/* Hover effects for tiles - subtle overlay */
+	:global(.grid-container .grid .grid-item.bg-orange-500) {
+		background: #ff8c00 !important;
+		background-color: #ff8c00 !important;
+	}
+
+	:global(.grid-container .grid .grid-item.bg-red-500) {
+		background: #e81123 !important;
+		background-color: #e81123 !important;
+	}
+
+	:global(.grid-container .grid .grid-item.bg-yellow-500) {
+		background: #ffb900 !important;
+		background-color: #ffb900 !important;
+	}
+
+	:global(.grid-container .grid .grid-item.bg-pink-500) {
+		background: #e3008c !important;
+		background-color: #e3008c !important;
+	}
+
+	:global(.grid-container .grid .grid-item.bg-indigo-500) {
+		background: #6b69d6 !important;
+		background-color: #6b69d6 !important;
+	}
+
+	:global(.grid-container .grid .grid-item.bg-cyan-500) {
+		background: #00bcf2 !important;
+		background-color: #00bcf2 !important;
+	}
+
+	/* Default homescreen background color */
+	:global(.grid-container .grid .grid-item.bg-\[#ff00ff\]) {
+		background: var(--accent-color) !important;
+		background-color: var(--accent-color) !important;
+	}
+
+	/* Hover effects for tiles - subtle darkening */
 	:global(.grid-item:hover) {
-		background: rgba(0, 0, 0, 0.1) !important;
-		backdrop-filter: blur(2px);
-		transform: scale(1.02);
-		border-color: rgba(255, 255, 255, 0.5);
+		opacity: 0.9;
+		transform: scale(1.01);
+	}
+
+	/* Active/pressed state */
+	:global(.grid-item:active) {
+		opacity: 0.8;
+		transform: scale(0.98);
 	}
 </style>

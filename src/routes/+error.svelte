@@ -1,8 +1,13 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { accentColorStore, textColorClassStore, borderColorClassStore } from '../utils/theme';
 
 	let isExiting = false;
+	
+	$: accentColor = $accentColorStore;
+	$: textClass = $textColorClassStore;
+	$: borderClass = $borderColorClassStore;
 
 	function goHome() {
 		isExiting = true;
@@ -16,7 +21,7 @@
 	}
 </script>
 
-<div class="page-holder">
+<div class="page-holder" style="--accent-color: {accentColor};">
 	<div class="bsod-container page" class:page-exit={isExiting}>
 		<!-- BSOD Header -->
 		<div class="bsod-header">
@@ -30,7 +35,7 @@
 			<span class="text-left">
 				This page doesn't exist, If you think this is an error, please open an issue at <a
 					href="https://www.github.com/god-s-perfect-idiot/ubiquity/issues"
-					class="text-[#ff00ff]">my github</a
+					style="color: {accentColor};">my github</a
 				>
 			</span>
 
@@ -42,10 +47,10 @@
 
 		<!-- Action Buttons -->
 		<div class="flex flex-row gap-4 w-full">
-			<button class="text-white text-lg font-[300] border-2 border-white px-4 py-1" on:click={goHome}>
+			<button class="{textClass} text-lg font-[300] border-2 {borderClass} px-4 py-1" on:click={goHome}>
 				<span class="btn-text">ubiquity home</span>
 			</button>
-			<button class="text-white text-lg font-[300] border-2 border-white px-4 py-1" on:click={reload}>
+			<button class="{textClass} text-lg font-[300] border-2 {borderClass} px-4 py-1" on:click={reload}>
 				<span class="btn-text">reload</span>
 			</button>
 		</div>
@@ -61,7 +66,7 @@
 
 	.bsod-container {
 		min-height: 100vh;
-		background: #ff00ff;
+		background: var(--accent-color);
 		color: white;
 		padding: 2rem;
 		display: flex;

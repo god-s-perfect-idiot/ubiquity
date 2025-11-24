@@ -8,6 +8,7 @@
 	import { addMarketplaceItem } from '../../lib/marketplace-utils.js';
 	import { getDefaultIcon, getDefaultBackground } from '../../lib/marketplace-utils.js';
 	import Loader from '../../components/Loader.svelte';
+	import { backgroundClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let itemName = '';
 	let description = '';
@@ -21,6 +22,10 @@
 	let isPublic = true;
 	let isExiting = false;
 	let isSubmitting = false;
+	
+	$: bgClass = $backgroundClassStore;
+	$: backgroundTheme = $backgroundThemeStore;
+	$: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
 
 	export let toggleBottomBar = () => {};
 	export let changeSubPage = () => {};
@@ -98,7 +103,7 @@
 	</div>
 {/if}
 {#if !isSubmitting}
-	<div class="flex flex-col gap-4 bg-black rounded-lg h-screen page-holder">
+	<div class="flex flex-col gap-4 {bgClass} rounded-lg h-screen page-holder">
 		<span class="mt-4 text-6xl font-[300] mb-2 page px-4" class:page-exit={isExiting}>publish</span>
 		<div class="flex flex-col gap-6 page overflow-y-auto pb-20 px-4" class:page-exit={isExiting}>
 			<Input bind:content={itemName} label="Item Name" />
@@ -113,14 +118,16 @@
 		</div>
 	</div>
 	<div
-		class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 bg-[#1f1f1f] gap-8 z-10 bottom-bar"
+		class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 gap-8 z-10 bottom-bar"
 		class:bottom-bar-exit={isExiting}
+		style="background-color: {bottomBarBg};"
 	>
 		<div class="btn w-full">
 			<Button
 				text={isSubmitting ? 'publishing...' : 'publish'}
 				onClick={publish}
-				className="btn !w-full bg-[#1f1f1f]"
+				className="btn !w-full"
+				style="background-color: {bottomBarBg};"
 				disabled={isSubmitting}
 			/>
 		</div>

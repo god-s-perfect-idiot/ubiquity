@@ -4,12 +4,15 @@
 	import { kernel } from '../../kernel/store';
 	import BottomControls from '../../components/BottomControls.svelte';
 	import { onMount } from 'svelte';
+	import { accentColorStore } from '../../utils/theme';
 
 	let currentFolder = 'root';
 	// $: currentFolder = $kernel.cursor.join('/');
 	let isExiting = false;
 	let isExpanded = false;
 	let isUnmounting = false;
+	
+	$: accentColor = $accentColorStore;
 
 	// Remove the onMount logic that automatically expands
 
@@ -49,7 +52,7 @@
     <button class="underline text-[#f12] p-2" on:click={() => goto('/new/dir?redirectTo=/files')}>Add New Folder</button>
 </div> -->
 <div class="ml-4 h-screen page-holder">
-	<div class="flex flex-row mt-2 text-[#ff00ff] items-center gap-1 !h-[3rem] text-base page" class:page-exit={isExiting}>
+	<div class="flex flex-row mt-2 items-center gap-1 !h-[3rem] text-base page" style="color: {accentColor};" class:page-exit={isExiting}>
 		<Icon icon="carbon:home" width="22" height="22" />
 		<Icon icon="carbon:chevron-right" width="18" height="18" class="text-[#d1d1d1]" />
 		<span class="truncate max-w-64" title={currentFolder}>{currentFolder}</span>
@@ -65,7 +68,8 @@
 					<span class="w-20 h-20">
 						{#if file.type === 'directory'}
 							<span
-								class=" bg-[#ff00ff] w-full h-full justify-end items-end flex pr-2 pb-2 font-[500]"
+								class="w-full h-full justify-end items-end flex pr-2 pb-2 font-[500]"
+								style="background-color: {accentColor};"
 								>{Object.keys(file.content).length}</span
 							>
 						{:else if file.type === 'document'}

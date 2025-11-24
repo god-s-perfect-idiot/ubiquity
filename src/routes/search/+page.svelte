@@ -6,6 +6,7 @@
 	import { searchActions } from '../../lib/search-actions.js';
 	import { slide } from 'svelte/transition';
 	import { onMount } from 'svelte';
+	import { accentColorStore, textColorClassStore } from '../../utils/theme';
 
 	let isExiting = false;
 	let isExpanded = false;
@@ -17,6 +18,9 @@
 	let error = null;
 	let currentPage = 0;
 	let showSearchBar = false;
+	
+	$: accentColor = $accentColorStore;
+	$: textClass = $textColorClassStore;
 
 	onMount(() => {
 		// Show search bar after a short delay to trigger slide-in animation
@@ -116,7 +120,8 @@
 
 			<!-- Search Button -->
 			<button
-				class="w-12 h-12 bg-[#ff00ff] text-white flex justify-center items-center"
+				class="w-12 h-12 {textClass} flex justify-center items-center"
+				style="background-color: {accentColor};"
 				on:click={handleSearch}
 				disabled={loading}
 			>

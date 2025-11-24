@@ -2,6 +2,7 @@
 // Exposes a function to window for easy testing
 
 import { kernel } from './store.js';
+import { appInfoStore } from '../store/appInfo.js';
 
 const generateRandomData = () => {
   // Real image URLs from Unsplash
@@ -96,6 +97,7 @@ const generateRandomData = () => {
       url: 'https://www.google.com',
       type: 'app',
       icon: 'https://www.google.com/favicon.ico',
+      backgroundColor: 'bg-white',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -104,6 +106,7 @@ const generateRandomData = () => {
       url: 'https://github.com',
       type: 'app',
       icon: 'https://github.com/favicon.ico',
+      backgroundColor: 'bg-[#ffffff]',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -112,6 +115,7 @@ const generateRandomData = () => {
       url: 'https://www.youtube.com',
       type: 'app',
       icon: 'https://www.youtube.com/favicon.ico',
+      backgroundColor: 'bg-[#f00035]',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -120,6 +124,7 @@ const generateRandomData = () => {
       url: 'https://www.reddit.com',
       type: 'app',
       icon: 'https://www.reddit.com/favicon.ico',
+      backgroundColor: 'bg-[#f04405]',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -128,6 +133,7 @@ const generateRandomData = () => {
       url: 'https://twitter.com',
       type: 'app',
       icon: 'https://twitter.com/favicon.ico',
+      backgroundColor: 'bg-black',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -136,6 +142,7 @@ const generateRandomData = () => {
       url: 'https://www.linkedin.com',
       type: 'app',
       icon: 'https://www.linkedin.com/favicon.ico',
+      backgroundColor: 'bg-[#3673b2]',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -144,6 +151,7 @@ const generateRandomData = () => {
       url: 'https://www.netflix.com',
       type: 'app',
       icon: 'https://www.netflix.com/favicon.ico',
+      backgroundColor: 'bg-white',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -152,6 +160,7 @@ const generateRandomData = () => {
       url: 'https://open.spotify.com',
       type: 'app',
       icon: 'https://open.spotify.com/favicon.ico',
+      backgroundColor: 'bg-white',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -159,7 +168,8 @@ const generateRandomData = () => {
       name: 'Discord',
       url: 'https://discord.com',
       type: 'app',
-      icon: 'https://discord.com/favicon.ico',
+      icon: 'https://cdn-icons-png.flaticon.com/512/5968/5968756.png',
+      backgroundColor: 'bg-[#ffffff]',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     },
     {
@@ -168,6 +178,7 @@ const generateRandomData = () => {
       url: 'https://stackoverflow.com',
       type: 'app',
       icon: 'https://stackoverflow.com/favicon.ico',
+      backgroundColor: 'bg-white',
       created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
     }
   ];
@@ -496,27 +507,42 @@ const addTestDataToFS = () => {
   kernel.addDirectory('Documents');
   
   // Add images
-  data.images.forEach((image, index) => {
+  data.images.forEach((image) => {
     kernel.addFile(image.name, image.url, 'image');
   });
   
   // Add apps
-  data.apps.forEach((app, index) => {
+  data.apps.forEach((app) => {
     kernel.addFile(app.name, app.url, 'app');
+    
+    // Store app info (icon, backgroundColor, and other metadata)
+    const appInfo = {
+      icon: app.icon,
+      iconSrc: app.icon,
+      backgroundColor: app.backgroundColor,
+      bgColor: app.backgroundColor,
+      name: app.name,
+      url: app.url,
+      ...app // Store all app data
+    };
+    
+    // Store by both name and URL for easy lookup
+    appInfoStore.setAppInfo(app.name, appInfo);
+    appInfoStore.setAppInfo(app.url, appInfo);
   });
   
   // Add songs
-  data.songs.forEach((song, index) => {
+  data.songs.forEach((song) => {
     kernel.addFile(song.name, song.url, 'music');
   });
   
   // Add videos
-  data.videos.forEach((video, index) => {
+  data.videos.forEach((video) => {
     kernel.addFile(video.name, video.url, 'video');
   });
   
   // Add documents
-  data.documents.forEach((doc, index) => {
+  data.documents.forEach((doc) => {
     kernel.addFile(doc.name, doc.url, 'document');
   });
   

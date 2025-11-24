@@ -6,6 +6,7 @@
 	import Listing from './Listing.svelte';
 	import Publish from './Publish.svelte';
 	import { onMount } from 'svelte';
+	import { accentColorStore } from '../../utils/theme';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -13,6 +14,8 @@
 	let subPage = 'categories';
 	let hiddenBottomBar = false;
 	let showSearch = false;
+	
+	$: accentColor = $accentColorStore;
 
 	const handleToggle = () => {
 		isExpanded = !isExpanded;
@@ -56,7 +59,7 @@
 		<div class="page pt-4 px-4 flex flex-col" class:page-exit={isExiting}>
 			<span class="text-6xl font-[300] h-[10%]">marketplace</span>
 			<div class="flex flex-col gap-1 mt-12">
-				<span class="text-xl font-[300] text-[#ff00ff]">categories</span>
+				<span class="text-xl font-[300]" style="color: {accentColor};">categories</span>
 				<div class="flex flex-col gap-4">
 					<button
 						class="text-4xl font-[300] text-left"

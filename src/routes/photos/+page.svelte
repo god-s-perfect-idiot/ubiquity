@@ -5,6 +5,7 @@ import { kernel } from '../../kernel/store';
     import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import { onMount } from "svelte";
+	import { backgroundClassStore, textColorClassStore } from '../../utils/theme';
     
     const photos = fetchPhotos(kernel.fs.getFiles());
     let isExpanded = false;
@@ -12,6 +13,9 @@ import { kernel } from '../../kernel/store';
     let isExiting = false;
     let selectedPhoto = null;
     let showPhotoView = false;
+    
+    $: bgClass = $backgroundClassStore;
+    $: textClass = $textColorClassStore;
 
     const handleToggle = () => {
         isExpanded = !isExpanded;
@@ -49,9 +53,9 @@ import { kernel } from '../../kernel/store';
 
 {#if showPhotoView && selectedPhoto}
     <!-- Full-screen photo view -->
-    <div class="fixed inset-0 bg-black z-50 flex items-center justify-center page-holder">
+    <div class="fixed inset-0 {bgClass} z-50 flex items-center justify-center page-holder">
         <div class="relative w-full h-full page overflow-hidden" class:page-exit={isExiting}>
-            <div class="absolute top-4 right-4 w-screen bg-black bg-opacity-50 text-white px-4 py-2 rounded">
+            <div class="absolute top-4 right-4 w-screen {bgClass} bg-opacity-50 {textClass} px-4 py-2 rounded">
                 <span class="px-4 text-2xl">{selectedPhoto.name}</span>
             </div>
 

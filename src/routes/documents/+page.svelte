@@ -6,6 +6,7 @@
 	import LetterGrid from '../../components/LetterGrid.svelte';
 	import { fetchDocuments } from '../../kernel/system-utils';
 	import { kernel } from '../../kernel/store';
+	import { accentColorStore, backgroundClassStore, textColorClassStore, borderColorClassStore } from '../../utils/theme';
 
 	let documents = [];
 	let isExpanded = false;
@@ -101,6 +102,12 @@
 	}
 
 	let targetChar = '';
+	
+	// Get theme values
+	$: accentColor = $accentColorStore;
+	$: bgClass = $backgroundClassStore;
+	$: textClass = $textColorClassStore;
+	$: borderClass = $borderColorClassStore;
 
 	onMount(() => {
 		initializeDocuments();
@@ -127,7 +134,8 @@
 				{#each Object.entries(documentList) as docEntry}
 					<div class="flex flex-col gap-2">
 						<button
-							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-2 mb-4 font-[300]"
+							class="{textClass} text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-2 mb-4 font-[300]"
+							style="background-color: {accentColor}; border-color: {accentColor};"
 							id={docEntry[0].toUpperCase()}
 							on:click={() => {
 								showGrid = true;
@@ -154,13 +162,13 @@
 									handleDocumentTap(doc);
 								}}
 							>
-								<span class="flex justify-center items-center border-2 border-white h-full">
+								<span class="flex justify-center items-center border-2 {borderClass} h-full">
 									<!-- <Icon icon="mdi:file-document" width="26" height="26" /> -->
-									<div class="w-20 h-20 bg-[#000] items-end justify-end flex pr-2 pb-2 font-[300]">
+									<div class="w-20 h-20 {bgClass} items-end justify-end flex pr-2 pb-2 font-[300]">
 										doc
 									</div>
 								</span>
-								<span class="text-2xl font-[300] truncate max-w-64 pt-2" title={doc.name}
+								<span class="{textClass} text-2xl font-[300] truncate max-w-64 pt-2" title={doc.name}
 									>{doc.name}</span
 								>
 							</button>

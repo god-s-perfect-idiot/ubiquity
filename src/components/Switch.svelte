@@ -1,9 +1,15 @@
 <script>
+	import { accentColorStore, borderColorClassStore, textColorClassStore } from '../utils/theme';
+	
 	export let title = '';
 	export let description = '';
 	export let value = false;
 	export let className = '';
 	export let onToggle = null;
+	
+	$: accentColor = $accentColorStore;
+	$: borderClass = $borderColorClassStore;
+	$: textClass = $textColorClassStore;
 
 	function handleToggle() {
 		value = !value;
@@ -18,11 +24,10 @@
 		<div class="flex flex-col w-full">
 			<span class="text-sm font-[300] text-[#a1a1a1]">{title}</span>
 			<div class="flex items-center gap-2 justify-between w-full">
-				<span class="text-white text-2xl mt-1">{value ? 'On' : 'Off'}</span>
+				<span class="{textClass} text-2xl mt-1">{value ? 'On' : 'Off'}</span>
 				<button
-					class="w-16 h-6 border-2 border-white relative transition-colors flex items-center {value
-						? 'bg-[#ff00ff]'
-						: 'bg-transparent'}"
+					class="w-16 h-6 border-2 {borderClass} relative transition-colors flex items-center {value ? '' : 'bg-transparent'}"
+					style={value ? `background-color: ${accentColor};` : ''}
 					on:click={handleToggle}
 					on:keydown={(e) => e.key === 'Enter' && handleToggle()}
 					role="switch"
@@ -30,7 +35,7 @@
 					tabindex="0"
 				>
 					<div
-						class="w-4 h-8 bg-white border-2 border-black transition-transform duration-200 ease-in-out {value
+						class="w-4 h-8 {textClass === 'text-white' ? 'bg-white' : 'bg-black'} border-2 {borderClass} transition-transform duration-200 ease-in-out {value
 							? 'translate-x-12'
 							: 'translate-x-[-2px]'}"
 					></div>

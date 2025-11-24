@@ -9,6 +9,7 @@
 	import LetterGrid from '../../components/LetterGrid.svelte';
 	import Select from '../../components/Select.svelte';
 	import Loader from '../../components/Loader.svelte';
+	import { accentColorStore, textColorClassStore } from '../../utils/theme';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -28,6 +29,9 @@
 	let seekValue = 0;
 	let currentSongIndex = -1;
 	let queue = [];
+	
+	$: accentColor = $accentColorStore;
+	$: textClass = $textColorClassStore;
 	let availableDevices = [];
 	let selectedDeviceId = null;
 	let selectedDeviceName = null;
@@ -515,7 +519,7 @@
 					</p>
 					<button
 						on:click={login}
-						class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium text-lg transition-colors"
+						class="px-4 py-2 bg-green-600 hover:bg-green-700 {textClass} font-medium text-lg transition-colors"
 					>
 						Connect with Spotify
 					</button>
@@ -626,7 +630,8 @@
 							{#each Object.entries(musicList) as musicEntry}
 								<div class="flex flex-col gap-6">
 									<button
-										class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
+										class="{textClass} text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1 font-[300]"
+										style="background-color: {accentColor}; border-color: {accentColor};"
 										id={musicEntry[0].toUpperCase()}
 										on:click={() => {
 											showGrid = true;

@@ -1,9 +1,15 @@
 <script>
     import Button from '../../components/Button.svelte';
     import { onMount, onDestroy } from 'svelte';
+    import { accentColorStore, textColorClassStore, backgroundThemeStore } from '../../utils/theme';
     
     let isExiting = false;
     let iconError = false;
+    
+    $: accentColor = $accentColorStore;
+    $: textClass = $textColorClassStore;
+    $: backgroundTheme = $backgroundThemeStore;
+    $: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
 
     export let item = null;
     export let toggleBottomBar = () => {};
@@ -53,7 +59,7 @@
             <div class="flex flex-col gap-4 items-start">
                 <div class="w-40 h-40 flex items-center justify-center" style="background-color: {item.background};">
                     {#if iconError || !isValidUrl(item.icon)}
-                        <div class="w-full h-full flex items-end justify-start pl-4 pb-4 text-white text-5xl font-[300] lowercase">
+                        <div class="w-full h-full flex items-end justify-start pl-4 pb-4 {textClass} text-5xl font-[300] lowercase">
                             {getFirstLetter(item.name)}
                         </div>
                     {:else}
@@ -70,7 +76,7 @@
                     <span class="text-[0.8rem] font-[300]">{item.source}</span>
                 </div>
                 <div class="flex flex-col gap-1 items-start">
-                    <span class="text-xl font-[300] text-[#ff00ff]">description</span>
+                    <span class="text-xl font-[300]" style="color: {accentColor};">description</span>
                     <span class="text-lg font-[100]">{item.description}</span>
                 </div>
             </div>
@@ -79,13 +85,14 @@
 </div>
 
 <div
-    class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 bg-[#1f1f1f] gap-8 z-10 bottom-bar"
+    class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 gap-8 z-10 bottom-bar"
     class:bottom-bar-exit={isExiting}
+    style="background-color: {bottomBarBg};"
 >
     <div class="btn w-full">
-        <Button text={isAdded ? "remove" : "add"} onClick={() => addOrRemove(item)} className="btn !w-full bg-[#1f1f1f]" />
+        <Button text={isAdded ? "remove" : "add"} onClick={() => addOrRemove(item)} className="btn !w-full" style="background-color: {bottomBarBg};" />
     </div>
     <div class="btn w-full">
-        <Button text="close" onClick={close} className="btn !w-full bg-[#1f1f1f]" />
+        <Button text="close" onClick={close} className="btn !w-full" style="background-color: {bottomBarBg};" />
     </div>
 </div>

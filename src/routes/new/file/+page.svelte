@@ -5,6 +5,7 @@
 	import Button from '../../../components/Button.svelte';
 	import { addToast } from '../../../store/toast';
 	import { goto } from '$app/navigation';
+	import { backgroundClassStore, backgroundThemeStore } from '../../../utils/theme';
 
 	let fileName = '';
 	let fileContent = '';
@@ -13,6 +14,10 @@
 	$: fileContent;
 	$: fileType;
 	let isExiting = false;
+	
+	$: bgClass = $backgroundClassStore;
+	$: backgroundTheme = $backgroundThemeStore;
+	$: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
 	const params = new URLSearchParams(window.location.search);
 	const redirectTo = params.get('redirectTo') || '/';
 
@@ -44,7 +49,7 @@
 
 </script>
 
-<div class="flex flex-col gap-4 mx-4 bg-black rounded-lg h-screen page-holder">
+<div class="flex flex-col gap-4 mx-4 {bgClass} rounded-lg h-screen page-holder">
 	<span class="mt-4 text-6xl font-[300] mb-2 page" class:page-exit={isExiting}>add file</span>
 	<div class="flex flex-col gap-6 page" class:page-exit={isExiting}>
 		<Input bind:content={fileName} label="File Name" />
@@ -57,14 +62,15 @@
 	</div>
 </div>
 <div
-    class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 bg-[#1f1f1f] gap-8 z-10 bottom-bar"
+    class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 gap-8 z-10 bottom-bar"
     class:bottom-bar-exit={isExiting}
+    style="background-color: {bottomBarBg};"
 >
     <div class="btn w-full">
-        <Button text="add" onClick={add} className="btn !w-full bg-[#1f1f1f]" />
+        <Button text="add" onClick={add} className="btn !w-full" style="background-color: {bottomBarBg};" />
     </div>
     <div class="btn w-full">
-        <Button text="close" onClick={close} className="btn !w-full bg-[#1f1f1f]" />
+        <Button text="close" onClick={close} className="btn !w-full" style="background-color: {bottomBarBg};" />
     </div>
 </div>
 

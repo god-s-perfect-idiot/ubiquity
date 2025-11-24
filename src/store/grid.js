@@ -1,9 +1,15 @@
 import { writable } from 'svelte/store';
+import { homescreenStore } from './homescreen.js';
+import { getAccentColor } from '../utils/theme.js';
 
 // Grid store for managing grid items and edit mode
 function createGridStore() {
+	// Load initial items from homescreen store
+	const homescreenState = homescreenStore.getState();
+	const initialItems = homescreenState.items || [];
+
 	const initialState = {
-		items: [],
+		items: initialItems,
 		editMode: false,
 		selectedItemId: null,
 		draggedItem: null,
@@ -27,14 +33,19 @@ function createGridStore() {
 					name: item.name,
 					src: item.src,
 					icon: item.icon,
-					bgColor: item.bgColor,
+					bgColor: item.bgColor || getAccentColor(), // Default to accent color (as hex)
 					size: item.size || '1x1',
 					...item
 				};
 
+				const newItems = [...state.items, newItem];
+				
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(newItems);
+
 				return {
 					...state,
-					items: [...state.items, newItem]
+					items: newItems
 				};
 			});
 		},
@@ -43,6 +54,10 @@ function createGridStore() {
 		removeItem(itemId) {
 			update((state) => {
 				const updatedItems = state.items.filter((item) => item.id !== itemId);
+				
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(updatedItems);
+				
 				return {
 					...state,
 					items: updatedItems
@@ -69,6 +84,9 @@ function createGridStore() {
 					...updatedItems[itemIndex],
 					size: newSize
 				};
+
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(updatedItems);
 
 				return {
 					...state,
@@ -97,6 +115,9 @@ function createGridStore() {
 				// Insert the dragged item at the target position
 				items.splice(newTargetIndex, 0, draggedItem);
 
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(items);
+
 				return {
 					...state,
 					items
@@ -115,6 +136,9 @@ function createGridStore() {
 					return sizeOrder[b.size] - sizeOrder[a.size];
 				});
 
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(sortedItems);
+
 				return {
 					...state,
 					items: sortedItems
@@ -132,6 +156,9 @@ function createGridStore() {
 
 				const [item] = items.splice(itemIndex, 1);
 				items.splice(newIndex, 0, item);
+
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(items);
 
 				return {
 					...state,
@@ -153,6 +180,9 @@ function createGridStore() {
 				// Clamp position to valid range
 				const clampedPosition = Math.max(0, Math.min(items.length, positionIndex));
 				items.splice(clampedPosition, 0, item);
+
+				// Save to homescreen store (which saves to localStorage)
+				homescreenStore.updateItems(items);
 
 				return {
 					...state,
@@ -211,7 +241,20 @@ function createGridStore() {
 			}));
 		},
 
-		// Initialize with default items
+		// Load items from homescreen store
+		loadFromHomescreen() {
+			const homescreenState = homescreenStore.getState();
+			set({
+				items: homescreenState.items || [],
+				editMode: false,
+				selectedItemId: null,
+				draggedItem: null,
+				dragOverPosition: null,
+				gridSize: { cols: 4, rows: 4 }
+			});
+		},
+
+		// Initialize with default items (deprecated - use loadFromHomescreen instead)
 		initializeDefaultItems() {
 			const defaultItems = [
 				// Row 1: Large tile on left, small tiles on right
@@ -365,8 +408,12 @@ function createGridStore() {
 				}
 			];
 
+			// Save default items to homescreen store
+			// homescreenStore.updateItems(defaultItems);
+			
 			set({
-				items: defaultItems,
+				// items: defaultItems,
+				items: [],
 				editMode: false,
 				selectedItemId: null,
 				draggedItem: null,

@@ -3,12 +3,13 @@
 	import { gridStore } from '../store/grid.js';
 	import GridItem from './GridItem.svelte';
 	import Icon from '@iconify/svelte';
+	import { backgroundClassStore } from '../utils/theme';
 
 	export let cols = 4;
 	export let scrollContainer = null;
 
 	// Calculate required rows based on items and their sizes
-	let calculatedRows = 6;
+	let calculatedRows = 0;
 
 	let gridContainer;
 	let draggedItem = null;
@@ -21,6 +22,9 @@
 	let removingItemId = null;
 	let autoScrollInterval = null;
 	let autoScrollSpeed = 100; // pixels per frame
+	
+	// Get theme-aware background
+	$: bgClass = $backgroundClassStore;
 
 	// Subscribe to grid store
 	$: gridState = $gridStore;
@@ -33,7 +37,7 @@
 
 	// Calculate required rows based on items
 	function calculateRequiredRows(items, cols) {
-		if (!items || items.length === 0) return 4; // Default minimum
+		if (!items || items.length === 0) return 0; // No rows if empty
 
 		// Simulate CSS Grid auto-placement more accurately
 		const grid = Array(cols).fill(0); // Track occupied cells per column
@@ -82,13 +86,19 @@
 			console.log(`Placed at row ${bestRow}, col ${bestCol}. Max row now: ${maxRow}`);
 		}
 
-		const result = Math.max(maxRow, 4);
+		// Return the actual maxRow needed (no minimum enforced)
+		const result = maxRow;
 		console.log('Final calculated rows:', result);
 		return result;
 	}
 
 	// Reactive calculation of rows
 	$: calculatedRows = calculateRequiredRows(items, cols);
+
+	// Calculate row height to maintain square proportions
+	// For 4 columns: ~90px per row, for 6 columns: proportionally smaller
+	// Row height should scale inversely with column count to maintain square tiles
+	$: rowHeight = Math.round(90 * (4 / cols));
 
 	// Debug logging
 	$: console.log(
@@ -97,7 +107,11 @@
 		'Items:',
 		items.length,
 		'Item sizes:',
-		items.map((i) => i.size)
+		items.map((i) => i.size),
+		'Row height:',
+		rowHeight,
+		'Columns:',
+		cols
 	);
 
 	// Update grid size when calculatedRows changes
@@ -107,10 +121,8 @@
 
 	// Initialize grid size
 	onMount(() => {
-		// Initialize with default items if empty
-		if (items.length === 0) {
-			gridStore.initializeDefaultItems();
-		}
+		// Load items from homescreen store (localStorage)
+		gridStore.loadFromHomescreen();
 	});
 
 	// Handle long press to enter edit mode
@@ -523,11 +535,10 @@
 </script>
 
 <div class="grid-container w-full relative flex-1" bind:this={gridContainer}>
-	<div class="z-10 p-4 fixed top-0 w-full h-full" style="background-image: url('https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=800&h=600&fit=crop'); background-size: cover; background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-clip: content-box; opacity: {editMode ? '0.8' : '1'};"></div>
-	<!-- Grid with black gaps -->
+	<!-- Grid with Windows Phone 8.1 style -->
 	<div
-		class="grid w-full transition-all duration-300 ease-in-out p-4 relative z-10 bg-black"
-		style="grid-template-columns: repeat({cols}, 1fr); grid-template-rows: repeat({calculatedRows}, minmax(90px, auto)); gap: 8px; opacity: {editMode ? '0.8' : '1'};"
+		class="grid w-full transition-all duration-300 ease-in-out p-4 relative z-10 {bgClass}"
+		style="grid-template-columns: repeat({cols}, 1fr); grid-template-rows: repeat({calculatedRows}, minmax({rowHeight}px, auto)); gap: 12px;"
 		on:click={handleGridClick}
 		on:dragover={handleDragOver}
 		role="grid"
@@ -539,7 +550,7 @@
 			<!-- Drop placeholder before this item -->
 			{#if dropIndicatorPosition === index && editMode && draggedItem}
 				<div
-					class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center"
+					class="drop-placeholder {draggedItem.bgColor} {bgClass} opacity-0 flex items-center justify-center"
 					style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};"
 				>
 					<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
@@ -567,7 +578,7 @@
 		<!-- Drop placeholder at the end -->
 		{#if dropIndicatorPosition === items.length && editMode && draggedItem}
 			<div
-				class="drop-placeholder {draggedItem.bgColor} bg-black opacity-0 flex items-center justify-center"
+				class="drop-placeholder {draggedItem.bgColor} {bgClass} opacity-0 flex items-center justify-center"
 				style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};"
 			>
 				<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
@@ -587,7 +598,7 @@
 		user-select: none;
 		min-height: 60px;
 		min-width: 60px;
-		border-radius: 8px;
+		border-radius: 0;
 	}
 	
 </style>

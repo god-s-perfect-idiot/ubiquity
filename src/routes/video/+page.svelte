@@ -6,6 +6,7 @@
 	import LetterGrid from '../../components/LetterGrid.svelte';
 	import BottomControls from '../../components/BottomControls.svelte';
 	import { goto } from '$app/navigation';
+	import { accentColorStore, backgroundClassStore, textColorClassStore, borderColorClassStore } from '../../utils/theme';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -21,6 +22,11 @@
 	let isVideoPaused = false;
 	let currentTime = 0;
 	let duration = 0;
+	
+	$: accentColor = $accentColorStore;
+	$: bgClass = $backgroundClassStore;
+	$: textClass = $textColorClassStore;
+	$: borderClass = $borderColorClassStore;
 
 	onMount(() => {
 		videos = fetchVideos(kernel.fs.getFiles());
@@ -121,10 +127,10 @@
 
 {#if isPlaying}
 	<!-- Full-screen video player -->
-	<div class="fixed inset-0 bg-black z-50 flex items-center justify-center page-holder">
+	<div class="fixed inset-0 {bgClass} z-50 flex items-center justify-center page-holder">
 		<div class="relative w-full h-full page overflow-hidden" class:page-exit={isExiting}>
 			<div
-				class="absolute top-4 right-4 w-screen bg-black bg-opacity-50 text-white px-4 py-2 rounded"
+				class="absolute top-4 right-4 w-screen {bgClass} bg-opacity-50 {textClass} px-4 py-2 rounded"
 			>
 				<span class="px-4 text-2xl">{nowPlayingName}</span>
 			</div>
@@ -145,7 +151,7 @@
 			</div>
 
 			<!-- Video controls overlay -->
-			<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-80 text-white p-4">
+			<div class="absolute bottom-0 left-0 right-0 {bgClass} bg-opacity-80 {textClass} p-4">
 				<div class="flex flex-col gap-4 mb-4">
 					<!-- Row 1: Seekbar -->
 					<div class="w-full">
@@ -176,27 +182,27 @@
 					<div class="flex justify-center items-center gap-8">
 						<button
 							on:click={togglePlayPause}
-							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+							class="{bgClass} border-2 {borderClass} rounded-full bg-opacity-50 hover:bg-opacity-75 {textClass} rounded-full p-2 transition-all duration-200"
 						>
 							<Icon icon={isVideoPaused ? 'mdi:play' : 'mdi:pause'} width="24" height="24" />
 						</button>
 						<button
 							on:click={skipBackward}
-							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+							class="{bgClass} border-2 {borderClass} rounded-full bg-opacity-50 hover:bg-opacity-75 {textClass} rounded-full p-2 transition-all duration-200"
 						>
 							<Icon icon="mdi:rewind-10" width="24" height="24" />
 						</button>
 
 						<button
 							on:click={skipForward}
-							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+							class="{bgClass} border-2 {borderClass} rounded-full bg-opacity-50 hover:bg-opacity-75 {textClass} rounded-full p-2 transition-all duration-200"
 						>
 							<Icon icon="mdi:fast-forward-10" width="24" height="24" />
 						</button>
 
 						<button
 							on:click={closeVideoPlayer}
-							class="bg-black border-2 border-white rounded-full bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-2 transition-all duration-200"
+							class="{bgClass} border-2 {borderClass} rounded-full bg-opacity-50 hover:bg-opacity-75 {textClass} rounded-full p-2 transition-all duration-200"
 						>
 							<Icon icon="rivet-icons:close" width="24" height="24" />
 						</button>
@@ -224,7 +230,8 @@
 				{#each Object.entries(videoList) as videoEntry}
 					<div class="flex flex-col gap-6">
 						<button
-							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
+							class="{textClass} text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1 font-[300]"
+							style="background-color: {accentColor}; border-color: {accentColor};"
 							id={videoEntry[0].toUpperCase()}
 							on:click={() => {
 								showGrid = true;
@@ -244,10 +251,10 @@
 									}}
 								>
 									<div
-										class="relative w-20 h-20 overflow-hidden border-2 border-white flex-shrink-0 flex items-center justify-center"
+										class="relative w-20 h-20 overflow-hidden border-2 {borderClass} flex-shrink-0 flex items-center justify-center"
 									>
-										<span class="absolute bottom-2 right-2 rounded-full border-2 border-white p-1">
-											<Icon icon="mdi:play" width="20" height="20" class="text-white" />
+										<span class="absolute bottom-2 right-2 rounded-full border-2 {borderClass} p-1">
+											<Icon icon="mdi:play" width="20" height="20" class="{textClass}" />
 										</span>
 									</div>
 									<div class="flex flex-col gap-2 justify-start">
@@ -277,7 +284,7 @@
 		>
 			<button
 				on:click={closePage}
-				class="flex flex-col border border-white rounded-full !border-2 p-1 font-bold"
+				class="flex flex-col border {borderClass} rounded-full !border-2 p-1 font-bold"
 			>
 				<Icon icon="rivet-icons:close" width="20" height="20" />
 			</button>

@@ -1,6 +1,7 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import { onMount } from 'svelte';
+	import { backgroundThemeStore, textColorClassStore } from '../utils/theme';
 
 	export let children = [];
 	export let expanded = false;
@@ -9,6 +10,11 @@
 	const dispatch = createEventDispatcher();
 	
 	let isMounted = false;
+	
+	$: backgroundTheme = $backgroundThemeStore;
+	$: textClass = $textColorClassStore;
+	// Invert: use #dedede in light mode, dark gray in dark mode
+	$: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
 
 	onMount(() => {
 		// Add a small delay to ensure the initial state is properly set
@@ -23,12 +29,12 @@
 	}
 </script>
 
-<div class="bg-[#1f1f1f] fixed bottom-0 left-0 right-0 z-50">
+<div class="fixed bottom-0 left-0 right-0 z-50" style="background-color: {bottomBarBg};">
 	<!-- Toggle Button (Always visible) -->
 	<div class="right-4 absolute top-0 z-10">
 		<button
 			on:click={toggleExpanded}
-			class="text-white transition-colors duration-200 leading-none font-[600] cursor-pointer"
+			class="{textClass} transition-colors duration-200 leading-none font-[600] cursor-pointer"
 			aria-label="Toggle bottom controls"
 		>
             <i class="fa-solid fa-ellipsis text-4xl"></i>

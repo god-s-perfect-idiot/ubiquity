@@ -1,15 +1,22 @@
 <script>
+    import { accentColorStore, backgroundClassStore, textColorClassStore, borderColorClassStore } from '../utils/theme';
+    
     export let onClick;
     export let text;
     export let className;
+    
+    $: accentColor = $accentColorStore;
+    $: bgClass = $backgroundClassStore;
+    $: textClass = $textColorClassStore;
+    $: borderClass = $borderColorClassStore;
 </script>
 
-<button class={`bg-[#000] text-white text-base py-1 border-2 border-white w-fit px-4 ${className} font-[300]`} on:click={onClick}>
+<button class={`${bgClass} ${textClass} text-base py-1 border-2 ${borderClass} w-fit px-4 ${className} font-[300]`} on:click={onClick} style="--accent-color: {accentColor};">
     {text}
 </button>
 
 <style>
     button:focus, button:active, button:hover {
-        background-color: #ff00ff;
+        background-color: var(--accent-color);
     }
 </style>

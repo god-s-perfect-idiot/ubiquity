@@ -1,5 +1,6 @@
 <script>
 	import { tick } from 'svelte';
+	import { accentColorStore } from '../utils/theme';
 
 	// Props
 	export let items = []; // Array of items to check against for highlighting
@@ -7,6 +8,9 @@
 	export let showGrid = false;
 	export let isExiting = false;
 	export let onLetterClick = null; // Callback function for letter clicks
+	
+	// Get accent color reactively
+	$: accentColor = $accentColorStore;
 
 	// Touch gesture detection variables
 	let touchStartY = 0;
@@ -103,12 +107,8 @@
 					href={`#${char.toUpperCase()}`}
 					class={`aspect-square text-4xl justify-start items-end flex ${
 						isExiting ? 'flip-out' : 'flip-in'
-					} ${
-						hasItemsForLetter(char)
-							? 'bg-[#ff00ff]'
-							: 'bg-[#121212]'
-					}`}
-					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms;"
+					} ${hasItemsForLetter(char) ? '' : 'bg-[#121212]'}`}
+					style="animation-delay: {isExiting ? (grid.length - index) * 10 : index * 10}ms; {hasItemsForLetter(char) ? `background-color: ${accentColor};` : ''}"
 					on:click={(event) => handleClick(char, event)}
 					on:touchstart={handleTouchStart}
 					on:touchend={(event) => {

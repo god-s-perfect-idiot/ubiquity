@@ -1,6 +1,7 @@
 <script>
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
+	import { accentColorStore, backgroundClassStore, borderColorClassStore } from '../utils/theme';
 
 	export let selection;
 	export let data = [];
@@ -8,6 +9,10 @@
 	export let label = '';
 	export let className = '';
 	export let onSelectionChange = null;
+	
+	$: accentColor = $accentColorStore;
+	$: bgClass = $backgroundClassStore;
+	$: borderClass = $borderColorClassStore;
 
 	// Set default selection only if none provided
 	$: if (selection === undefined && data.length > 0) {
@@ -24,7 +29,8 @@
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
                 transition:slide={{ duration: 300, easing: cubicOut }}
-                class="bg-white text-black pl-2 py-2 text-base border-[#ff00ff] border-2 flex flex-col gap-4"
+                class="bg-white text-black pl-2 py-2 text-base border-2 flex flex-col gap-4"
+                style="border-color: {accentColor};"
                 on:click={() => (open = false)}
             >
                 {#each data as item}
@@ -38,7 +44,7 @@
                                 onSelectionChange(item);
                             }
                         }}
-                        class={selection === item ? 'text-[#ff00ff]' : ''}
+                        style={selection === item ? `color: ${accentColor};` : ''}
                     >
                         {item}
                     </div>
@@ -47,7 +53,7 @@
         {:else}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div class="bg-[#000] border-2 border-white text-base p-1 pl-2" on:click={() => (open = true)}>
+			<div class="{bgClass} border-2 {borderClass} text-base p-1 pl-2" on:click={() => (open = true)}>
                 {selection}
             </div>
         {/if}

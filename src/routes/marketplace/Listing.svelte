@@ -14,10 +14,15 @@
 	import { slide, fade } from 'svelte/transition';
 	import { fetchMarketplaceItems, convertToKernelFile } from '../../lib/marketplace-utils.js';
 	import Loader from '../../components/Loader.svelte';
+	import { appInfoStore } from '../../store/appInfo.js';
+	import { accentColorStore, textColorClassStore } from '../../utils/theme';
 	export let listingType = 'apps';
 	export let toggleBottomBar = () => {};
 	export let isExiting = false;
 	export let showSearch = false;
+	
+	$: accentColor = $accentColorStore;
+	$: textClass = $textColorClassStore;
 
 	let marketplaceItems = [];
 	let localSources = [];
@@ -122,11 +127,35 @@
 		) {
 			const appName = findAppName(source);
 			kernel.removeFile(appName, fileTypes[listingType]);
+			
+			// Remove from appInfo store
+			appInfoStore.removeAppInfo(appName);
+			appInfoStore.removeAppInfo(source.source);
+			
 			addToast(`${appName} removed`);
 		} else {
 			// Convert marketplace item to kernel file format
 			const kernelFile = convertToKernelFile(source);
 			kernel.addFile(kernelFile.name, kernelFile.content, fileTypes[listingType]);
+			
+			// Store app info (icon, background, and other Firebase metadata)
+			const appInfo = {
+				icon: source.icon,
+				iconSrc: source.icon,
+				backgroundColor: source.background,
+				bgColor: source.background,
+				name: source.name,
+				description: source.description,
+				owner: source.owner,
+				category: source.category,
+				tags: source.tags,
+				...source // Store all Firebase data
+			};
+			
+			// Store by both name and URL for easy lookup
+			appInfoStore.setAppInfo(kernelFile.name, appInfo);
+			appInfoStore.setAppInfo(source.source, appInfo);
+			
 			addToast(`${kernelFile.name} added`);
 		}
 		kernel.updateFS();
@@ -203,7 +232,7 @@
 					in:slide={{ duration: 300, axis: 'y' }}
 					out:slide={{ duration: 300, axis: 'y' }}
 				>
-					<span class="text-2xl font-[300] text-[#ff00ff]">Showing results for "{searchQuery}"</span
+					<span class="text-2xl font-[300]" style="color: {accentColor};">Showing results for "{searchQuery}"</span
 					>
 					<span class="text-sm font-[300] text-[#7e7e7e]">
 						{filteredSources.length} results found
@@ -228,7 +257,7 @@
 							>
 								{#if isIconError(item) || !isValidUrl(item.icon)}
 									<div
-										class="w-full h-full flex items-end justify-start pl-4 pb-4 text-white text-4xl font-[300] lowercase"
+										class="w-full h-full flex items-end justify-start pl-4 pb-4 {textClass} text-4xl font-[300] lowercase"
 									>
 										{getFirstLetter(item.name)}
 									</div>

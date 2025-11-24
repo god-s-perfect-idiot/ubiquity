@@ -1,8 +1,12 @@
 <!-- Toast.svelte -->
 <script>
+    import { accentColorStore } from '../utils/theme';
+    
     export let content = "";
     export let duration = 2000;
     let visible = true;
+    
+    $: accentColor = $accentColorStore;
 
     setTimeout(() => {
         visible = false;
@@ -10,7 +14,7 @@
 </script>
 
 {#if visible}
-    <div class="fixed z-10 top-0 w-full bg-[#ff00ff] px-2 py-4 text-xl toast font-[300]">
+    <div class="fixed z-10 top-0 w-full px-2 py-4 text-xl toast font-[300]" style="background-color: {accentColor};">
         {content}
     </div>
 {/if}

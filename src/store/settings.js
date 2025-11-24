@@ -7,9 +7,10 @@ const createSettingsStore = () => {
       // Appearance settings
       appearance: {
         theme: 'system', // 'light', 'dark', 'system'
+        background: 'dark', // 'light' or 'dark'
         fontSize: 'medium', // 'small', 'medium', 'large'
         fontFamily: 'system', // 'system', 'monospace', 'serif'
-        accentColor: '#3b82f6', // Primary accent color
+        accentColor: '#ff00ff', // Primary accent color (Fuschia default)
         borderRadius: 'medium', // 'none', 'small', 'medium', 'large'
         animations: true, // Enable/disable animations
         compactMode: false, // Compact UI mode
@@ -211,9 +212,10 @@ const createSettingsStore = () => {
       return {
         appearance: {
           theme: 'system',
+          background: 'dark',
           fontSize: 'medium',
           fontFamily: 'system',
-          accentColor: '#3b82f6',
+          accentColor: '#ff00ff',
           borderRadius: 'medium',
           animations: true,
           compactMode: false,

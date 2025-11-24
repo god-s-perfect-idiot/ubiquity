@@ -3,10 +3,13 @@
 	import BottomControls from "../../components/BottomControls.svelte";
 	import { goto } from "$app/navigation";
 	import { onMount } from "svelte";
+	import { accentColorStore } from "../../utils/theme";
 
     let isExpanded = false;
     let isUnmounting = false;
     let isExiting = false;
+    
+    $: accentColor = $accentColorStore;
 
     const handleToggle = () => {
         isExpanded = !isExpanded;
@@ -36,9 +39,10 @@
         <div class="mt-4 h-[90%] overflow-scroll px-4 ">
             <span class="text-[#767676] text-base mt-4"> Software Release </span>
             <div class="flex flex-row justify-between w-full items-end">
-                <span class="text-[#ff00ff] text-4xl font-[300] mt-2"> Ubiquity Fuschia</span>
+                <span class="text-4xl font-[300] mt-2" style="color: {accentColor};"> Ubiquity Fuschia</span>
                 <span
-                    class="text-[#ff00ff] border-2 border-[#ff00ff] w-10 h-10 rounded-full flex justify-center items-center"
+                    class="border-2 w-10 h-10 rounded-full flex justify-center items-center"
+                    style="color: {accentColor}; border-color: {accentColor};"
                 >
                     <a href="https://github.com/god-s-perfect-idiot/ubiquity">
                         <i class="fa-solid fa-info"></i>
@@ -47,19 +51,19 @@
             </div>
             <span class="text-lg mt-4 underline font-[300]"> Privacy Policy </span>
             <div class="flex flex-col gap-2 mt-6 text-lg font-[300]">
-                <span>Ubiquity Version v-0.2</span>
-                <span>File Explorer v-0.1</span>
-                <span>Marketplace v-0.3</span>
+                <span>Ubiquity Version v-1.0</span>
+                <span>File Explorer v-1.0</span>
+                <span>Marketplace v-1.0</span>
                 <span>Music Player v-1.0</span>
                 <span>Photos v-1.0</span>
-                <span>Video v-0.2</span>
-                <span>Settings v-0.1</span>
-                <span>Documents v-0.2</span>
-                <span>Spotify (Metro) v-0.5</span>
-                <span>Weather v-0.1</span>
+                <span>Video v-1.0</span>
+                <span>Settings v-1.0</span>
+                <span>Documents v-1.0</span>
+                <span>Spotify (Metro) v-1.0</span>
+                <span>Weather v-1.0</span>
             </div>
             <div class="mt-12 mb-8">
-                <span class="text-2xl text-[#ff00ff]">faq</span>
+                <span class="text-2xl" style="color: {accentColor};">faq</span>
             </div>
             <div class="flex flex-col gap-6 font-[300] mb-16">
                 <div class="flex flex-col">

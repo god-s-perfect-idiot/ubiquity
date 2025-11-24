@@ -6,6 +6,7 @@
 	import { fetchMusic } from '../../kernel/system-utils';
 	import { kernel } from '../../kernel/store';
 	import LetterGrid from '../../components/LetterGrid.svelte';
+	import { accentColorStore, textColorClassStore, borderColorClassStore } from '../../utils/theme';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -22,6 +23,10 @@
 	let currentTime = 0;
 	let duration = 0;
 	let seekValue = 0;
+	
+	$: accentColor = $accentColorStore;
+	$: textClass = $textColorClassStore;
+	$: borderClass = $borderColorClassStore;
 
 	// Touch gesture detection variables
 	let touchStartY = 0;
@@ -209,7 +214,7 @@
 	$: console.log(nowPlayingLink);
 </script>
 
-<div class="page-holder">
+<div class="page-holder" style="--accent-color: {accentColor};">
 	{#if nowPlayingLink}
 		<div
 			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
@@ -230,8 +235,8 @@
 					</div>
 					<div class="relative w-full h-2 bg-gray-200">
 						<div
-							class="absolute top-0 left-0 h-full bg-[#ff00ff] transition-all duration-100 ease-in-out"
-							style="width: {seekValue}%"
+							class="absolute top-0 left-0 h-full transition-all duration-100 ease-in-out"
+							style="width: {seekValue}%; background-color: {accentColor};"
 						></div>
 						<input
 							type="range"
@@ -318,7 +323,8 @@
 				{#each Object.entries(musicList) as musicEntry}
 					<div class="flex flex-col gap-6">
 						<button
-							class="text-white text-3xl lowercase border-2 w-12 h-12 bg-[#ff00ff] border-[#ff00ff] justify-start items-end flex pl-1 pb-1 font-[300]"
+							class="{textClass} text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1 font-[300]"
+							style="background-color: {accentColor}; border-color: {accentColor};"
 							id={musicEntry[0].toUpperCase()}
 							on:click={() => {
 								showGrid = true;
@@ -444,7 +450,7 @@
 	.slider::-webkit-slider-thumb {
 		-webkit-appearance: none;
 		appearance: none;
-		background: #ff00ff;
+		background: var(--accent-color);
 		height: 16px;
 		width: 16px;
 		border-radius: 50%;
@@ -459,7 +465,7 @@
 	}
 
 	.slider::-moz-range-thumb {
-		background: #ff00ff;
+		background: var(--accent-color);
 		height: 16px;
 		width: 16px;
 		border-radius: 50%;

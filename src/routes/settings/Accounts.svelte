@@ -4,6 +4,10 @@
 	import { onMount } from 'svelte';
 	import { accountsStore } from '../../store/accounts.js';
 	import { addToast } from '../../store/toast';
+	import { backgroundThemeStore } from '../../utils/theme';
+	
+	$: backgroundTheme = $backgroundThemeStore;
+	$: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
 
 	export let isExiting = false;
 	export let hideBottomBar = () => {};
@@ -94,14 +98,16 @@
 	</div>
 
 	<div
-		class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 bg-[#1f1f1f] gap-8 z-10 bottom-bar"
+		class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 gap-8 z-10 bottom-bar"
 		class:bottom-bar-exit={isExiting}
+		style="background-color: {bottomBarBg};"
 	>
 		<div class="btn w-full">
 			<Button
 				text={isSpotifyConnected ? 'disconnect' : 'connect'}
 				onClick={isSpotifyConnected ? disconnectSpotify : openSpotifyApp}
-				className="btn !w-full bg-[#1f1f1f]"
+				className="btn !w-full"
+				style="background-color: {bottomBarBg};"
 			/>
 		</div>
 		<div class="btn w-full">
