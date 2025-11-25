@@ -64,11 +64,25 @@
 			bgColor: 'bg-pink-800'
 		},
 		{
+			name: 'Clock',
+			content: '/clock',
+			isSystemApp: true,
+			icon: 'nrk:clock',
+			bgColor: 'bg-indigo-800'
+		},
+		{
 			name: 'Documents',
 			content: '/documents',
 			isSystemApp: true,
 			icon: 'ix:document-filled',
 			bgColor: 'bg-red-700'
+		},
+		{
+			name: 'Feedback',
+			content: '/feedback',
+			isSystemApp: true,
+			icon: 'fluent-mdl2:feedback-response-solid',
+			bgColor: 'bg-teal-700'
 		},
 		{
 			name: 'Marketplace',

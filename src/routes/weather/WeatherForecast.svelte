@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { settingsStore } from '../../store/settings.js';
+	import { weatherStore } from '../../store/weather.js';
 	import { getWeatherIconUrl, formatDate, formatTime } from '../../lib/weather-utils.js';
 
 	// Reactive variables for forecast data
@@ -8,12 +9,12 @@
 	let dailyForecast = {};
 	let forecastArray = [];
 
-	// Subscribe to settings store for real-time updates
+	// Subscribe to weather store for real-time updates
 	onMount(() => {
 		console.log('WeatherForecast mounted, setting up store subscription...');
 		
-		const unsubscribe = settingsStore.subscribe((state) => {
-			forecast = state.settings?.weather?.forecast || [];
+		const unsubscribe = weatherStore.subscribe((state) => {
+			forecast = state.forecast || [];
 			console.log('Forecast data updated:', forecast);
 			
 			// Process forecast data when it updates
@@ -21,8 +22,8 @@
 		});
 		
 		// Get initial forecast data
-		const initialState = settingsStore.getAll();
-		forecast = initialState?.weather?.forecast || [];
+		const initialState = weatherStore.getCurrentState();
+		forecast = initialState?.forecast || [];
 		console.log('Initial forecast data:', forecast);
 		
 		// Process initial data

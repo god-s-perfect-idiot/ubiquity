@@ -17,6 +17,7 @@
 	console.log('Weather actions:', weatherActions);
 
 	export let locationTitle;
+	export let isUpdatingLocation = false;
 
 	// Auto-detect location and fetch weather on component mount
 	$: if (!weatherStore.getCurrentState().lastLocation && !weatherStore.getCurrentState().error && !weatherStore.getCurrentState().loading) {
@@ -44,6 +45,17 @@
 
 	function handleRefresh() {
 		weatherActions.refresh();
+	}
+
+	async function handleUpdateLocation() {
+		isUpdatingLocation = true;
+		try {
+			await weatherActions.updateLocationOnly();
+		} catch (error) {
+			console.error('Failed to update location:', error);
+		} finally {
+			isUpdatingLocation = false;
+		}
 	}
 
 	function handleRetry() {
@@ -170,7 +182,7 @@
 </script>
 
 <div class="w-full">
-	{#if loading}
+	{#if loading || isUpdatingLocation}
 		<div class="flex flex-col items-center justify-center py-12 h-full my-24">
 			<Loader />
 		</div>
@@ -197,8 +209,7 @@
 		<!-- Current Weather -->
 		<div class="space-y-6">
 			<div class="text-left">
-				<p class="text-lg text-gray-300 mb-2">{currentWeather.country}</p>
-				<p class="text-sm text-gray-400">
+				<p class="text-sm text-[#767676]">
 					Last updated: {new Date(currentWeather.timestamp).toLocaleTimeString()}
 				</p>
 			</div>
@@ -248,7 +259,11 @@
 					<Icon icon="material-symbols:refresh" />
 					<span class="text-base">refresh</span>
 				</button>
-				<button class="px-2 border-2 border-white flex items-center justify-center gap-1 py-2 text-white" on:click={() => weatherActions.updateLocationOnly()}>
+				<button 
+					class="px-2 border-2 border-white flex items-center justify-center gap-1 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed" 
+					on:click={handleUpdateLocation}
+					disabled={isUpdatingLocation}
+				>
 					<Icon icon="material-symbols:location-on" />
 					<span class="text-base">update location</span>
 				</button>

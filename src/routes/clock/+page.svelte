@@ -1,23 +1,48 @@
 <script>
+	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import BottomControls from '../../components/BottomControls.svelte';
-	import WeatherDisplay from './WeatherDisplay.svelte';
-	import WeatherForecast from './WeatherForecast.svelte';
 	import Icon from '@iconify/svelte';
-	import { onMount } from "svelte";
 	import { borderColorClassStore } from '../../utils/theme';
-	import { weatherStore } from '../../store/weather.js';
 	
 	$: borderClass = $borderColorClassStore;
-    
-	console.log('Weather page loading...');
-
+	
 	let isExiting = false;
 	let isExpanded = false;
 	let isUnmounting = false;
-	let locationTitle = '';
-	let isLoading = false;
-	let isUpdatingLocation = false;
+	let currentTime = new Date();
+	let timeInterval;
+
+	function updateTime() {
+		currentTime = new Date();
+	}
+
+	function formatTime(date) {
+		const hours = date.getHours();
+		const minutes = date.getMinutes();
+		const seconds = date.getSeconds();
+		const ampm = hours >= 12 ? 'PM' : 'AM';
+		const displayHours = hours % 12 || 12;
+		
+		return {
+			hours: displayHours.toString().padStart(2, '0'),
+			minutes: minutes.toString().padStart(2, '0'),
+			seconds: seconds.toString().padStart(2, '0'),
+			ampm
+		};
+	}
+
+	function formatDate(date) {
+		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+		const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+		
+		const dayName = days[date.getDay()];
+		const monthName = months[date.getMonth()];
+		const day = date.getDate();
+		const year = date.getFullYear();
+		
+		return `${dayName}, ${monthName} ${day}, ${year}`;
+	}
 
 	function handleToggle(event) {
 		isExpanded = event.detail.expanded;
@@ -36,35 +61,43 @@
 		}, 300); // Allow time for unmounting animation
 	}
 
-    onMount(() => {
-        isExpanded = false;
-        
-        // Get initial loading state
-        const initialState = weatherStore.getCurrentState();
-        isLoading = initialState.loading;
-        
-        // Subscribe to weather store to track loading state
-        const unsubscribe = weatherStore.subscribe((state) => {
-            isLoading = state.loading;
-        });
-        
-        return unsubscribe;
-    });
+	onMount(() => {
+		updateTime();
+		timeInterval = setInterval(updateTime, 1000);
+		isExpanded = false;
+	});
+
+	onDestroy(() => {
+		if (timeInterval) {
+			clearInterval(timeInterval);
+		}
+	});
+
+	$: timeDisplay = formatTime(currentTime);
+	$: dateDisplay = formatDate(currentTime);
 </script>
 
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
-		<span class="text-6xl font-[300] mb-8 lowercase"
-			>{locationTitle === '' || locationTitle === 'Unknown Location'
-				? 'weather'
-				: locationTitle}</span
-		>
-		<!-- Weather Display Component -->
-		<WeatherDisplay bind:locationTitle bind:isUpdatingLocation />
-		<!-- Weather Forecast Component -->
-		{#if !isLoading && !isUpdatingLocation}
-			<WeatherForecast />
-		{/if}
+		<span class="text-6xl font-[300] lowercase mb-8">date & time</span>
+		
+		<div class="flex flex-col flex-1 gap-2">
+			<!-- Time Display -->
+			<div class="flex flex-col gap-4 mt-16">
+				<div class="flex flex-row items-baseline gap-2 w-full">
+					<span class="text-6xl font-[300]">{timeDisplay.hours}</span>
+					<span class="text-6xl font-[300]">:</span>
+					<span class="text-6xl font-[300]">{timeDisplay.minutes}</span>
+					<span class="text-3xl font-[300] opacity-60">{timeDisplay.seconds}</span>
+					<span class="text-5xl font-[300] ml-2">{timeDisplay.ampm}</span>
+				</div>
+			</div>
+			
+			<!-- Date Display -->
+			<div class="flex flex-col gap-2 mt-2">
+				<span class="text-2xl font-[300] opacity-80">{dateDisplay}</span>
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -130,3 +163,4 @@
 		background: #718096;
 	}
 </style>
+

@@ -167,26 +167,30 @@ export async function getCityName(lat, lon) {
 	try {
 		console.log('Getting city name for coordinates:', { lat, lon });
 		
-		const response = await fetch(`https://api.open-meteo.com/v1/geocoding/reverse?latitude=${lat}&longitude=${lon}&count=1`);
+		// Use Nominatim (OpenStreetMap) for reverse geocoding
+		// Note: Nominatim requires a User-Agent header to identify the application
+		const response = await fetch(
+			`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`,
+			{
+				headers: {
+					'User-Agent': 'Ubiquity Weather App'
+				}
+			}
+		);
 		console.log('Geocoding response status:', response.status);
 		
 		if (response.ok) {
 			const data = await response.json();
 			console.log('Geocoding response data:', data);
 			
-			if (data.results && data.results.length > 0) {
-				const result = data.results[0];
-				console.log('Geocoding result:', result);
-				
-				// Try different possible field names for city and country
-				const city = result.name || result.city || result.locality || result.place || 'Unknown Location';
-				const country = result.country || result.country_code || 'Unknown';
+			if (data.address) {
+				const city = data.address.city || data.address.town || data.address.village || data.address.county || data.address.municipality || 'Unknown Location';
+				const country = data.address.country || 'Unknown';
 				
 				console.log('Extracted city info:', { city, country });
-				
 				return { city, country };
 			} else {
-				console.log('No results in geocoding response');
+				console.log('No address in geocoding response');
 			}
 		} else {
 			console.log('Geocoding response not ok:', response.status, response.statusText);
@@ -195,48 +199,8 @@ export async function getCityName(lat, lon) {
 		console.error('Failed to get city name:', error);
 	}
 	
-	// Try fallback geocoding service
-	console.log('Primary geocoding failed, trying fallback...');
-	const fallbackResult = await getCityNameFallback(lat, lon);
-	if (fallbackResult) {
-		return fallbackResult;
-	}
-	
 	console.log('Returning default city info');
 	return { city: 'Unknown Location', country: 'Unknown' };
-}
-
-/**
- * Fallback geocoding using a different free service
- * @param {number} lat - Latitude
- * @param {number} lon - Longitude
- * @returns {Promise<{city: string, country: string}>}
- */
-async function getCityNameFallback(lat, lon) {
-	try {
-		console.log('Trying fallback geocoding service...');
-		
-		// Use Nominatim (OpenStreetMap) as a fallback
-		const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
-		console.log('Fallback geocoding response status:', response.status);
-		
-		if (response.ok) {
-			const data = await response.json();
-			console.log('Fallback geocoding data:', data);
-			
-			if (data.address) {
-				const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Unknown Location';
-				const country = data.address.country || 'Unknown';
-				
-				console.log('Fallback extracted city info:', { city, country });
-				return { city, country };
-			}
-		}
-	} catch (error) {
-		console.error('Fallback geocoding failed:', error);
-	}
-	
-	return null;
 }
 
 /**
