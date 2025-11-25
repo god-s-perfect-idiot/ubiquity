@@ -1,9 +1,39 @@
 <script>
 	import Apps from './Apps.svelte';
 	import StartMenu from './StartMenu.svelte';
+	import { settingsStore } from '../store/settings';
+	import { onMount } from 'svelte';
     
-	let showMenu = false;
+	// Initialize showMenu immediately using synchronous get to avoid animation on load
+	const initialSetting = settingsStore.get('appearance.showHomescreenWhenOpened');
+	let showMenu = initialSetting === true;
 	let isAnimating = false;
+	let userHasInteracted = false;
+	let isInitialLoad = true;
+	
+	// Reset interaction flag when component mounts
+	onMount(() => {
+		userHasInteracted = false; // Reset on each navigation to home
+		// Ensure showMenu matches setting on mount (in case store wasn't ready initially)
+		const currentSetting = settingsStore.get('appearance.showHomescreenWhenOpened');
+		if (!userHasInteracted) {
+			showMenu = currentSetting === true;
+		}
+		// Disable initial load flag after a brief delay to allow transitions for future changes
+		setTimeout(() => {
+			isInitialLoad = false;
+		}, 100);
+	});
+	
+	// Get value from store reactively for updates
+	$: showHomescreenWhenOpened = $settingsStore?.settings?.appearance?.showHomescreenWhenOpened ?? false;
+	
+	// Update showMenu when setting changes (but only if user hasn't interacted and not initial load)
+	$: {
+		if (!isInitialLoad && !isAnimating && !userHasInteracted) {
+			showMenu = showHomescreenWhenOpened === true;
+		}
+	}
 	
 	// Swipe gesture tracking
 	let touchStartX = 0;
@@ -16,6 +46,7 @@
 	export let onBackClick = () => {
 		if (isAnimating) return;
 		isAnimating = true;
+		userHasInteracted = true;
 		showMenu = true;
 		// Reset animation state after animation completes
 		setTimeout(() => {
@@ -26,6 +57,7 @@
 	function handleStartMenuBack() {
 		if (isAnimating) return;
 		isAnimating = true;
+		userHasInteracted = true;
 		showMenu = false;
 		// Reset animation state after animation completes
 		setTimeout(() => {
@@ -69,10 +101,12 @@
 		
 		// Swipe right: from Apps to StartMenu
 		if (deltaX > minSwipeDistance && !showMenu) {
+			userHasInteracted = true;
 			onBackClick();
 		}
 		// Swipe left: from StartMenu to Apps
 		else if (deltaX < -minSwipeDistance && showMenu) {
+			userHasInteracted = true;
 			handleStartMenuBack();
 		}
 	}
@@ -86,7 +120,10 @@
 >
 	<!-- Apps Component -->
 	<div 
-		class="absolute inset-0 transition-transform duration-500 ease-in-out h-full"
+		class="absolute inset-0 h-full"
+		class:transition-transform={!isInitialLoad}
+		class:duration-500={!isInitialLoad}
+		class:ease-in-out={!isInitialLoad}
 		class:slide-out-right={showMenu}
 	>
 		<Apps onBackClick={onBackClick} />
@@ -94,7 +131,10 @@
 	
 	<!-- StartMenu Component -->
 	<div 
-		class="absolute inset-0 transition-transform duration-500 ease-in-out"
+		class="absolute inset-0"
+		class:transition-transform={!isInitialLoad}
+		class:duration-500={!isInitialLoad}
+		class:ease-in-out={!isInitialLoad}
 		class:slide-in-left={showMenu}
 		class:slide-out-left={!showMenu}
 	>

@@ -14,7 +14,8 @@ const createSettingsStore = () => {
         borderRadius: 'medium', // 'none', 'small', 'medium', 'large'
         animations: true, // Enable/disable animations
         compactMode: false, // Compact UI mode
-        showMoreCols: false // Show 6 columns instead of 4 in start menu (false = 4 cols, true = 6 cols)
+        showMoreCols: false, // Show 6 columns instead of 4 in start menu (false = 4 cols, true = 6 cols)
+        showHomescreenWhenOpened: false // Show homescreen when app is opened
       },
       
       // System settings
@@ -219,7 +220,8 @@ const createSettingsStore = () => {
           borderRadius: 'medium',
           animations: true,
           compactMode: false,
-          showMoreCols: false
+          showMoreCols: false,
+          showHomescreenWhenOpened: false
         },
         system: {
           language: 'en',

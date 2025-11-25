@@ -5,6 +5,7 @@
 	import { accentColorStore, backgroundThemeStore, borderColorClassStore } from '../../utils/theme';
 	import Select from '../../components/Select.svelte';
 	import ColorPicker from '../../components/ColorPicker.svelte';
+	import Switch from '../../components/Switch.svelte';
 	import { slide } from 'svelte/transition';
 
 	// Color definitions with hex values
@@ -50,11 +51,20 @@
 	let background = 'dark';
 	let accentColorName = 'Fuschia';
 	let colorPickerOpen = false;
+	let showHomescreenWhenOpened = false;
 	
 	// Get accent color reactively from store
 	$: accentColor = $accentColorStore;
 	$: borderClass = $borderColorClassStore;
 	$: background = $backgroundThemeStore;
+	
+	// Initialize showHomescreenWhenOpened from settings
+	$: {
+		const setting = settingsStore.get('appearance.showHomescreenWhenOpened');
+		if (setting !== undefined) {
+			showHomescreenWhenOpened = setting;
+		}
+	}
 
 	// Hide bottom bar when color picker opens
 	$: if (colorPickerOpen) {
@@ -86,6 +96,12 @@
 		const color = event.detail;
 		handleAccentColorChange(color.name);
 		colorPickerOpen = false;
+	}
+
+	// Handle show homescreen when opened toggle
+	function handleShowHomescreenToggle(value) {
+		settingsStore.set('appearance.showHomescreenWhenOpened', value);
+		showHomescreenWhenOpened = value;
 	}
 </script>
 
@@ -143,6 +159,12 @@
 				colors={accentColors}
 				bind:open={colorPickerOpen}
 				on:colorSelected={handleColorSelected}
+			/>
+			<Switch
+				title="Show Homescreen when opened"
+				value={showHomescreenWhenOpened}
+				onToggle={handleShowHomescreenToggle}
+				description="Show the homescreen when opened."
 			/>
 		</div>
 	</div>
