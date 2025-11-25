@@ -5,6 +5,7 @@
 	import { weatherActions } from '../../lib/weather-actions.js';
 	import { getWeatherIconUrl } from '../../lib/weather-utils.js';
 	import { accentColorStore, textColorClassStore } from '../../utils/theme';
+	import Loader from '../../components/Loader.svelte';
 
 	export let gridSize = '2x2'; // '2x2' or '4x2'
 
@@ -174,7 +175,7 @@
 		class="w-full h-full flex items-center justify-center text-white {textColor}"
 		style="background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);"
 	>
-		<span class="text-lg font-[300]">Loading...</span>
+		<Loader />
 	</div>
 {:else if currentWeather}
 	{#if gridSize === '2x2'}

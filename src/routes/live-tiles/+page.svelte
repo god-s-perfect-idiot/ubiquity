@@ -7,6 +7,7 @@
 	import LiveClock from '../clock/Live.svelte';
 	import LiveWeather from '../weather/Live.svelte';
 	import LivePhotos from '../photos/Live.svelte';
+	import Loader from '../../components/Loader.svelte';
 	
 	$: borderClass = $borderColorClassStore;
 	
@@ -15,6 +16,7 @@
 	let isUnmounting = false;
 	let selectedApp = null;
 	let selectedGridSize = '2x2';
+	let isLoadingLiveTile = false;
 	
 	const systemAppsWithLiveTiles = [
 		{
@@ -59,10 +61,22 @@
 
 	function selectApp(app) {
 		selectedApp = app;
+		isLoadingLiveTile = true;
+		// Reset loading state after a short delay to allow components to initialize
+		setTimeout(() => {
+			isLoadingLiveTile = false;
+		}, 300);
 	}
 
 	function selectGridSize(size) {
 		selectedGridSize = size;
+		if (selectedApp) {
+			isLoadingLiveTile = true;
+			// Reset loading state after a short delay to allow components to re-render
+			setTimeout(() => {
+				isLoadingLiveTile = false;
+			}, 300);
+		}
 	}
 
 	function getLiveTileComponent() {
@@ -144,8 +158,12 @@
 								<span class="text-lg font-[300]">{selectedApp.name} - {selectedGridSize}</span>
 								<span class="text-sm opacity-70">This is how the live tile will appear</span>
 							</div>
-							<div class="border-2 {borderClass} overflow-hidden" style="width: {selectedGridSize === '2x2' ? '200px' : '400px'}; height: {selectedGridSize === '2x2' ? '200px' : '200px'};">
-								{#if LiveTileComponent}
+							<div class="border-2 {borderClass} overflow-hidden relative" style="width: {selectedGridSize === '2x2' ? '200px' : '400px'}; height: {selectedGridSize === '2x2' ? '200px' : '200px'};">
+								{#if isLoadingLiveTile}
+									<div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+										<Loader />
+									</div>
+								{:else if LiveTileComponent}
 									<svelte:component this={LiveTileComponent} gridSize={selectedGridSize} />
 								{/if}
 							</div>
