@@ -202,7 +202,8 @@
 	}
 
 	/* Enter animation - image enters from bottom */
-	/* Starts from below and moves up to cover the exiting image */
+	/* Replicates Windows Phone 8.1 gallery live tile animation behavior */
+	/* Uses Windows Phone standard easing curve for smooth deceleration */
 	@keyframes enter-from-bottom {
 		0% {
 			object-position: center top;
@@ -218,7 +219,7 @@
 
 	.photo-enter {
 		object-position: center top;
-		animation: enter-from-bottom 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+		animation: enter-from-bottom 0.6s cubic-bezier(0.1, 0, 0.25, 1) forwards;
 	}
 </style>
 
