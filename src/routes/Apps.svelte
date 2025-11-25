@@ -111,6 +111,13 @@
 			isSystemApp: true,
 			icon: 'mdi:magnify',
 			bgColor: 'bg-red-700'
+		},
+		{
+			name: 'Live Tiles Toolkit',
+			content: '/live-tiles',
+			isSystemApp: true,
+			icon: 'material-symbols:grid-view',
+			bgColor: 'bg-purple-800'
 		}
 	];
 	let apps = [];

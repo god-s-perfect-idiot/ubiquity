@@ -67,10 +67,10 @@
     style="background-color: {bottomBarBg};"
 >
     <div class="btn w-full">
-        <Button text="add" onClick={add} className="btn !w-full" style="background-color: {bottomBarBg};" />
+        <Button text="add" onClick={add} className="btn !w-full" style="background-color: {bottomBarBg} !important;" />
     </div>
     <div class="btn w-full">
-        <Button text="close" onClick={close} className="btn !w-full" style="background-color: {bottomBarBg};" />
+        <Button text="close" onClick={close} className="btn !w-full" style="background-color: {bottomBarBg} !important;" />
     </div>
 </div>
 
