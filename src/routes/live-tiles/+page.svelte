@@ -113,7 +113,7 @@
 		installedApps.forEach((app) => {
 			const appInfo = appInfoStore.getAppInfo(app.name);
 			if (appInfo) {
-				app.icon = appInfo.iconSrc;
+				app.icon = appInfo.icon;
 				app.bgColor = appInfo.bgColor;
 			}
 		});

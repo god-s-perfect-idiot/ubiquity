@@ -33,6 +33,7 @@
 			isExiting = true;
 			kernel.addFile(fileName, fileContent, fileType);
 			kernel.updateFS();
+			addToast('Added successfully', 2000);
 			close()
 		} else {
 			addToast('Please fill all fields', 2000);

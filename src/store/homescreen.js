@@ -50,7 +50,7 @@ function createHomescreenStore() {
 					return state;
 				}
 
-				// Only save minimal data - exclude bgColor and iconSrc (these come from appInfo)
+				// Only save minimal data - exclude bgColor and icon (these come from appInfo)
 				const newItem = {
 					id: item.id || `homescreen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 					name: item.name,

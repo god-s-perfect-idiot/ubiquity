@@ -518,7 +518,6 @@ const addTestDataToFS = () => {
     // Store app info (icon, backgroundColor, and other metadata)
     const appInfo = {
       icon: app.icon,
-      iconSrc: app.icon,
       backgroundColor: app.backgroundColor,
       bgColor: app.backgroundColor,
       name: app.name,

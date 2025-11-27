@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import Display from './Display.svelte';
 	import Theme from './Theme.svelte';
+	import Apps from './Apps.svelte';
 	import { accentColorStore, borderColorClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let isExpanded = false;
@@ -89,9 +90,9 @@
 				</div>
 				<div class="flex flex-col gap-3 items-start">
 					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">on this device</span>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">apps</span>
-						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
+					<button class="flex flex-col items-start" on:click={() => {changePage('apps')}}>
+						<span class="text-3xl font-[300]">apps</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>check installed apps</span
 						>
 					</button>
@@ -172,6 +173,8 @@
 	<Display {isExiting} {hideBottomBar} />
 {:else if currentPage === 'theme'}
 	<Theme {isExiting} {hideBottomBar} />
+{:else if currentPage === 'apps'}
+	<Apps {isExiting} {hideBottomBar} />
 {/if}
 
 {#if !hiddenBottomBar}

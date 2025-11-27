@@ -141,7 +141,6 @@
 			// Store app info (icon, background, and other Firebase metadata)
 			const appInfo = {
 				icon: source.icon,
-				iconSrc: source.icon,
 				backgroundColor: source.background,
 				bgColor: source.background,
 				name: source.name,

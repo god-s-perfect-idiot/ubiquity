@@ -376,12 +376,9 @@
 		// Fallback to favicon cache if no appInfo
 		const faviconData = faviconCache[app.name];
 
-		// Get icon src - prioritize appInfo.iconSrc, then appInfo.icon (if URL), then favicon cache
+		// Get icon src - check appInfo.icon (if URL), then favicon cache
 		let iconSrc = null;
-		if (appInfo?.iconSrc) {
-			// iconSrc is explicitly set (from Firebase/marketplace)
-			iconSrc = appInfo.iconSrc;
-		} else if (
+		if (
 			appInfo?.icon &&
 			(appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))
 		) {
@@ -425,7 +422,7 @@
 			iconifyIcon = app.icon;
 		}
 
-		// Only save minimal data - exclude bgColor and iconSrc (these come from appInfo)
+		// Only save minimal data - exclude bgColor and icon (these come from appInfo)
 		const newItem = {
 			id: `homescreen-${app.name}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 			name: app.name,
@@ -541,7 +538,9 @@
 											appInfoStore.getAppInfo(app.content) ||
 											appInfoStore.getAppInfo(app.url)}
 										{@const iconSrc =
-											appInfo?.iconSrc || appInfo?.icon || faviconCache[app.name]?.url}
+											(appInfo?.icon && (appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))) 
+												? appInfo.icon 
+												: faviconCache[app.name]?.url}
 										{@const rawBgColor =
 											appInfo?.bgColor ||
 											appInfo?.backgroundColor ||

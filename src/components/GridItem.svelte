@@ -354,7 +354,7 @@
 		iconElement.style.alignItems = 'center';
 		iconElement.style.justifyContent = 'center';
 		
-		// Use iconSrc if available (image icon), otherwise use Iconify
+		// Use icon URL if available (image icon), otherwise use Iconify
 		if (iconSrc) {
 			const img = document.createElement('img');
 			img.src = iconSrc;
@@ -575,17 +575,15 @@
 		return r > 240 && g > 240 && b > 240;
 	}
 
-	// Get iconSrc and bgColor from appInfo store (reactive)
+	// Get icon (as URL) and bgColor from appInfo store (reactive)
 	$: iconSrc = (() => {
 		// Look up appInfo by name, src, or URL
 		const appInfo = appInfoStore.getAppInfo(item.name) || 
 			appInfoStore.getAppInfo(item.src) || 
 			(item.src && item.src.startsWith('http') ? appInfoStore.getAppInfo(item.src) : null);
 		
-		// Get iconSrc from appInfo
-		if (appInfo?.iconSrc) {
-			return appInfo.iconSrc;
-		} else if (appInfo?.icon && (appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))) {
+		// Get icon from appInfo (check if it's a URL)
+		if (appInfo?.icon && (appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))) {
 			return appInfo.icon;
 		} else if (item.src && item.src.startsWith('http')) {
 			// Fallback to favicon for external URLs
