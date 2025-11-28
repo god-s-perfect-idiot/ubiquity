@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import { accountsStore } from '../../../store/accounts.js';
 	import { addToast } from '../../../store/toast';
+	import { getRedirectUri } from '../../../lib/spotify-config.js';
 	
 	let debugInfo = '';
 	let isProcessing = true;
@@ -48,13 +49,27 @@
 			debugInfo += '\nAuthorization code received successfully!';
 			
 			try {
+				// Get stored credentials from localStorage
+				const storedClientId = localStorage.getItem('spotify_client_id') || 
+					import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+				const storedClientSecret = localStorage.getItem('spotify_client_secret') || 
+					import.meta.env.VITE_SPOTIFY_CLIENT_SECRET || '';
+				
+				// Get the redirect URI (must match what was used in auth)
+				const redirectUri = getRedirectUri();
+				
 				// Exchange the code for an access token
 				const response = await fetch('/api/spotify/token', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
 					},
-					body: JSON.stringify({ code: authCode })
+					body: JSON.stringify({ 
+						code: authCode,
+						clientId: storedClientId,
+						clientSecret: storedClientSecret,
+						redirectUri: redirectUri
+					})
 				});
 				
 				const tokenData = await response.json();

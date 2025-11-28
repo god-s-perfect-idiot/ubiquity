@@ -35,6 +35,7 @@
 	let availableDevices = [];
 	let selectedDeviceId = null;
 	let selectedDeviceName = null;
+	let webPlayerReady = false;
 
 	function handleToggle(event) {
 		isExpanded = event.detail.expanded;
@@ -69,7 +70,11 @@
 		if (accountsStore.hasValidToken('spotify')) {
 			const token = accountsStore.getAccessToken('spotify');
 			await initializeSpotifyApi(token);
+			await initializeWebPlayer(token);
 			await loadAvailableDevices();
+			// Poll for devices a few times to catch the web player
+			setTimeout(() => loadAvailableDevices(), 2000);
+			setTimeout(() => loadAvailableDevices(), 4000);
 			await loadLikedSongs();
 			isInitializing = false; // Mark as done initializing
 		} else {
@@ -88,6 +93,93 @@
 		}
 	}
 
+	async function initializeWebPlayer(token) {
+		if (!browser) return;
+		
+		// Load Spotify Web Playback SDK script
+		return new Promise((resolve) => {
+			if (window.Spotify) {
+				setupWebPlayer(token);
+				resolve();
+				return;
+			}
+
+			const script = document.createElement('script');
+			script.src = 'https://sdk.scdn.co/spotify-player.js';
+			script.async = true;
+			script.onload = () => {
+				setupWebPlayer(token);
+				resolve();
+			};
+			script.onerror = () => {
+				console.error('Failed to load Spotify Web Playback SDK');
+				resolve();
+			};
+			document.head.appendChild(script);
+		});
+	}
+
+	function setupWebPlayer(initialToken) {
+		if (!window.Spotify || !browser) return;
+
+		try {
+			const player = new window.Spotify.Player({
+				name: 'Ubiquity Web Player',
+				getOAuthToken: (cb) => {
+					// Get fresh token from accounts store
+					if (accountsStore.hasValidToken('spotify')) {
+						const currentToken = accountsStore.getAccessToken('spotify');
+						cb(currentToken);
+					} else {
+						cb(initialToken);
+					}
+				},
+				volume: 0.5
+			});
+
+			// Error handling
+			player.addListener('initialization_error', ({ message }) => {
+				console.error('Spotify Player initialization error:', message);
+			});
+
+			player.addListener('authentication_error', ({ message }) => {
+				console.error('Spotify Player authentication error:', message);
+			});
+
+			player.addListener('account_error', ({ message }) => {
+				console.error('Spotify Player account error:', message);
+			});
+
+			player.addListener('playback_error', ({ message }) => {
+				console.error('Spotify Player playback error:', message);
+			});
+
+			// Ready event
+			player.addListener('ready', ({ device_id }) => {
+				console.log('Spotify Web Player ready with device ID:', device_id);
+				webPlayerReady = true;
+				selectedDeviceId = device_id;
+				selectedDeviceName = 'Ubiquity Web Player';
+				// Reload devices to include this one
+				loadAvailableDevices();
+			});
+
+			// Connect to the player
+			player.connect().then((success) => {
+				if (success) {
+					console.log('Spotify Web Player connected successfully');
+				}
+			}).catch((error) => {
+				console.error('Failed to connect Spotify Web Player:', error);
+			});
+
+			// Store player globally for cleanup if needed
+			window.spotifyPlayer = player;
+		} catch (error) {
+			console.error('Error setting up Spotify Web Player:', error);
+		}
+	}
+
 	async function loadAvailableDevices() {
 		if (!spotifyApi) return;
 
@@ -95,23 +187,34 @@
 			const devices = await spotifyApi.getMyDevices();
 			availableDevices = devices.devices || [];
 
-			// Prioritize web player if available
-			const webPlayer = availableDevices.find(
-				(device) =>
-					device.type === 'Computer' &&
-					(device.name.includes('Web Player') ||
-						device.name.includes('Chrome') ||
-						device.name.includes('Safari'))
+			// Prioritize our embedded web player
+			const ubiquityPlayer = availableDevices.find(
+				(device) => device.name === 'Ubiquity Web Player'
 			);
 
-			if (webPlayer) {
-				selectedDeviceId = webPlayer.id;
-				selectedDeviceName = webPlayer.name;
-				console.log('Selected web player device:', webPlayer.name);
-			} else if (availableDevices.length > 0) {
-				selectedDeviceId = availableDevices[0].id;
-				selectedDeviceName = availableDevices[0].name;
-				console.log('Selected device:', availableDevices[0].name);
+			if (ubiquityPlayer) {
+				selectedDeviceId = ubiquityPlayer.id;
+				selectedDeviceName = ubiquityPlayer.name;
+				console.log('Selected Ubiquity Web Player device:', ubiquityPlayer.id);
+			} else {
+				// Fallback to other web players
+				const webPlayer = availableDevices.find(
+					(device) =>
+						device.type === 'Computer' &&
+						(device.name.includes('Web Player') ||
+							device.name.includes('Chrome') ||
+							device.name.includes('Safari'))
+				);
+
+				if (webPlayer) {
+					selectedDeviceId = webPlayer.id;
+					selectedDeviceName = webPlayer.name;
+					console.log('Selected web player device:', webPlayer.name);
+				} else if (availableDevices.length > 0) {
+					selectedDeviceId = availableDevices[0].id;
+					selectedDeviceName = availableDevices[0].name;
+					console.log('Selected device:', availableDevices[0].name);
+				}
 			}
 
 			console.log('Available devices:', availableDevices);
@@ -147,7 +250,7 @@
 					}
 				}
 				// disable this for local development. keep enabled or we will hit the rate limit.
-				// hasMore = false;
+				hasMore = false;
 			}
 
 			// Filter out songs without names
@@ -215,6 +318,16 @@
 	}
 
 	async function logout() {
+		// Disconnect web player if it exists
+		if (window.spotifyPlayer) {
+			try {
+				await window.spotifyPlayer.disconnect();
+			} catch (error) {
+				console.error('Error disconnecting player:', error);
+			}
+			window.spotifyPlayer = null;
+		}
+		
 		accountsStore.logout('spotify');
 		accountsStore.cleanupStorage('spotify');
 		spotifyApi = null;
@@ -222,6 +335,7 @@
 		musicList = {};
 		nowPlayingTrack = null;
 		isPlaying = false;
+		webPlayerReady = false;
 	}
 
 	async function playSong(uri, song = null) {
@@ -529,11 +643,11 @@
 	{:else if nowPlayingTrack}
 		<!-- Now Playing State -->
 		<div
-			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
+			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4 overflow-x-hidden"
 			class:page-exit={isExiting}
 		>
 			<span class="text-6xl font-[300] h-[10%]">spotify</span>
-			<div class="flex flex-col gap-2 mb-16">
+			<div class="flex flex-col gap-2 mb-16 overflow-x-hidden">
 				<span class="text-4xl font-[300]">now playing</span>
 
 				<!-- Album Art -->
@@ -566,10 +680,12 @@
 				</div>
 
 				<!-- Song Info -->
-				<span class="text-2xl font-[300] mt-2">{nowPlayingTrack.name}</span>
-				<span class="text-lg text-gray-400"
-					>{nowPlayingTrack.artists?.map((a) => a.name).join(', ')}</span
-				>
+				<div class="flex flex-col gap-1 w-72 max-w-full">
+					<span class="text-2xl font-[300] mt-2 truncate" title={nowPlayingTrack.name}>{nowPlayingTrack.name}</span>
+					<span class="text-lg text-gray-400 truncate" title={nowPlayingTrack.artists?.map((a) => a.name).join(', ')}
+						>{nowPlayingTrack.artists?.map((a) => a.name).join(', ')}</span
+					>
+				</div>
 
 				<!-- Playback Controls -->
 				<div class="flex flex-row justify-between mt-6 w-72">
@@ -615,11 +731,11 @@
 				/>
 			{:else}
 				<div
-					class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
+					class="flex flex-col pt-4 w-full font-[400] h-screen page overflow-x-hidden"
 					class:page-exit={isExiting}
 				>
-					<span class="text-6xl font-[300] h-[10%]">spotify</span>
-					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto">
+					<span class="text-6xl font-[300] h-[10%] px-4">spotify</span>
+					<div class="flex flex-col gap-8 pb-16 mt-6 overflow-y-auto overflow-x-hidden px-4">
 						{#if isLoading}
 							<!-- Loading State -->
 							<div class="flex flex-col gap-4 items-center justify-center my-24">
@@ -641,7 +757,7 @@
 									</button>
 									{#each musicEntry[1] as song}
 										<button
-											class="flex flex-row gap-4 items-center"
+											class="flex flex-row gap-4 items-center w-full min-w-0"
 											on:click={() => playSong(song.uri, song)}
 										>
 											<!-- Album Art -->
@@ -660,12 +776,12 @@
 											{/if}
 
 											<!-- Song Info -->
-											<div class="flex flex-col min-w-0 items-start">
-												<span class="text-2xl font-[300] truncate" title={song.name}>
+											<div class="flex flex-col min-w-0 flex-1 items-start overflow-hidden">
+												<span class="text-2xl text-left font-[300] truncate w-full" title={song.name}>
 													{song.name}
 												</span>
 												<span
-													class="text-gray-400 text-base font-[300] truncate"
+													class="text-gray-400 text-left text-base font-[300] truncate w-full"
 													title={song.artists?.map((a) => a.name).join(', ')}
 												>
 													{song.artists?.map((a) => a.name).join(', ') || 'Unknown Artist'}
