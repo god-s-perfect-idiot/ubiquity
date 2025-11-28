@@ -21,17 +21,18 @@
 	onMount(async () => {
 		// Refresh settings from localStorage to get latest values
 		settingsStore.refreshFromStorage();
-		
+
 		// Load search settings
 		searchSettings = searchActions.getSettings();
 		availableEngines = searchActions.getAvailableEngines();
-		
+
 		// Set form values
 		selectedEngine = searchSettings.defaultEngine;
 		maxResults = searchSettings.maxResults.toString();
 		safeSearch = searchSettings.safeSearch;
-		
-		loading = false; d
+
+		loading = false;
+		d;
 		isInitialized = true; // Allow reactive statements to work
 	});
 
@@ -45,10 +46,6 @@
 		const intValue = parseInt(newValue);
 		searchActions.updateSettings({ 'search.maxResults': intValue });
 	}
-
-
-
-
 
 	async function testSearchEngine() {
 		const isWorking = await searchActions.testEngine(selectedEngine);
@@ -64,55 +61,53 @@
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300]">search</span>
 		<div class="flex flex-col gap-4 mt-6 pb-10 flex-1 overflow-y-auto">
+			<span class="text-lg font-[300] text-[#a1a1a1]"
+				>Use this page to change the default search engine and the number of results per search.
+				This is for the search app.
+			</span>
 			{#if loading}
-				<div class="flex flex-col items-center justify-center py-12 h-full my-24">
+				<div class="flex flex-col items-center justify-center py-12 h-full my-24 mt-4">
 					<Loader />
 				</div>
 			{:else}
 				<!-- Search Engine Selection -->
 				<div class="flex flex-col gap-1">
-					<Select 
-						bind:selection={selectedEngine} 
-						data={availableEngines.map(engine => engine.key)} 
+					<Select
+						bind:selection={selectedEngine}
+						data={availableEngines.map((engine) => engine.key)}
 						label="default search engine"
 						onSelectionChange={handleEngineChange}
-                        className="lowercase"
+						className="lowercase"
 					/>
 					<div class="flex flex-col gap-2 mt-4">
-						<Button
-							text="test engine"
-							onClick={testSearchEngine}
-						/>
+						<Button text="test engine" onClick={testSearchEngine} />
 						<span class="text-sm text-[#a1a1a1]">Test if the selected engine is working</span>
 					</div>
 				</div>
 
 				<!-- Search Results Settings -->
 				<div class="flex flex-col gap-1">
-					<Select 
+					<Select
 						key={maxResults}
-						bind:selection={maxResults} 
-						data={['5', '10', '15', '20', '25']} 
+						bind:selection={maxResults}
+						data={['5', '10', '15', '20', '25']}
 						label="max results per search"
 						onSelectionChange={handleMaxResultsChange}
 					/>
 				</div>
 
-
-
 				<!-- Privacy Settings -->
 				<div class="flex flex-col gap-4 mt-4">
 					<span class="text-xl font-[300] text-[#a1a1a1]">privacy settings</span>
-					
-			<Switch
-				title="Safe Search"
-				description="Filter out explicit content when browsing the web."
-				bind:value={safeSearch}
-				onToggle={(value) => {
-					searchActions.updateSettings({ 'search.safeSearch': value });
-				}}
-			/>
 
+					<Switch
+						title="Safe Search"
+						description="Filter out explicit content when browsing the web."
+						bind:value={safeSearch}
+						onToggle={(value) => {
+							searchActions.updateSettings({ 'search.safeSearch': value });
+						}}
+					/>
 				</div>
 			{/if}
 		</div>

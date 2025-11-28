@@ -10,6 +10,7 @@
 	import Display from './Display.svelte';
 	import Theme from './Theme.svelte';
 	import Apps from './Apps.svelte';
+	import Storage from './Storage.svelte';
 	import { accentColorStore, borderColorClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let isExpanded = false;
@@ -95,9 +96,9 @@
 							>check installed apps</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">storage</span>
-						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
+					<button class="flex flex-col items-start" on:click={() => {changePage('storage')}}>
+						<span class="text-3xl font-[300]">storage</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>explore local storage usage</span
 						>
 					</button>
@@ -174,6 +175,8 @@
 	<Theme {isExiting} {hideBottomBar} />
 {:else if currentPage === 'apps'}
 	<Apps {isExiting} {hideBottomBar} />
+{:else if currentPage === 'storage'}
+	<Storage {isExiting} />
 {/if}
 
 {#if !hiddenBottomBar}

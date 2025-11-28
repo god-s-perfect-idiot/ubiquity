@@ -39,7 +39,7 @@
 	async function handleUnitsChange(newUnits) {
 		console.log('Units changed to:', newUnits);
 		units = newUnits;
-		
+
 		// Update region in store (this will also update all weather units)
 		const success = settingsStore.setRegion(newUnits);
 		if (success) {
@@ -54,10 +54,10 @@
 	onMount(async () => {
 		// Initial location load
 		await updateLocationFromStore();
-		
+
 		// Load current region setting
 		units = settingsStore.getRegion() || 'Metric';
-		
+
 		// Subscribe to weather store changes for reactive updates
 		unsubscribe = weatherStore.subscribe(async (state) => {
 			// Check if location has changed
@@ -69,7 +69,7 @@
 				loading = false;
 			}
 		});
-		
+
 		// Subscribe to settings store for region changes
 		const settingsUnsubscribe = settingsStore.subscribe(async (state) => {
 			// Update units if region changed
@@ -93,13 +93,16 @@
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300]">region+units</span>
-		<div class="flex flex-col gap-4 mt-12 flex-1 overflow-y-auto">
+		<div class="flex flex-col gap-4 mt-6 flex-1 overflow-y-auto">
+			<span class="text-lg font-[300] text-[#a1a1a1]"
+				>Use this page to change the region and units for the weather data. </span
+			>
 			{#if loading}
 				<div class="flex flex-col items-center justify-center py-12 h-full my-24">
 					<Loader />
 				</div>
 			{:else}
-				<div class="flex flex-col gap-1">
+				<div class="flex flex-col gap-1 mt-4">
 					<span class="text-sm font-[300] text-[#a1a1a1]">location</span>
 					<span class="text-xl font-[300]">
 						{location.city}, {location.country}
@@ -126,11 +129,13 @@
 						}}
 						className="mt-2"
 					/>
-					<span class="text-sm font-[300] text-[#a1a1a1] mt-1">This will refresh the weather data and fetch a new location.</span>
+					<span class="text-sm font-[300] text-[#a1a1a1] mt-1"
+						>This will refresh the weather data and fetch a new location.</span
+					>
 				</div>
-				<Select 
-					bind:selection={units} 
-					data={['Imperial', 'Metric']} 
+				<Select
+					bind:selection={units}
+					data={['Imperial', 'Metric']}
 					label="units"
 					onSelectionChange={handleUnitsChange}
 				/>

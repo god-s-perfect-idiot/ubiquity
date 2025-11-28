@@ -8,7 +8,7 @@
 	import { homescreenStore } from '../../store/homescreen';
 	import { appInfoStore } from '../../store/appInfo';
 	import { borderColorClassStore } from '../../utils/theme';
-	
+
 	$: borderClass = $borderColorClassStore;
 
 	const addData = () => {
@@ -39,14 +39,17 @@
 		appInfoStore.resetAll();
 		addToast('Data reset successfully');
 	};
-		
 </script>
 
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300]">data</span>
-		<div class="flex flex-col gap-8 mt-8 flex-1 overflow-y-auto">
-			<div class="flex flex-col gap-4">
+		<div class="flex flex-col gap-8 mt-6 flex-1 overflow-y-auto">
+			<span class="text-lg font-[300] text-[#a1a1a1]"
+				>Use this page to reset the data on your device. This will reset all data, including
+				accounts, settings, and apps.</span
+			>
+			<div class="flex flex-col gap-4 mt-4">
 				<button
 					type="button"
 					class="border-2 {borderClass} px-4 py-2 w-fit text-base"
@@ -55,7 +58,8 @@
 				<span class="flex flex-col gap-4 items-start text-sm text-[#a1a1a1]">
 					Remove all accounts from your device.
 				</span>
-			</div><div class="flex flex-col gap-4">
+			</div>
+			<div class="flex flex-col gap-4">
 				<button
 					type="button"
 					class="border-2 border-white px-4 py-2 w-fit text-base"
