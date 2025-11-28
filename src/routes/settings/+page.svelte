@@ -11,6 +11,7 @@
 	import Theme from './Theme.svelte';
 	import Apps from './Apps.svelte';
 	import Storage from './Storage.svelte';
+	import DeviceInfo from './DeviceInfo.svelte';
 	import { accentColorStore, borderColorClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let isExpanded = false;
@@ -147,9 +148,9 @@
 							>login to google services for importing data</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">device information</span>
-						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
+					<button class="flex flex-col items-start" on:click={() => {changePage('device-info')}}>
+						<span class="text-3xl font-[300]">device information</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>get device level information using navigator</span
 						>
 					</button>
@@ -177,6 +178,8 @@
 	<Apps {isExiting} {hideBottomBar} />
 {:else if currentPage === 'storage'}
 	<Storage {isExiting} />
+{:else if currentPage === 'device-info'}
+	<DeviceInfo {isExiting} />
 {/if}
 
 {#if !hiddenBottomBar}
