@@ -224,7 +224,7 @@
 		/* Set initial state to match panning end position */
 		object-position: center 30%;
 		transform: translateY(0);
-		animation: exit-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+		animation: exit-up 0.6s cubic-bezier(0, 0.1, 1, 0.5) forwards;
 	}
 
 	/* Enter container - ensures proper stacking during transition */
@@ -250,7 +250,7 @@
 
 	.photo-enter {
 		object-position: center top;
-		animation: enter-from-bottom 0.6s cubic-bezier(0.1, 0, 0.25, 1) forwards;
+		animation: enter-from-bottom 0.6s cubic-bezier(0, 0.1, 1, 0.5) forwards;
 	}
 </style>
 

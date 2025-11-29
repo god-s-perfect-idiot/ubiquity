@@ -46,14 +46,14 @@
 		: 'Unknown Artist';
 	$: backgroundStyle = currentTrackData?.album?.images && currentTrackData.album.images.length > 0
 		? `background-image: url('${currentTrackData.album.images[0].url}');`
-		: '';
+		: `background-color: ${accentColor};`;
 </script>
 
 {#if gridSize === '2x2'}
 	<!-- 2x2 Tile: Compact music player -->
 	<div
 		class="w-full h-full flex flex-col justify-between items-between text-white {textColor} relative overflow-hidden p-2"
-		style="background: linear-gradient(135deg, {accentColor} 0%, {accentColor}dd 100%);"
+		style="{backgroundStyle}"
 	>
 		{#if currentTrackData}
 			<!-- Track info -->
