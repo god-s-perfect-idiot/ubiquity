@@ -38,6 +38,11 @@
 	let animationDelay = 0;
 	let animationDuration = 6;
 	
+	// Live tile flip animation state
+	let isFlipping = false;
+	let flipDirection = 'up'; // 'up' or 'down'
+	let flipAnimationTimer = null;
+	
 	// Get accent color reactively
 	$: accentColor = $accentColorStore;
 	$: textColorClass = $textColorClassStore;
@@ -713,6 +718,54 @@
 		return null;
 	})();
 	
+	// Check if this live tile should show flip animation (exclude music and photos)
+	$: shouldShowFlipAnimation = shouldShowLiveTile && LiveComponent && !editMode && 
+		item.src !== '/music' && item.src !== '/spotify' && item.src !== '/photos';
+	
+	// Random flip animation for live tiles
+	function startRandomFlipAnimation() {
+		if (!shouldShowFlipAnimation) return;
+		
+		// Random delay between 4-11 seconds (less frequent)
+		const delay = 3000 + Math.random() * 7000;
+		
+		flipAnimationTimer = setTimeout(() => {
+			// Randomly choose flip direction
+			flipDirection = Math.random() > 0.5 ? 'up' : 'down';
+			isFlipping = true;
+			
+			// After 0.8s (flip animation), show back for 1.5s, then flip back
+			setTimeout(() => {
+				// Keep showing back for a moment
+				setTimeout(() => {
+					// Flip back to front
+					isFlipping = false;
+					// Schedule next animation
+					startRandomFlipAnimation();
+				}, 1000); // Show icon/name for 1.5 seconds
+			}, 800); // Wait for flip animation to complete
+		}, delay);
+	}
+	
+	// Start random flip animations for live tiles (excluding music and photos)
+	$: if (shouldShowFlipAnimation) {
+		// Clear any existing timer
+		if (flipAnimationTimer) {
+			clearTimeout(flipAnimationTimer);
+			flipAnimationTimer = null;
+		}
+		// Start the animation cycle
+		startRandomFlipAnimation();
+	}
+	
+	// Cleanup on destroy
+	onDestroy(() => {
+		if (flipAnimationTimer) {
+			clearTimeout(flipAnimationTimer);
+			flipAnimationTimer = null;
+		}
+	});
+	
 </script>
 
 	<div
@@ -758,8 +811,39 @@
 	<!-- Main content -->
 	{#if shouldShowLiveTile && LiveComponent}
 		<!-- Live Tile Content -->
-		<div class="relative w-full h-full overflow-hidden">
-			<svelte:component this={LiveComponent} gridSize={item.size} />
+		<div class="relative w-full h-full overflow-hidden live-tile-wrapper" style="background: #000000;">
+			<div class="live-tile-container w-full h-full" class:flip-up={isFlipping && flipDirection === 'up'} class:flip-down={isFlipping && flipDirection === 'down'}>
+				<!-- Live tile content (front) -->
+				<div class="live-tile-front absolute inset-0 w-full h-full">
+					<svelte:component this={LiveComponent} gridSize={item.size} />
+				</div>
+				
+				<!-- App icon and name (back) - shown during flip -->
+				<div class="live-tile-back absolute inset-0 w-full h-full flex flex-col items-center justify-center" style="background: {((bgColor && bgColor.startsWith('#')) ? bgColor : (bgColor || accentColor))};">
+					<div class="flex flex-col items-center justify-center gap-2">
+						<div class="icon-container">
+							{#if iconSrc}
+								<img
+									src={iconSrc}
+									alt={`${item.name} icon`}
+									class="w-12 h-12 object-contain"
+									on:error={(e) => {
+										e.target.style.display = 'none';
+										const iconElement = e.target.nextElementSibling;
+										if (iconElement) iconElement.style.display = 'block';
+									}}
+								/>
+								<Icon icon={item.icon} width="48" height="48" style="display: none;" />
+							{:else}
+								<Icon icon={item.icon} width="48" height="48" class={item.isSystemApp ? 'text-white' : ((bgColor && bgColor.startsWith('#') && isWhiteOrLightColor(bgColor)) || (bgColor && (bgColor.includes('white') || bgColor === 'bg-white')) ? 'text-black' : 'text-white')} />
+							{/if}
+						</div>
+						<span class="absolute bottom-2 left-2 text-base font-medium {((bgColor && bgColor.startsWith('#')) ? isWhiteOrLightColor(bgColor) : (bgColor && (bgColor.includes('white') || bgColor === 'bg-white'))) ? 'text-black' : 'text-white'}">
+							{item.name}
+						</span>
+					</div>
+				</div>
+			</div>
 		</div>
 	{:else}
 		<!-- Regular Tile Content -->
@@ -1029,6 +1113,59 @@
 	/* Ensure dragging items don't have other animations */
 	.grid-item.opacity-50.scale-95 {
 		animation: none !important;
+	}
+
+	/* Live tile flip animations */
+	.live-tile-wrapper {
+		perspective: 1000px;
+		-webkit-perspective: 1000px;
+		transform-style: preserve-3d;
+		-webkit-transform-style: preserve-3d;
+	}
+	
+	.live-tile-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		transform-style: preserve-3d;
+		-webkit-transform-style: preserve-3d;
+		transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+		transform-origin: center center;
+	}
+	
+	.live-tile-front,
+	.live-tile-back {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
+		transform-style: preserve-3d;
+		-webkit-transform-style: preserve-3d;
+	}
+	
+	.live-tile-front {
+		transform: rotateX(0deg) translateZ(0);
+		-webkit-transform: rotateX(0deg) translateZ(0);
+	}
+	
+	.live-tile-back {
+		transform: rotateX(180deg) translateZ(0);
+		-webkit-transform: rotateX(180deg) translateZ(0);
+	}
+	
+	/* Flip up animation - tile flips up (pivots on center horizontal axis) */
+	.live-tile-container.flip-up {
+		transform: rotateX(-180deg);
+		-webkit-transform: rotateX(-180deg);
+	}
+	
+	/* Flip down animation - tile flips down (pivots on center horizontal axis) */
+	.live-tile-container.flip-down {
+		transform: rotateX(180deg);
+		-webkit-transform: rotateX(180deg);
 	}
 
 	/* Ensure deselection animation doesn't interfere with other states */
