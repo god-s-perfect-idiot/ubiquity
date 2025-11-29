@@ -79,7 +79,7 @@
 
 <div class="page-holder">
 	<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
-		<span class="text-6xl font-[300] lowercase mb-8">date & time</span>
+		<span class="text-6xl font-[300] lowercase mb-8">date + time</span>
 		
 		<div class="flex flex-col flex-1 gap-2">
 			<!-- Time Display -->
