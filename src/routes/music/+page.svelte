@@ -7,6 +7,7 @@
 	import { kernel } from '../../kernel/store';
 	import LetterGrid from '../../components/LetterGrid.svelte';
 	import { accentColorStore, textColorClassStore, borderColorClassStore } from '../../utils/theme';
+	import { musicStore, currentTrack, isPlaying, playbackProgress } from '../../store/music.js';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -14,19 +15,33 @@
 	let music = [];
 	const musicList = {};
 	let showGrid = false;
-	let nowPlayingLink = '';
-	let nowPlayingName = '';
-	let currentSongIndex = -1;
-	let queue = [];
-	let audioElement;
-	let isPlaying = false;
-	let currentTime = 0;
-	let duration = 0;
-	let seekValue = 0;
+	let showNowPlaying = false; // Control whether to show "now playing" view
+	
+	// Subscribe to music store
+	let currentTrackData = null;
+	let isPlayingState = false;
+	let progress = { currentTime: 0, duration: 0, seekValue: 0 };
 	
 	$: accentColor = $accentColorStore;
 	$: textClass = $textColorClassStore;
 	$: borderClass = $borderColorClassStore;
+	
+	// Subscribe to music store
+	$: currentTrackData = $currentTrack;
+	$: isPlayingState = $isPlaying;
+	$: progress = $playbackProgress;
+	
+	// Hide "now playing" if track is cleared
+	$: if (!currentTrackData) {
+		showNowPlaying = false;
+	}
+	
+	// Derived values for display
+	$: nowPlayingLink = currentTrackData && currentTrackData.type === 'local' ? currentTrackData.content : '';
+	$: nowPlayingName = currentTrackData ? currentTrackData.name : '';
+	$: currentTime = progress.currentTime;
+	$: duration = progress.duration;
+	$: seekValue = progress.seekValue;
 
 	// Touch gesture detection variables
 	let touchStartY = 0;
@@ -40,87 +55,51 @@
 	};
 
 	function initializeQueue() {
-		queue = music;
+		// Add type to each track for the music store
+		const tracksWithType = music.map(track => ({
+			...track,
+			type: 'local'
+		}));
+		musicStore.setQueue(tracksWithType);
 	}
 
-	function playSong(index) {
-		if (index >= 0 && index < queue.length) {
-			currentSongIndex = index;
-			nowPlayingLink = queue[index].content;
-			nowPlayingName = queue[index].name;
-			isPlaying = true;
+	async function playSong(index) {
+		const currentState = musicStore.getCurrentState();
+		
+		// Ensure queue is initialized before playing
+		if (currentState.queue.length === 0) {
+			initializeQueue();
+		}
+		
+		const updatedState = musicStore.getCurrentState();
+		if (index >= 0 && index < updatedState.queue.length) {
+			const track = updatedState.queue[index];
+			await musicStore.playTrack(track, index);
+			showNowPlaying = true; // Show "now playing" view when a track starts
 			isExpanded = false;
-
-			// Reset seek bar values for new song
-			currentTime = 0;
-			duration = 0;
-			seekValue = 0;
-
-			// Force audio element to reload with new source
-			if (audioElement) {
-				audioElement.load();
-			}
 		}
 	}
 
-	function playNext() {
-		if (queue.length > 0) {
-			const nextIndex = (currentSongIndex + 1) % queue.length; // Cyclic
-			console.log('Playing next song, index:', nextIndex, 'song:', queue[nextIndex]?.name);
-			playSong(nextIndex);
-		}
+	async function playNext() {
+		await musicStore.playNext();
 	}
 
-	function playPrevious() {
-		if (queue.length > 0) {
-			const prevIndex = currentSongIndex <= 0 ? queue.length - 1 : currentSongIndex - 1; // Cyclic
-			playSong(prevIndex);
-		}
+	async function playPrevious() {
+		await musicStore.playPrevious();
 	}
 
-	function togglePlayPause() {
-		if (audioElement) {
-			if (isPlaying) {
-				audioElement.pause();
-			} else {
-				audioElement.play();
-			}
-			isPlaying = !isPlaying;
-		}
+	async function togglePlayPause() {
+		await musicStore.togglePlayPause();
 	}
 
-	function handleSeek(event) {
-		if (audioElement && duration > 0) {
-			const newTime = (event.target.value / 100) * duration;
-			audioElement.currentTime = newTime;
-			currentTime = newTime;
-			seekValue = event.target.value;
-		}
+	async function handleSeek(event) {
+		await musicStore.seek(event.target.value);
 	}
 
 	function formatTime(seconds) {
 		const mins = Math.floor(seconds / 60);
 		const secs = Math.floor(seconds % 60);
 		return `${mins}:${secs.toString().padStart(2, '0')}`;
-	}
-
-	// Fallback timer to check if song ended
-	let endCheckTimer;
-	$: if (audioElement && isPlaying && duration > 0) {
-		clearInterval(endCheckTimer);
-		endCheckTimer = setInterval(() => {
-			if (audioElement && audioElement.currentTime >= duration - 0.1) {
-				console.log('Song ended (timer check), playing next...');
-				clearInterval(endCheckTimer);
-				playNext();
-			}
-		}, 1000);
-	}
-
-	// Reactive statement to update duration when audio element changes
-	$: if (audioElement && audioElement.duration && audioElement.duration !== duration) {
-		duration = audioElement.duration;
-		console.log('Duration updated reactively:', duration);
 	}
 
 	function closePage() {
@@ -147,15 +126,24 @@
 				musicList[firstLetter] = [song];
 			}
 		});
-		initializeQueue();
+		
+		// Check if music is already playing before initializing queue
+		const currentState = musicStore.getCurrentState();
+		
+		// Only initialize queue if music is NOT currently playing
+		// This prevents stopping playback when opening the app
+		if (!currentState.isPlaying || currentState.serviceType !== 'local') {
+			// No music playing or playing from different service, safe to initialize queue
+			initializeQueue();
+		}
+		// If music is playing, skip queue initialization to avoid disrupting playback
+		// The queue will be initialized when user selects a new track or when music stops
+		
 		isExpanded = false;
 	});
 
-	// Cleanup timer on component destroy
 	onDestroy(() => {
-		if (endCheckTimer) {
-			clearInterval(endCheckTimer);
-		}
+		// Cleanup is handled by the music store
 	});
 
 	async function scrollToChar(char) {
@@ -182,12 +170,13 @@
 		targetChar = '';
 	}
 
-	function handleSongTap(song) {
+	async function handleSongTap(song) {
 		// Only play if it's a genuine tap (not a scroll)
 		if (isTap()) {
-			const songIndex = queue.findIndex((s) => s.name === song.name);
+			const currentState = musicStore.getCurrentState();
+			const songIndex = currentState.queue.findIndex((s) => s.name === song.name);
 			if (songIndex !== -1) {
-				playSong(songIndex);
+				await playSong(songIndex);
 			}
 		}
 	}
@@ -210,12 +199,10 @@
 	}
 
 	let targetChar = '';
-
-	$: console.log(nowPlayingLink);
 </script>
 
 <div class="page-holder" style="--accent-color: {accentColor};">
-	{#if nowPlayingLink}
+	{#if currentTrackData && currentTrackData.type === 'local' && showNowPlaying}
 		<div
 			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4"
 			class:page-exit={isExiting}
@@ -261,7 +248,7 @@
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
 						on:click={togglePlayPause}
 					>
-						<Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width="32" height="32" />
+						<Icon icon={isPlayingState ? 'mdi:pause' : 'mdi:play'} width="32" height="32" />
 					</button>
 					<button
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
@@ -271,38 +258,7 @@
 					</button>
 				</div>
 
-				<audio
-					bind:this={audioElement}
-					src={nowPlayingLink}
-					autoplay
-					on:loadedmetadata={() => {
-						if (audioElement) {
-							duration = audioElement.duration;
-							console.log('Audio loaded, duration:', duration, 'for song:', nowPlayingName);
-						}
-					}}
-					on:canplay={() => {
-						if (audioElement) {
-							duration = audioElement.duration;
-							console.log('Audio can play, duration:', duration, 'for song:', nowPlayingName);
-						}
-					}}
-					on:timeupdate={() => {
-						if (audioElement && duration > 0) {
-							currentTime = audioElement.currentTime;
-							seekValue = (currentTime / duration) * 100;
-						}
-					}}
-					on:ended={() => {
-						console.log('Song ended, playing next...');
-						playNext(); // Auto-play next song when current ends
-					}}
-					on:error={(e) => {
-						console.error('Audio error:', e);
-						// If there's an error, try to play next song
-						playNext();
-					}}
-				></audio>
+				<!-- Audio element is now in the layout component for persistence -->
 			</div>
 		</div>
 	{:else if showGrid}
@@ -342,10 +298,11 @@
 						{#each musicEntry[1] as song}
 							<button
 								class="flex flex-row gap-4 items-center"
-								on:click={() => {
-									const songIndex = queue.findIndex((s) => s.name === song.name);
+								on:click={async () => {
+									const currentState = musicStore.getCurrentState();
+									const songIndex = currentState.queue.findIndex((s) => s.name === song.name);
 									if (songIndex !== -1) {
-										playSong(songIndex);
+										await playSong(songIndex);
 									}
 								}}
 								on:touchstart={handleTouchStart}
@@ -382,17 +339,12 @@
 					class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
 					on:click={() => {
 						isExpanded = false;
-						nowPlayingLink = '';
-						nowPlayingName = '';
-						isPlaying = false;
-						currentTime = 0;
-						duration = 0;
-						seekValue = 0;
+						showNowPlaying = false; // Hide "now playing" view, but keep music playing
 					}}
 				>
 					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
 				</button>
-				<span class="text-xs font-[400]">previous</span>
+				<span class="text-xs font-[400]">library</span>
 			</div>
 		{/if}
 		<div

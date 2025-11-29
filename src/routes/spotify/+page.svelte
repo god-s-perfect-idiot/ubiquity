@@ -10,6 +10,7 @@
 	import Select from '../../components/Select.svelte';
 	import Loader from '../../components/Loader.svelte';
 	import { accentColorStore, textColorClassStore } from '../../utils/theme';
+	import { musicStore, currentTrack, isPlaying, playbackProgress } from '../../store/music.js';
 
 	let isExpanded = false;
 	let isUnmounting = false;
@@ -21,17 +22,25 @@
 	let musicList = {};
 	let targetChar = '';
 
-	// Now playing state
-	let nowPlayingTrack = null;
-	let isPlaying = false;
-	let currentTime = 0;
-	let duration = 0;
-	let seekValue = 0;
-	let currentSongIndex = -1;
-	let queue = [];
+	// Subscribe to music store
+	let currentTrackData = null;
+	let isPlayingState = false;
+	let progress = { currentTime: 0, duration: 0, seekValue: 0 };
 	
 	$: accentColor = $accentColorStore;
 	$: textClass = $textColorClassStore;
+	
+	// Subscribe to music store
+	$: currentTrackData = $currentTrack;
+	$: isPlayingState = $isPlaying;
+	$: progress = $playbackProgress;
+	
+	// Derived values for display
+	$: nowPlayingTrack = currentTrackData && currentTrackData.type === 'spotify' ? currentTrackData : null;
+	$: currentTime = progress.currentTime;
+	$: duration = progress.duration;
+	$: seekValue = progress.seekValue;
+	
 	let availableDevices = [];
 	let selectedDeviceId = null;
 	let selectedDeviceName = null;
@@ -88,6 +97,8 @@
 			const { default: SpotifyWebApi } = await import('spotify-web-api-js');
 			spotifyApi = new SpotifyWebApi();
 			spotifyApi.setAccessToken(token);
+			// Set Spotify API in music store
+			musicStore.setSpotifyApi(spotifyApi);
 		} catch (error) {
 			console.error('Error initializing Spotify API:', error);
 		}
@@ -195,6 +206,7 @@
 			if (ubiquityPlayer) {
 				selectedDeviceId = ubiquityPlayer.id;
 				selectedDeviceName = ubiquityPlayer.name;
+				musicStore.setSelectedDeviceId(ubiquityPlayer.id);
 				console.log('Selected Ubiquity Web Player device:', ubiquityPlayer.id);
 			} else {
 				// Fallback to other web players
@@ -209,10 +221,12 @@
 				if (webPlayer) {
 					selectedDeviceId = webPlayer.id;
 					selectedDeviceName = webPlayer.name;
+					musicStore.setSelectedDeviceId(webPlayer.id);
 					console.log('Selected web player device:', webPlayer.name);
 				} else if (availableDevices.length > 0) {
 					selectedDeviceId = availableDevices[0].id;
 					selectedDeviceName = availableDevices[0].name;
+					musicStore.setSelectedDeviceId(availableDevices[0].id);
 					console.log('Selected device:', availableDevices[0].name);
 				}
 			}
@@ -261,8 +275,12 @@
 
 			console.log(`Loaded ${likedSongs.length} total liked songs in alphabetical order (filtered)`);
 
-			// Initialize queue
-			queue = likedSongs;
+			// Initialize queue in music store
+			const tracksWithType = likedSongs.map(song => ({
+				...song,
+				type: 'spotify'
+			}));
+			musicStore.setQueue(tracksWithType);
 
 			// Organize songs by first letter for LetterGrid
 			organizeSongsByLetter();
@@ -333,102 +351,26 @@
 		spotifyApi = null;
 		likedSongs = [];
 		musicList = {};
-		nowPlayingTrack = null;
-		isPlaying = false;
+		musicStore.clear();
+		musicStore.setSpotifyApi(null);
 		webPlayerReady = false;
 	}
 
 	async function playSong(uri, song = null) {
-		if (!spotifyApi) return;
+		if (!spotifyApi || !song) return;
 
 		try {
-			// Use selected device if available
-			if (selectedDeviceId) {
-				await spotifyApi.play({
-					uris: [uri],
-					device_id: selectedDeviceId
-				});
-
-				const selectedDevice = availableDevices.find((d) => d.id === selectedDeviceId);
-				console.log(
-					'Playing song:',
-					uri,
-					'on selected device:',
-					selectedDevice?.name || selectedDeviceId
-				);
-
-				// Update now playing state
-				if (song) {
-					nowPlayingTrack = song;
-					currentSongIndex = queue.findIndex((s) => s.uri === uri);
-					isPlaying = true;
-					showGrid = false;
-					startPlaybackPolling();
-				}
-				return;
-			}
-
-			// Fallback: check for available devices
-			const devices = await spotifyApi.getMyDevices();
-			console.log(devices);
-
-			if (!devices.devices || devices.devices.length === 0) {
-				console.error('No Spotify devices available. Opening Spotify web player...');
-
-				// Try to open Spotify web player and then play
-				const webPlayerUrl = 'https://open.spotify.com';
-				const newTab = window.open(webPlayerUrl, '_blank');
-
-				// Wait a moment for the tab to open, then try to play
-				setTimeout(async () => {
-					try {
-						// Try playing without device ID (will use web player if it's active)
-						await spotifyApi.play({ uris: [uri] });
-						console.log('Playing song on web player:', uri);
-
-						// Update now playing state
-						if (song) {
-							nowPlayingTrack = song;
-							currentSongIndex = queue.findIndex((s) => s.uri === uri);
-							isPlaying = true;
-							showGrid = false;
-							startPlaybackPolling();
-						}
-					} catch (webPlayerError) {
-						console.error('Web player playback failed:', webPlayerError);
-						alert(
-							"Please:\n1. Keep the Spotify web player tab open\n2. Make sure you're logged in\n3. Try playing the song again"
-						);
-					}
-				}, 2000);
-
-				return;
-			}
-
-			// Try to play on the first available device
-			const deviceId = selectedDeviceId || devices.devices[0].id; // Use selectedDeviceId if available, otherwise first device
-			await spotifyApi.play({
-				uris: [uri],
-				device_id: deviceId
-			});
-
-			console.log(
-				'Playing song:',
-				uri,
-				'on device:',
-				devices.devices.find((d) => d.id === deviceId)?.name || 'web player'
-			);
-
-			// Update now playing state
-			if (song) {
-				nowPlayingTrack = song;
-				currentSongIndex = queue.findIndex((s) => s.uri === uri);
-				isPlaying = true;
-				showGrid = false;
-
-				// Start polling for playback state
-				startPlaybackPolling();
-			}
+			// Use music store to play track
+			const track = {
+				...song,
+				type: 'spotify'
+			};
+			
+			const currentState = musicStore.getCurrentState();
+			const songIndex = currentState.queue.findIndex((s) => s.uri === uri);
+			
+			await musicStore.playTrack(track, songIndex);
+			showGrid = false;
 		} catch (error) {
 			console.error('Error playing song:', error);
 
@@ -449,115 +391,18 @@
 	}
 
 	async function playNext() {
-		if (queue.length > 0 && currentSongIndex >= 0) {
-			const nextIndex = (currentSongIndex + 1) % queue.length;
-			const nextSong = queue[nextIndex];
-			await playSong(nextSong.uri, nextSong);
-		}
+		await musicStore.playNext();
 	}
 
 	async function playPrevious() {
-		if (queue.length > 0 && currentSongIndex >= 0) {
-			const prevIndex = currentSongIndex <= 0 ? queue.length - 1 : currentSongIndex - 1;
-			const prevSong = queue[prevIndex];
-			await playSong(prevSong.uri, prevSong);
-		}
+		await musicStore.playPrevious();
 	}
 
 	async function togglePlayPause() {
-		if (!spotifyApi) return;
-
-		try {
-			// Use selected device if available, otherwise get available devices
-			let deviceId = selectedDeviceId;
-
-			if (!deviceId) {
-				const devices = await spotifyApi.getMyDevices();
-				if (!devices.devices || devices.devices.length === 0) {
-					alert('No Spotify devices available. Please open Spotify app or web player first.');
-					return;
-				}
-				deviceId = devices.devices[0].id;
-			}
-
-			if (isPlaying) {
-				await spotifyApi.pause({ device_id: deviceId });
-				isPlaying = false;
-			} else {
-				await spotifyApi.play({ device_id: deviceId });
-				isPlaying = true;
-			}
-		} catch (error) {
-			console.error('Error toggling play/pause:', error);
-
-			// Handle different types of errors
-			if (error.status === 401) {
-				alert('Authentication expired. Please log in to Spotify again.');
-				await logout();
-			} else if (error.status === 429) {
-				alert('Rate limit exceeded. Please wait a moment before trying again.');
-			} else if (error.status === 404) {
-				alert(
-					'Cannot control playback. Please make sure Spotify app is open and you have an active device.'
-				);
-			} else if (error.status === 403) {
-				alert('Playback control requires a Spotify Premium account.');
-			} else if (error.message && error.message.includes('JSON')) {
-				console.error('Non-JSON response received. This might be a network issue or API problem.');
-				alert('Network or API issue detected. Please try again or check your connection.');
-			} else {
-				alert(`Error controlling playback: ${error.message || 'Unknown error'}`);
-			}
-		}
+		await musicStore.togglePlayPause();
 	}
 
-	async function startPlaybackPolling() {
-		// Poll for current playback state every 2 seconds
-		const pollInterval = setInterval(async () => {
-			if (!nowPlayingTrack || !spotifyApi) {
-				clearInterval(pollInterval);
-				return;
-			}
-
-			try {
-				const playbackState = await spotifyApi.getMyCurrentPlaybackState();
-				if (playbackState && playbackState.item) {
-					// Update current time and duration
-					currentTime = playbackState.progress_ms / 1000;
-					duration = playbackState.item.duration_ms / 1000;
-					seekValue = duration > 0 ? (currentTime / duration) * 100 : 0;
-
-					// Check if still playing
-					isPlaying = playbackState.is_playing;
-
-					// Check if song ended
-					if (!playbackState.is_playing && currentTime >= duration - 1) {
-						playNext();
-					}
-				}
-			} catch (error) {
-				console.error('Playback polling error:', error);
-
-				// Handle different types of errors during polling
-				if (error.status === 401) {
-					console.log('Authentication expired during polling, stopping poll');
-					clearInterval(pollInterval);
-					await logout();
-				} else if (error.status === 429) {
-					console.log('Rate limited during polling, reducing frequency');
-					// Could implement exponential backoff here
-				} else if (error.message && error.message.includes('JSON')) {
-					console.error('Non-JSON response during polling - this might be a network issue');
-					// Don't stop polling for network issues, just log them
-				} else {
-					console.error('Unknown error during playback polling:', error);
-				}
-			}
-		}, 2000);
-
-		// Clean up interval when component unmounts
-		return () => clearInterval(pollInterval);
-	}
+	// Playback polling is now handled by the music store
 
 	function formatTime(seconds) {
 		const mins = Math.floor(seconds / 60);
@@ -606,6 +451,7 @@
 		const device = availableDevices.find((d) => d.name === selectedDeviceName);
 		if (device) {
 			selectedDeviceId = device.id;
+			musicStore.setSelectedDeviceId(device.id);
 			console.log('Device selection changed to:', device.name, 'ID:', device.id);
 		}
 	}
@@ -640,7 +486,7 @@
 				</div>
 			</div>
 		</div>
-	{:else if nowPlayingTrack}
+	{:else if nowPlayingTrack && nowPlayingTrack.type === 'spotify'}
 		<!-- Now Playing State -->
 		<div
 			class="flex flex-col pt-4 w-full font-[400] h-screen page px-4 overflow-x-hidden"
@@ -699,7 +545,7 @@
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
 						on:click={togglePlayPause}
 					>
-						<Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width="32" height="32" />
+						<Icon icon={isPlayingState ? 'mdi:pause' : 'mdi:play'} width="32" height="32" />
 					</button>
 					<button
 						class="flex flex-row gap-4 items-center border-2 border-white rounded-full p-2"
@@ -819,11 +665,7 @@
 				<button
 					class="flex flex-col border border-white rounded-full !border-2 p-2 font-bold"
 					on:click={() => {
-						nowPlayingTrack = null;
-						isPlaying = false;
-						currentTime = 0;
-						duration = 0;
-						seekValue = 0;
+						musicStore.clear();
 					}}
 				>
 					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />

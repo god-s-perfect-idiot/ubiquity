@@ -8,6 +8,8 @@
 	import { onMount } from 'svelte';
 	import { backgroundThemeStore, textColorClassStore } from '../utils/theme';
 	import { settingsStore } from '../store/settings';
+	import { musicStore, currentTrack } from '../store/music.js';
+	import { browser } from '$app/environment';
 
 	// Get theme reactively
 	$: backgroundTheme = $backgroundThemeStore;
@@ -79,6 +81,8 @@
 		}
 	}
 
+	let audioElement;
+	
 	onMount(() => {
 		// Register service worker
 		registerServiceWorker();
@@ -98,7 +102,17 @@
 				document.body.style.fontFamily = selectedFont;
 			}
 		}
+		
+		// Set up audio element with music store after mount
+		if (browser && audioElement) {
+			musicStore.setAudioElement(audioElement);
+		}
 	});
+	
+	// Update audio element when it's available
+	$: if (browser && audioElement) {
+		musicStore.setAudioElement(audioElement);
+	}
 </script>
 
 <div class="app">
@@ -111,6 +125,14 @@
 	<footer>
 		<!-- <NavBar />	 -->
 	</footer>
+	
+	<!-- Persistent audio element for music playback -->
+	{#if browser}
+		<audio
+			bind:this={audioElement}
+			style="display: none;"
+		></audio>
+	{/if}
 </div>
 
 

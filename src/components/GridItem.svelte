@@ -1,5 +1,6 @@
 <script>
 	import { createEventDispatcher, onDestroy, onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 	import { gridStore } from '../store/grid.js';
 	import { appInfoStore } from '../store/appInfo.js';
@@ -8,6 +9,7 @@
 	import LiveClock from '../routes/clock/Live.svelte';
 	import LiveWeather from '../routes/weather/Live.svelte';
 	import LivePhotos from '../routes/photos/Live.svelte';
+	import LiveMusic from '../routes/music/Live.svelte';
 
 	export let item;
 	export let editMode = false;
@@ -260,6 +262,16 @@
 			return;
 		}
 
+		// Check if click is on a live tile with interactive controls (like music controls)
+		// Don't navigate if clicking on interactive elements within the live tile
+		if (shouldShowLiveTile && LiveComponent) {
+			const liveTileButton = event.target.closest('button');
+			if (liveTileButton) {
+				// Click is on a button within the live tile (like play/pause), don't navigate
+				return;
+			}
+		}
+
 		if (editMode) {
 			// In edit mode, clicking on the item selects it
 			event.preventDefault();
@@ -280,7 +292,8 @@
 
 		// Only trigger click if it wasn't a long press
 		if (!isPressed) {
-			window.location.href = item.src;
+			// Use SvelteKit's goto for client-side navigation to preserve state
+			goto(item.src);
 		}
 	}
 
@@ -680,8 +693,8 @@
 		if (item.size !== '2x2' && item.size !== '4x2') return false;
 		if (editMode) return false; // Don't show live tiles in edit mode
 		
-		// Check if it's a Clock, Weather, or Photos app
-		return item.src === '/clock' || item.src === '/weather' || item.src === '/photos';
+		// Check if it's a Clock, Weather, Photos, or Music app
+		return item.src === '/clock' || item.src === '/weather' || item.src === '/photos' || item.src === '/music' || item.src === '/spotify';
 	})();
 	
 	// Get the Live component for this app
@@ -694,6 +707,8 @@
 			return LiveWeather;
 		} else if (item.src === '/photos') {
 			return LivePhotos;
+		} else if (item.src === '/music' || item.src === '/spotify') {
+			return LiveMusic;
 		}
 		return null;
 	})();
