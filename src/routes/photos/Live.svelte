@@ -34,6 +34,20 @@
 		}
 	}
 
+	function getRandomPhotoIndex(excludeIndex) {
+		if (photos.length <= 1) return 0;
+		if (photos.length === 2) {
+			// If only 2 photos, return the other one
+			return excludeIndex === 0 ? 1 : 0;
+		}
+		// Get a random index that's different from the current one
+		let randomIndex;
+		do {
+			randomIndex = Math.floor(Math.random() * photos.length);
+		} while (randomIndex === excludeIndex);
+		return randomIndex;
+	}
+
 	function startPhotoCycle() {
 		if (photos.length <= 1) return;
 		
@@ -45,7 +59,8 @@
 			setTimeout(() => {
 				// Step 3: Panning complete, start exit/enter transition
 				isPanning = false;
-				nextPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+				// Select a random photo (different from current)
+				nextPhotoIndex = getRandomPhotoIndex(currentPhotoIndex);
 				isTransitioning = true;
 				
 				setTimeout(() => {
@@ -70,11 +85,27 @@
 		}
 	}
 
+	function shuffleArray(array) {
+		const shuffled = [...array];
+		for (let i = shuffled.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+		}
+		return shuffled;
+	}
+
 	onMount(() => {
 		// Read photos only once on mount
 		const files = kernel.fs.getFiles();
-		photos = fetchPhotos(files);
+		const fetchedPhotos = fetchPhotos(files);
+		// Shuffle the photos array to randomize the order
+		photos = shuffleArray(fetchedPhotos);
 		photoCount = photos.length;
+		
+		// Start with a random photo index
+		if (photos.length > 0) {
+			currentPhotoIndex = Math.floor(Math.random() * photos.length);
+		}
 		
 		// Start photo rotation if we have multiple photos
 		if (photos.length > 1) {
