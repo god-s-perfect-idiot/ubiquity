@@ -591,9 +591,28 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 									>
 										<div class="flex flex-col items-center justify-center gap-2">
 											{#if appIcon && (appIcon.startsWith('http://') || appIcon.startsWith('https://'))}
-												<img src={appIcon} alt="{app.name} icon" class="w-8 h-8 object-contain" />
+												<img
+													src={appIcon}
+													alt="{app.name} icon"
+													class="w-8 h-8 object-contain"
+													on:error={(e) => {
+														e.target.style.display = 'none';
+														if (e.target.nextElementSibling) {
+															e.target.nextElementSibling.style.display = 'flex';
+														}
+													}}
+												/>
+												<span
+													class="w-8 h-8 justify-center items-center flex text-white font-[300] hidden"
+													style="background: {appBgColor};">{app.name.charAt(0).toUpperCase()}</span
+												>
 											{:else if appIcon}
 												<Icon icon={appIcon} width="16" height="16" class="text-white" />
+											{:else}
+												<span
+													class="w-8 h-8 justify-center items-center flex text-white font-[300]"
+													style="background: {appBgColor};">{app.name.charAt(0).toUpperCase()}</span
+												>
 											{/if}
 											<span class="text-base font-medium text-white absolute bottom-2 left-2"
 												>{app.name}</span
@@ -642,9 +661,28 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 									>
 										<div class="flex flex-col items-center justify-center gap-2">
 											{#if appIcon && (appIcon.startsWith('http://') || appIcon.startsWith('https://'))}
-												<img src={appIcon} alt="{app.name} icon" class="w-8 h-8 object-contain" />
+												<img
+													src={appIcon}
+													alt="{app.name} icon"
+													class="w-8 h-8 object-contain"
+													on:error={(e) => {
+														e.target.style.display = 'none';
+														if (e.target.nextElementSibling) {
+															e.target.nextElementSibling.style.display = 'flex';
+														}
+													}}
+												/>
+												<span
+													class="w-8 h-8 justify-center items-center flex text-white font-[300] hidden"
+													style="background: {appBgColor};">{app.name.charAt(0).toUpperCase()}</span
+												>
 											{:else if appIcon}
 												<Icon icon={appIcon} width="16" height="16" class="text-white" />
+											{:else}
+												<span
+													class="w-8 h-8 justify-center items-center flex text-white font-[300]"
+													style="background: {appBgColor};">{app.name.charAt(0).toUpperCase()}</span
+												>
 											{/if}
 											<span class="text-base font-medium text-white absolute bottom-2 left-2"
 												>{app.name}</span

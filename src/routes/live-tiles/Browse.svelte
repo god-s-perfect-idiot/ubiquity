@@ -296,9 +296,24 @@
 																	src={appIcon}
 																	alt="{app?.name || 'App'} icon"
 																	class="w-8 h-8 object-contain"
+																	on:error={(e) => {
+																		e.target.style.display = 'none';
+																		if (e.target.nextElementSibling) {
+																			e.target.nextElementSibling.style.display = 'flex';
+																		}
+																	}}
 																/>
+																<span
+																	class="w-8 h-8 justify-center items-center flex text-white font-[300] hidden"
+																	style="background: {appBgColor};">{(app?.name || tile.appName || 'A').charAt(0).toUpperCase()}</span
+																>
 															{:else if appIcon}
 																<Icon icon={appIcon} width="16" height="16" class="text-white" />
+															{:else}
+																<span
+																	class="w-8 h-8 justify-center items-center flex text-white font-[300]"
+																	style="background: {appBgColor};">{(app?.name || tile.appName || 'A').charAt(0).toUpperCase()}</span
+																>
 															{/if}
 															<span
 																class="text-base font-medium text-white absolute bottom-2 left-2"

@@ -20,12 +20,12 @@
 	let isExiting = false;
 	let isExpanded = false;
 	let isUnmounting = false;
-		let selectedApp = null;
-		let selectedGridSize = '2x2';
-		let isLoadingLiveTile = false;
-		let allApps = [];
-		let appComponent = null;
-		let isBrowsing = false;
+	let selectedApp = null;
+	let selectedGridSize = '2x2';
+	let isLoadingLiveTile = false;
+	let allApps = [];
+	let appComponent = null;
+	let isBrowsing = false;
 
 	// const systemAppsWithLiveTiles = [
 	// 	{
@@ -151,7 +151,13 @@
 </script>
 
 {#if selectedApp}
-	<App bind:this={appComponent} bind:showBrowse={isBrowsing} app={selectedApp} {isExiting} onBack={goBack} />
+	<App
+		bind:this={appComponent}
+		bind:showBrowse={isBrowsing}
+		app={selectedApp}
+		{isExiting}
+		onBack={goBack}
+	/>
 {:else}
 	<div class="page-holder">
 		<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
@@ -161,14 +167,39 @@
 				<!-- App Selection -->
 				<div class="flex flex-col gap-4">
 					<h2 class="text-2xl font-[300] mb-2" style="color: {accentColor};">select app</h2>
-					<div class="flex flex-row gap-8 flex-wrap">
+					<div class="flex flex-row gap-8 flex-wrap pb-24">
 						{#each allApps as app}
 							<button
 								class="flex flex-col items-start justify-center gap-2"
 								on:click={() => selectApp(app)}
 							>
-								<div class="w-16 h-16 {app.bgColor} flex items-center justify-center text-white">
-									<img src={app.icon} width="40" height="40" alt={app.name} />
+								<div
+									class="w-16 h-16 flex items-center justify-center text-white {app.bgColor}"
+									style="background: {app.bgColor};"
+								>
+									{#if app.icon}
+										<img
+											src={app.icon}
+											width="40"
+											height="40"
+											alt={app.name}
+											on:error={(e) => {
+												e.target.style.display = 'none';
+												if (e.target.nextElementSibling) {
+													e.target.nextElementSibling.style.display = 'flex';
+												}
+											}}
+										/>
+										<span
+											class="w-16 h-16 justify-center items-center flex text-white font-[300] hidden"
+											style="background: {app.bgColor};">{app.name.charAt(0).toUpperCase()}</span
+										>
+									{:else}
+										<span
+											class="w-16 h-16 justify-center items-center flex text-white font-[300]"
+											style="background: {app.bgColor};">{app.name.charAt(0).toUpperCase()}</span
+										>
+									{/if}
 								</div>
 								<span class="text-sm font-[400] truncate max-w-[64px]">{app.name}</span>
 							</button>
@@ -213,19 +244,24 @@
 						on:click={async (e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							console.log('Publish button clicked', { appComponent, hasPublish: typeof appComponent?.publish });
+							console.log('Publish button clicked', {
+								appComponent,
+								hasPublish: typeof appComponent?.publish
+							});
 							try {
 								if (appComponent && typeof appComponent.publish === 'function') {
 									console.log('Calling publish function...');
 									const result = await appComponent.publish();
 									console.log('Publish result:', result);
-									
+
 									if (result && !result.success) {
 										// Error message already shown by publishLiveTile, but log it
 										console.log('Publish failed:', result.error);
 									}
 								} else {
-									console.error('App component or publish function not available', { appComponent });
+									console.error('App component or publish function not available', {
+										appComponent
+									});
 									addToast('Please configure your live tiles first');
 								}
 							} catch (error) {
@@ -260,7 +296,9 @@
 	.btn-animate {
 		transform: translateY(120%);
 		opacity: 0;
-		transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+		transition:
+			transform 0.3s ease-out,
+			opacity 0.3s ease-out;
 	}
 
 	.btn-animate.animate {
