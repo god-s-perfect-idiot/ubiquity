@@ -12,6 +12,7 @@
 	import { kernel } from '../../kernel/store';
 	import { appInfoStore } from '../../store/appInfo';
 	import App from './App.svelte';
+	import { addToast } from '../../store/toast';
 
 	$: borderClass = $borderColorClassStore;
 	$: accentColor = $accentColorStore;
@@ -175,7 +176,9 @@
 				class:animate={isExpanded}
 			>
 				<button
-					on:click={() => {}}
+					on:click={() => {
+						addToast('Coming soon. i need some coffee.');
+					}}
 					class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
 				>
 					<Icon icon="ic:baseline-publish" width="18" height="18" strokeWidth="2" />

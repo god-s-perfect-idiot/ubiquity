@@ -298,8 +298,14 @@
 
 		// Only trigger click if it wasn't a long press
 		if (!isPressed) {
-			// Use SvelteKit's goto for client-side navigation to preserve state
-			goto(item.src);
+			// Check if the URL is external (starts with http:// or https://)
+			if (item.src && (item.src.startsWith('http://') || item.src.startsWith('https://'))) {
+				// External URL - use window.location
+				window.location.href = item.src;
+			} else if (item.src) {
+				// Internal route - use SvelteKit's goto for client-side navigation
+				goto(item.src);
+			}
 		}
 	}
 
@@ -693,19 +699,53 @@
 		return finalBgColor;
 	})();
 
+	// Load custom live tile config from localStorage (reactive)
+	$: customLiveTileConfig = (() => {
+		if (typeof window === 'undefined' || !item?.name) return null;
+		
+		try {
+			const storageKey = `ubiquity-live-tile-${item.name}`;
+			const stored = localStorage.getItem(storageKey);
+			if (stored) {
+				return JSON.parse(stored);
+			}
+		} catch (error) {
+			console.error('Error loading custom live tile config:', error);
+		}
+		return null;
+	})();
+	
+	// Get custom live tile HTML for current size
+	$: customLiveTileHTML = (() => {
+		if (!customLiveTileConfig || !item?.size) return null;
+		const sizeKey = item.size === '4x2' ? 'tile4x2' : 'tile2x2';
+		const html = customLiveTileConfig[sizeKey];
+		return html && html.trim() ? html.trim() : null;
+	})();
+	
+	$: customAutoTileFlip = customLiveTileConfig?.autoTileFlip || false;
+	
 	// Check if this item should show a live tile
 	$: shouldShowLiveTile = (() => {
-		if (!item.src) return false;
+		if (!item?.name) return false;
 		if (item.size !== '2x2' && item.size !== '4x2') return false;
 		if (editMode) return false; // Don't show live tiles in edit mode
 		
-		// Check if it's a Clock, Weather, Photos, or Music app
-		return item.src === '/clock' || item.src === '/weather' || item.src === '/photos' || item.src === '/music' || item.src === '/spotify';
+		// Show live tile if custom HTML exists OR if it's a built-in live tile app
+		if (customLiveTileHTML) return true;
+		
+		// Check if it's a Clock, Weather, Photos, or Music app (requires src)
+		if (item.src) {
+			return item.src === '/clock' || item.src === '/weather' || item.src === '/photos' || item.src === '/music' || item.src === '/spotify';
+		}
+		
+		return false;
 	})();
 	
-	// Get the Live component for this app
+	// Get the Live component for this app (only if no custom tile)
 	$: LiveComponent = (() => {
 		if (!shouldShowLiveTile) return null;
+		if (customLiveTileHTML) return null; // Don't use built-in component if custom HTML exists
 		
 		if (item.src === '/clock') {
 			return LiveClock;
@@ -721,9 +761,23 @@
 		return null;
 	})();
 	
-	// Check if this live tile should show flip animation (exclude music and photos)
-	$: shouldShowFlipAnimation = shouldShowLiveTile && LiveComponent && !editMode && 
-		item.src !== '/music' &&  item.src !== '/photos';
+	// Check if this live tile should show flip animation
+	$: shouldShowFlipAnimation = (() => {
+		if (!shouldShowLiveTile) return false;
+		if (editMode) return false;
+		
+		// For custom tiles, use the autoTileFlip setting
+		if (customLiveTileHTML) {
+			return customAutoTileFlip;
+		}
+		
+		// For built-in tiles, exclude music and photos
+		if (LiveComponent) {
+			return item.src !== '/music' && item.src !== '/photos';
+		}
+		
+		return false;
+	})();
 	
 	// Random flip animation for live tiles
 	function startRandomFlipAnimation() {
@@ -812,13 +866,21 @@
 	tabindex="0"
 >
 	<!-- Main content -->
-	{#if shouldShowLiveTile && LiveComponent}
+	{#if shouldShowLiveTile && (LiveComponent || customLiveTileHTML)}
 		<!-- Live Tile Content -->
 		<div class="relative w-full h-full overflow-hidden live-tile-wrapper" style="background: #000000;">
 			<div class="live-tile-container w-full h-full" class:flip-up={isFlipping && flipDirection === 'up'} class:flip-down={isFlipping && flipDirection === 'down'}>
 				<!-- Live tile content (front) -->
 				<div class="live-tile-front absolute inset-0 w-full h-full">
-					<svelte:component this={LiveComponent} gridSize={item.size} />
+					{#if customLiveTileHTML}
+						<!-- Custom live tile HTML -->
+						<div class="w-full h-full custom-live-tile">
+							{@html customLiveTileHTML}
+						</div>
+					{:else if LiveComponent}
+						<!-- Built-in live tile component -->
+						<svelte:component this={LiveComponent} gridSize={item.size} />
+					{/if}
 				</div>
 				
 				<!-- App icon and name (back) - shown during flip -->
