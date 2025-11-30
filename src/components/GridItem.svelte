@@ -10,6 +10,7 @@
 	import LiveWeather from '../routes/weather/Live.svelte';
 	import LivePhotos from '../routes/photos/Live.svelte';
 	import LiveMusic from '../routes/music/Live.svelte';
+	import LiveSpotify from '../routes/spotify/Live.svelte';
 
 	export let item;
 	export let editMode = false;
@@ -712,15 +713,17 @@
 			return LiveWeather;
 		} else if (item.src === '/photos') {
 			return LivePhotos;
-		} else if (item.src === '/music' || item.src === '/spotify') {
+		} else if (item.src === '/music') {
 			return LiveMusic;
+		} else if (item.src === '/spotify') {
+			return LiveSpotify;
 		}
 		return null;
 	})();
 	
 	// Check if this live tile should show flip animation (exclude music and photos)
 	$: shouldShowFlipAnimation = shouldShowLiveTile && LiveComponent && !editMode && 
-		item.src !== '/music' && item.src !== '/spotify' && item.src !== '/photos';
+		item.src !== '/music' &&  item.src !== '/photos';
 	
 	// Random flip animation for live tiles
 	function startRandomFlipAnimation() {

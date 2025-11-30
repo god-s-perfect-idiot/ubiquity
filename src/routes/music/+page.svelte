@@ -55,12 +55,29 @@
 	};
 
 	function initializeQueue() {
-		// Add type to each track for the music store
 		const tracksWithType = music.map(track => ({
 			...track,
 			type: 'local'
 		}));
-		musicStore.setQueue(tracksWithType);
+
+		const currentState = musicStore.getCurrentState();
+
+		// If music is currently playing from local files, and the current track is still in the new queue,
+		// we don't need to re-set the entire queue immediately. The queue will be updated when a new track is selected.
+		if (currentState.currentTrack && currentState.serviceType === 'local' && currentState.isPlaying) {
+			const currentTrackInNewQueue = tracksWithType.some(t => t.content === currentState.currentTrack.content);
+			if (currentTrackInNewQueue) {
+				// If the current track is still in the new queue, we can update the queue.
+				// This won't stop playback as the current track's index will remain valid.
+				musicStore.setQueue(tracksWithType);
+			}
+			// If current track is NOT in new queue, we explicitly do NOT update the queue
+			// to avoid stopping playback. The user will have to select a new track.
+		} else {
+			// No track playing, or playing from a different service, or current track is not local.
+			// It's safe to set the queue.
+			musicStore.setQueue(tracksWithType);
+		}
 	}
 
 	async function playSong(index) {
