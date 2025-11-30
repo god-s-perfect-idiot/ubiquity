@@ -167,21 +167,21 @@
 				<!-- App Selection -->
 				<div class="flex flex-col gap-4">
 					<h2 class="text-2xl font-[300] mb-2" style="color: {accentColor};">select app</h2>
-					<div class="flex flex-row gap-8 flex-wrap pb-24">
+					<div class="flex flex-col gap-8 pb-24">
 						{#each allApps as app}
 							<button
-								class="flex flex-col items-start justify-center gap-2"
+								class="flex flex-row items-center gap-4 justify-start gap-2"
 								on:click={() => selectApp(app)}
 							>
 								<div
-									class="w-16 h-16 flex items-center justify-center text-white {app.bgColor}"
+									class="w-12 h-12 flex items-center justify-center text-white {app.bgColor}"
 									style="background: {app.bgColor};"
 								>
 									{#if app.icon}
 										<img
 											src={app.icon}
-											width="40"
-											height="40"
+											width="32"
+											height="32"
 											alt={app.name}
 											on:error={(e) => {
 												e.target.style.display = 'none';
@@ -191,17 +191,17 @@
 											}}
 										/>
 										<span
-											class="w-16 h-16 justify-center items-center flex text-white font-[300] hidden"
+											class="w-8 h-8 justify-center items-center flex text-white font-[300] hidden"
 											style="background: {app.bgColor};">{app.name.charAt(0).toUpperCase()}</span
 										>
 									{:else}
 										<span
-											class="w-16 h-16 justify-center items-center flex text-white font-[300]"
+											class="w-8 h-8 justify-center items-center flex text-white font-[300]"
 											style="background: {app.bgColor};">{app.name.charAt(0).toUpperCase()}</span
 										>
 									{/if}
 								</div>
-								<span class="text-sm font-[400] truncate max-w-[64px]">{app.name}</span>
+								<span class="text-2xl font-[300] truncate">{app.name}</span>
 							</button>
 						{/each}
 					</div>

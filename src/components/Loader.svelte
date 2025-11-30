@@ -1,11 +1,17 @@
+<script>
+	import { accentColorStore } from '../utils/theme';
+	
+	$: accentColor = $accentColorStore;
+</script>
+
 <div class="flex items-center justify-center py-12">
 	<div class="flex flex-col items-center gap-4">
 		<!-- Windows Phone 8 Style Loading Dots -->
 		<div class="ellipsis-loader" aria-role="alert" aria-label="Loading. Please wait">
-			<div class="ellipsis-loader__dot"></div>
-			<div class="ellipsis-loader__dot"></div>
-			<div class="ellipsis-loader__dot"></div>
-			<div class="ellipsis-loader__dot"></div>
+			<div class="ellipsis-loader__dot" style="background: {accentColor};"></div>
+			<div class="ellipsis-loader__dot" style="background: {accentColor};"></div>
+			<div class="ellipsis-loader__dot" style="background: {accentColor};"></div>
+			<div class="ellipsis-loader__dot" style="background: {accentColor};"></div>
 		</div>
 
 		<!-- Loading Text -->
@@ -27,7 +33,6 @@
 	.ellipsis-loader__dot {
 		-webkit-animation: 1.8s infinite ellipsis-loader__dot;
 		animation: 1.8s infinite ellipsis-loader__dot;
-		background: #f0f;
 		float: left;
 		height: 3px;
 		position: absolute;
