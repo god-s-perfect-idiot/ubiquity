@@ -16,7 +16,11 @@
 		'spotify_access_token': 'accounts',
 		'spotify_refresh_token': 'accounts',
 		'spotify_expires_at': 'accounts',
-		'spotify_user': 'accounts'
+		'spotify_user': 'accounts',
+		'spotify_client_id': 'accounts',
+		'spotify_client_secret': 'accounts',
+		'ubiquity-user-name': 'user',
+		'ubiquity-user-id': 'user'
 	};
 
 	let storageData = {
@@ -87,8 +91,13 @@
 		// Iterate through all localStorage items
 		for (let i = 0; i < localStorage.length; i++) {
 			const key = localStorage.key(i);
+			if (!key) continue; // Skip if key is null/undefined
+			
 			const value = localStorage.getItem(key);
-			const size = getSizeInBytes(key) + getSizeInBytes(value);
+			// Calculate size including key and value (handle null values)
+			const keySize = getSizeInBytes(key || '');
+			const valueSize = getSizeInBytes(value || '');
+			const size = keySize + valueSize;
 			
 			totalUsed += size;
 			
@@ -96,12 +105,23 @@
 			let category = 'other';
 			if (categoryMap[key]) {
 				category = categoryMap[key];
-			} else if (key.includes('_access_token') || key.includes('_user') || key.includes('_refresh_token') || key.includes('_expires_at')) {
+			} else if (key.startsWith('ubiquity-live-tile-')) {
+				category = 'live-tiles';
+			} else if (key.includes('_access_token') || key.includes('_user') || key.includes('_refresh_token') || key.includes('_expires_at') || key.includes('_client_id') || key.includes('_client_secret')) {
 				category = 'accounts';
 			} else if (key.includes('weather') || key.includes('Weather')) {
 				category = 'weather';
 			} else if (key.includes('grid') || key.includes('Grid')) {
 				category = 'homescreen';
+			} else if (key.startsWith('ubiquity-')) {
+				// Any other ubiquity-* keys
+				if (key.includes('user')) {
+					category = 'user';
+				} else if (key.includes('app') || key.includes('game')) {
+					category = 'apps+games';
+				} else if (key.includes('homescreen') || key.includes('grid')) {
+					category = 'homescreen';
+				}
 			}
 			
 			if (!categories[category]) {
@@ -141,6 +161,8 @@
 			'files': 'files',
 			'accounts': 'accounts',
 			'weather': 'weather',
+			'live-tiles': 'live-tiles',
+			'user': 'user',
 			'other': 'other'
 		};
 		return names[key] || key;

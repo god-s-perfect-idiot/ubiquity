@@ -20,10 +20,12 @@
 	let isExiting = false;
 	let isExpanded = false;
 	let isUnmounting = false;
-	let selectedApp = null;
-	let selectedGridSize = '2x2';
-	let isLoadingLiveTile = false;
-	let allApps = [];
+		let selectedApp = null;
+		let selectedGridSize = '2x2';
+		let isLoadingLiveTile = false;
+		let allApps = [];
+		let appComponent = null;
+		let isBrowsing = false;
 
 	// const systemAppsWithLiveTiles = [
 	// 	{
@@ -54,16 +56,39 @@
 	}
 
 	function closePage() {
-		isUnmounting = true;
-		setTimeout(() => {
-			isExpanded = false;
+		// Close directly without exiting browse first - single stage exit
+		// Ensure bottom bar is expanded so buttons can animate out
+		if (!isExpanded) {
+			isExpanded = true;
+			// Wait for expansion animation before starting unmount
 			setTimeout(() => {
-				isExiting = true;
+				// Remove animate class first to let buttons animate out
+				isExpanded = false;
+				// Wait for buttons to animate out before collapsing bottom bar
 				setTimeout(() => {
-					goto('/');
-				}, 200);
-			}, 300);
-		}, 300);
+					isUnmounting = true;
+					setTimeout(() => {
+						isExiting = true;
+						setTimeout(() => {
+							goto('/');
+						}, 200);
+					}, 300);
+				}, 300); // Wait for button animation
+			}, 350);
+		} else {
+			// Already expanded, remove animate class first to let buttons animate out
+			isExpanded = false;
+			// Wait for buttons to animate out before collapsing bottom bar
+			setTimeout(() => {
+				isUnmounting = true;
+				setTimeout(() => {
+					isExiting = true;
+					setTimeout(() => {
+						goto('/');
+					}, 200);
+				}, 300);
+			}, 300); // Wait for button animation
+		}
 	}
 
 	function selectApp(app) {
@@ -126,7 +151,7 @@
 </script>
 
 {#if selectedApp}
-	<App app={selectedApp} {isExiting} onBack={goBack} />
+	<App bind:this={appComponent} bind:showBrowse={isBrowsing} app={selectedApp} {isExiting} onBack={goBack} />
 {:else}
 	<div class="page-holder">
 		<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
@@ -163,7 +188,14 @@
 				class:animate={isExpanded}
 			>
 				<button
-					on:click={() => goBack()}
+					on:click={() => {
+						isExpanded = false;
+						if (isBrowsing && appComponent?.exitBrowse) {
+							appComponent.exitBrowse();
+						} else {
+							goBack();
+						}
+					}}
 					class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
 				>
 					<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
@@ -171,20 +203,43 @@
 
 				<span class="text-xs font-[400]">back</span>
 			</div>
-			<div
-				class="btn-animate flex flex-col gap-2 justify-center items-center"
-				class:animate={isExpanded}
-			>
-				<button
-					on:click={() => {
-						addToast('Coming soon. i need some coffee.');
-					}}
-					class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
+			{#if !isBrowsing}
+				<div
+					class="btn-animate flex flex-col gap-2 justify-center items-center"
+					class:animate={isExpanded}
 				>
-					<Icon icon="ic:baseline-publish" width="18" height="18" strokeWidth="2" />
-				</button>
-				<span class="text-xs font-[400]">publish</span>
-			</div>
+					<button
+						type="button"
+						on:click={async (e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							console.log('Publish button clicked', { appComponent, hasPublish: typeof appComponent?.publish });
+							try {
+								if (appComponent && typeof appComponent.publish === 'function') {
+									console.log('Calling publish function...');
+									const result = await appComponent.publish();
+									console.log('Publish result:', result);
+									
+									if (result && !result.success) {
+										// Error message already shown by publishLiveTile, but log it
+										console.log('Publish failed:', result.error);
+									}
+								} else {
+									console.error('App component or publish function not available', { appComponent });
+									addToast('Please configure your live tiles first');
+								}
+							} catch (error) {
+								console.error('Error in publish button:', error);
+								addToast('Failed to publish live tile: ' + error.message);
+							}
+						}}
+						class="flex flex-col border {borderClass} rounded-full !border-2 p-2 font-bold"
+					>
+						<Icon icon="ic:baseline-publish" width="18" height="18" strokeWidth="2" />
+					</button>
+					<span class="text-xs font-[400]">publish</span>
+				</div>
+			{/if}
 		{/if}
 		<div
 			class="btn-animate flex flex-col gap-2 justify-center items-center"
@@ -205,6 +260,7 @@
 	.btn-animate {
 		transform: translateY(120%);
 		opacity: 0;
+		transition: transform 0.3s ease-out, opacity 0.3s ease-out;
 	}
 
 	.btn-animate.animate {

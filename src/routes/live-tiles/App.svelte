@@ -3,6 +3,7 @@
 	import { borderColorClassStore, accentColorStore } from '../../utils/theme';
 	import Switch from '../../components/Switch.svelte';
 	import Button from '../../components/Button.svelte';
+	import Browse from './Browse.svelte';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { addToast } from '../../store/toast';
 	import { browser } from '$app/environment';
@@ -11,6 +12,34 @@
 	export let app = null;
 	export let isExiting = false;
 	export let onBack = () => {};
+
+	// Expose publish function for parent component
+	export function publish() {
+		return publishLiveTile();
+	}
+
+	// Expose browse state and exit browse function for parent component
+	export function exitBrowse() {
+		if (showBrowse) {
+			showBrowse = false;
+		}
+	}
+
+	// User ID for ownership - generate or retrieve from localStorage
+	function getUserId() {
+		if (!browser) return 'anonymous';
+		let userId = localStorage.getItem('ubiquity-user-id');
+		if (!userId) {
+			userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+			localStorage.setItem('ubiquity-user-id', userId);
+		}
+		return userId;
+	}
+
+	function getUserName() {
+		if (!browser) return 'Anonymous';
+		return localStorage.getItem('ubiquity-user-name') || 'Anonymous';
+	}
 
 	$: borderClass = $borderColorClassStore;
 	$: accentColor = $accentColorStore;
@@ -30,6 +59,8 @@
 	let tile4x2 = '';
 	let tile2x2 = '';
 	let autoTileFlip = false;
+	export let showBrowse = false;
+	let isPublishing = false;
 
 	// Preview flip animation state
 	let isFlipping4x2 = false;
@@ -146,7 +177,7 @@
 			addToast('Live tile configuration saved');
 		} catch (error) {
 			console.error('Error saving live tile config:', error);
-			addToast('Error saving configuration', 'error');
+			addToast('Error saving configuration');
 		}
 	}
 
@@ -154,38 +185,66 @@
 		const prompt = `You are an expert web developer specializing in creating beautiful, production-ready live tile designs following STRICT Metro UI (Windows Phone 8.1 / Windows 8) design guidelines. Your task is to generate HTML code for live tiles that will be displayed in an app launcher interface.
 
 CRITICAL METRO UI DESIGN REQUIREMENTS (MUST FOLLOW):
-1. FLAT DESIGN PRINCIPLES:
+
+1. SIMPLICITY & BALANCE (HIGHEST PRIORITY):
+   - DO NOT overcrowd tiles with too many UI elements
+   - Keep designs clean and organized - show 2-5 key pieces of information
+   - Avoid cramming multiple sections, borders, or decorative elements
+   - White space is your friend - use generous breathing room between elements
+   - Each tile should feel spacious and organized, not busy or overwhelming
+   - Organize information in clear sections with visual hierarchy
+   - Use consistent spacing and alignment to create structure
+   - When in doubt, reduce clutter rather than add elements
+
+2. FLAT DESIGN PRINCIPLES:
    - Use solid, vibrant background colors - NO gradients (use solid colors like bg-blue-600, bg-green-600, etc.)
    - NO rounded corners - all elements should have sharp, square edges (no rounded-lg, rounded-full, etc.)
    - NO shadows or drop shadows - flat, clean surfaces only
    - NO bevels, embossed effects, or 3D styling
+   - NO decorative borders or dividers unless absolutely necessary
 
-2. TYPOGRAPHY (Metro UI Typography System):
+3. TYPOGRAPHY (Metro UI Typography System):
    - Use LARGE, BOLD, readable fonts - Metro UI emphasizes readability
    - Primary content should use text-4xl, text-5xl, or text-6xl for important numbers/text
    - Use font-bold or font-semibold for emphasis
    - Text should be WHITE on colored backgrounds for maximum contrast
-   - Use clear hierarchy: large numbers/stats, medium labels, small details
+   - Use clear hierarchy: ONE large number/text, ONE medium label, optionally ONE small detail
+   - Avoid using more than 2-3 different font sizes in a single tile
 
-3. LAYOUT & SPACING:
+4. LAYOUT & SPACING:
    - Content-first approach - prioritize showing information over decoration
-   - Use generous padding (p-4, p-6) but keep it structured
-   - Align content to grid - use flexbox with clear alignment
-   - For 4x2 tiles: Use horizontal layouts with clear sections
-   - For 2x2 tiles: Use centered, vertical layouts
+   - Use generous padding (p-4, p-6, p-8) - give content room to breathe
+   - Align content to grid - use flexbox with clear, simple alignment
+   - For 4x2 tiles: Use horizontal layouts with 1-2 clear sections MAX
+   - For 2x2 tiles: Focus on ONE piece of information centered or top-left aligned
+   - Avoid creating multiple columns or complex grid structures
+   - Keep spacing consistent and generous
 
-4. COLOR PALETTE (Metro UI Colors):
-   - Use vibrant, saturated colors from Tailwind's palette (blue-600, green-600, purple-600, etc.)
+5. COLOR PALETTE (Metro UI Colors):
+   - Use ONE vibrant, saturated color as the background (blue-600, green-600, purple-600, etc.)
    - Solid backgrounds only - NO gradients: use bg-blue-600 NOT bg-gradient-to-br
    - White text on colored backgrounds: text-white
    - Consider using darker shades (600-800 range) for better text contrast
+   - Avoid using multiple background colors in a single tile
 
-5. CONTENT DESIGN:
-   - Information-dense but not cluttered
-   - Show real, useful data (not placeholders)
-   - Use icons sparingly - prefer large numbers and text
-   - For 4x2: Show multiple data points or a horizontal layout
-   - For 2x2: Focus on one or two key pieces of information
+6. CONTENT DESIGN:
+   - Information-dense but NOT cluttered - this is the key balance
+   - Show real, useful data (not placeholders) organized clearly
+   - Use icons sparingly - prefer large numbers and text for primary information
+   - Icons work well for secondary information (humidity, wind, etc.)
+   - For 4x2: Show 3-6 key data points organized in clear sections
+   - For 2x2: Show 2-4 key pieces of information with clear hierarchy
+   - Organize information spatially - use left/right, top/bottom sections
+   - Primary information should be largest, secondary information smaller
+
+7. WHAT TO AVOID:
+   - Multiple borders or dividers
+   - Too many text elements competing for attention
+   - Complex layouts with many sections
+   - Decorative elements that don't serve a functional purpose
+   - Icons that are unnecessary or redundant with text
+   - Multiple colors or patterns
+   - Dense information grids
 
 TECHNICAL REQUIREMENTS:
 1. Generate TWO versions of the live tile HTML:
@@ -200,54 +259,104 @@ TECHNICAL REQUIREMENTS:
 
 5. You can use subtle animations using Tailwind's animate utilities, but keep them minimal and purposeful.
 
-6. Make the text purposeful and useful. Dont use random numbers or text. If you are showing something, use js to fetch the data from some api. if not, use meaningful static text.
+6. Make the text purposeful and useful. Don't use random numbers or text. If you are showing something, use js to fetch the data from some API. If not, use meaningful static text.
 
-CONTENT BY APP TYPE:
-- Weather apps: Show current temperature (large), condition, and forecast
-- News apps: Show headlines, breaking news indicators
-- Social apps: Show notification counts, recent activity
-- Productivity apps: Show task counts, deadlines, stats
-- Music apps: Show current track, artist name
-- Calendar apps: Show current date, upcoming events
-- Finance apps: Show key metrics, stock prices, balances
-- Fitness apps: Show steps, goals, achievements
-- And adapt accordingly for other app types...
+CONTENT BY APP TYPE (Balance detail with clarity):
+- Weather apps: Show temperature (LARGE), condition, location, and optional forecast/high-low. For 4x2, can include humidity/pressure/wind.
+- News apps: Show headline and optionally source or time
+- Social apps: Show notification count (LARGE) and optionally recent activity preview
+- Productivity apps: Show key metrics (task count, completion status, deadlines)
+- Music apps: Show current track, artist, and optionally album art or controls
+- Calendar apps: Show current date (LARGE), day name, and optionally upcoming events
+- Finance apps: Show key metrics (balance, price, change) with clear labels
+- Fitness apps: Show steps/progress (LARGE) and optionally goal or achievement
+- General: Show 2-5 key pieces of information, organized clearly with hierarchy
 
-EXAMPLE FORMAT (Following Metro UI):
+EXAMPLE FORMAT (Following Metro UI - Based on existing system tiles):
 
-Here's an example for a Weather app following Metro UI principles:
+Here's an example for a Weather app matching the complexity of existing system tiles:
 
-4x2 TILE:
-<div class="w-full h-full bg-blue-600 flex flex-col justify-between p-6 text-white">
-  <div class="flex items-start justify-between">
-    <div>
-      <div class="text-6xl font-bold leading-none">72°</div>
-      <div class="text-xl font-semibold mt-1">Sunny</div>
+4x2 TILE (Weather - matches system design):
+<div class="w-full h-full bg-blue-600 flex flex-row justify-between text-white p-4">
+  <div class="flex flex-col justify-between h-full">
+    <div class="flex flex-col">
+      <span class="text-lg font-[400]">New York</span>
+      <span class="text-sm font-[300] opacity-80">Updated: 2:30 PM</span>
     </div>
-    <div class="text-6xl">☀️</div>
+    <div class="flex flex-col">
+      <div class="flex items-baseline gap-2">
+        <span class="text-6xl font-[300]">72</span>
+        <span class="text-base font-[500]">°F</span>
+      </div>
+      <span class="text-base font-[300] capitalize">Sunny</span>
+    </div>
   </div>
-  <div class="flex gap-4 text-base">
-    <div class="flex-1">
-      <div class="text-xs uppercase tracking-wide opacity-90">Tomorrow</div>
-      <div class="text-2xl font-bold">68°</div>
+  <div class="flex flex-col gap-2 items-end justify-center">
+    <div class="flex items-center gap-2">
+      <span class="text-base">☁️</span>
+      <span class="text-base font-[300]">60%</span>
     </div>
-    <div class="flex-1">
-      <div class="text-xs uppercase tracking-wide opacity-90">Wed</div>
-      <div class="text-2xl font-bold">70°</div>
-    </div>
-    <div class="flex-1">
-      <div class="text-xs uppercase tracking-wide opacity-90">Thu</div>
-      <div class="text-2xl font-bold">74°</div>
+    <div class="flex items-center gap-2">
+      <span class="text-base">💨</span>
+      <span class="text-base font-[300]">12 km/h</span>
     </div>
   </div>
 </div>
 
-2x2 TILE:
-<div class="w-full h-full bg-blue-600 flex flex-col justify-center items-center p-4 text-white">
-  <div class="text-6xl mb-2">☀️</div>
-  <div class="text-5xl font-bold leading-none">72°</div>
-  <div class="text-base font-semibold mt-1">Sunny</div>
+2x2 TILE (Weather - compact but informative):
+<div class="w-full h-full bg-blue-600 flex flex-col justify-between text-white p-2">
+  <div class="flex flex-col">
+    <span class="text-lg font-[500]">New York</span>
+    <span class="text-sm font-[300] capitalize opacity-90">Sunny</span>
+  </div>
+  <div class="flex items-baseline gap-2">
+    <span class="text-6xl font-[300]">72</span>
+    <span class="text-base font-[500]">°F</span>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="text-base font-[300]">75°</span>
+    <div class="w-6 h-px bg-white opacity-50"></div>
+    <span class="text-base font-[300] opacity-80">68°</span>
+  </div>
 </div>
+
+Here's an example for a Clock app (based on system implementation):
+
+4x2 TILE (Clock):
+<div class="w-full h-full flex flex-col justify-center items-start text-white p-4" style="background-color: #4c1d95;">
+  <div class="flex items-center gap-2">
+    <span class="text-7xl font-[200]">12</span>
+    <span class="text-7xl font-[200]">:</span>
+    <span class="text-7xl font-[200]">45</span>
+    <span class="text-4xl font-[200] ml-2">PM</span>
+  </div>
+  <div class="flex flex-col absolute bottom-1 left-1">
+    <span class="text-base font-[500]">Monday</span>
+    <span class="text-base font-[300]">January 15, 2024</span>
+  </div>
+</div>
+
+2x2 TILE (Clock):
+<div class="w-full h-full flex flex-col justify-center items-center text-white p-4" style="background-color: #4c1d95;">
+  <div class="flex flex-row items-baseline gap-1 text-6xl font-[200]">
+    <span>12</span>
+    <span>:</span>
+    <span>45</span>
+  </div>
+  <span class="text-base font-[300] mb-4">PM</span>
+  <div class="flex flex-col items-start w-full absolute bottom-1 left-1">
+    <span class="text-base font-[500]">Monday</span>
+    <span class="text-base font-[300]">Jan 15, 2024</span>
+  </div>
+</div>
+
+DESIGN PHILOSOPHY REMINDER:
+- Metro UI is about CONTENT, not decoration
+- Every element must serve a clear purpose
+- When in doubt, simplify - remove elements rather than add
+- The tile should be readable at a glance
+- Clarity over complexity
+- Space is a design element - use it generously
 
 IMPORTANT: Follow Metro UI guidelines STRICTLY:
 - Solid colors, no gradients
@@ -255,9 +364,10 @@ IMPORTANT: Follow Metro UI guidelines STRICTLY:
 - No shadows
 - Large, bold typography
 - White text on colored backgrounds
-- Content-first, information-dense design
+- Content-first, SIMPLE design
 - Clean, flat, modern aesthetic
-- Left Alignment over center alignment. 
+- Left alignment preferred over center alignment
+- DO NOT overcrowd - simplicity is key
 
 Now, please generate production-ready HTML code following these Metro UI guidelines for the following app:
 
@@ -265,10 +375,102 @@ APP NAME: ${app?.name || 'My App'}
 
 APP DESCRIPTION: ${app?.description || 'A useful application'}
 
+Remember: Create tiles that are SIMPLE, CLEAN, and UNCLUTTERED. Focus on ONE to THREE key pieces of information maximum. When in doubt, remove elements rather than add them.
+
 Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follows Metro UI design principles, uses only Tailwind CSS classes, and is production-ready.`;
 
 		navigator.clipboard.writeText(prompt);
 		addToast('Live tile generator prompt copied to clipboard');
+	}
+
+	async function publishLiveTile() {
+		console.log('publishLiveTile called', { app, hasTile4x2: !!tile4x2.trim(), hasTile2x2: !!tile2x2.trim() });
+		
+		if (!app) {
+			addToast('No app selected');
+			return { success: false, error: 'No app selected' };
+		}
+		
+		if (!tile4x2.trim()) {
+			addToast('Please create a 4x2 tile before publishing');
+			return { success: false, error: 'Missing 4x2 tile' };
+		}
+		
+		if (!tile2x2.trim()) {
+			addToast('Please create a 2x2 tile before publishing');
+			return { success: false, error: 'Missing 2x2 tile' };
+		}
+
+		const appUrl = app.url || app.content || '';
+		if (!appUrl) {
+			addToast('App URL is required to publish');
+			isPublishing = false;
+			return { success: false, error: 'Missing app URL' };
+		}
+
+		isPublishing = true;
+		try {
+			const tileData = {
+				appUrl: appUrl,
+				appName: app.name || '',
+				tile4x2: tile4x2.trim(),
+				tile2x2: tile2x2.trim(),
+				autoTileFlip: autoTileFlip,
+				owner: getUserName(),
+				ownerId: getUserId(),
+				description: ''
+			};
+			
+			console.log('Publishing tile:', tileData);
+
+			const response = await fetch('/api/livetiles', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(tileData)
+			});
+
+			const data = await response.json();
+
+			if (data.success) {
+				addToast('Live tile published successfully!');
+				return { success: true, tileId: data.tileId };
+			} else {
+				throw new Error(data.error || 'Failed to publish live tile');
+			}
+		} catch (error) {
+			console.error('Error publishing live tile:', error);
+			addToast('Failed to publish live tile: ' + (error.message || 'Unknown error'));
+			return { success: false, error: error.message || 'Unknown error' };
+		} finally {
+			isPublishing = false;
+		}
+	}
+
+	function handleBrowse() {
+		showBrowse = true;
+	}
+
+	function handleBrowseBack() {
+		showBrowse = false;
+	}
+
+	function handleTileSelect(selectedTile) {
+		if (selectedTile) {
+			tile4x2 = selectedTile.tile4x2 || '';
+			tile2x2 = selectedTile.tile2x2 || '';
+			autoTileFlip = selectedTile.autoTileFlip || false;
+			showBrowse = false;
+			addToast('Live tile loaded!');
+
+			// Save the loaded tile config
+			tick().then(() => {
+				saveTileConfig();
+				checkAndStart4x2Animation();
+				checkAndStart2x2Animation();
+			});
+		}
 	}
 
 	// Simple check: if we should animate and timer is not running, start it
@@ -337,8 +539,11 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 </script>
 
 <div class="page-holder">
-	<div class="page pt-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
-		{#if app}
+	{#if showBrowse && app}
+		<Browse {app} {isExiting} onBack={handleBrowseBack} onSelect={handleTileSelect} />
+	{:else}
+		<div class="page pt-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
+			{#if app}
 			<span class="text-6xl font-[300] truncate lowercase pb-8 h-auto px-4">{app.name}</span>
 
 			<div class="flex flex-col gap-6 flex-1 overflow-y-auto pb-24 px-4">
@@ -364,7 +569,7 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 						<div class="flex flex-col gap-2">
 							<span class="text-[#767676] text-sm">Preview</span>
 							<div
-								class="relative overflow-hidden border-2 border-white"
+								class="relative overflow-hidden"
 								style="width: {PREVIEW_4X2_WIDTH}px; height: {PREVIEW_4X2_HEIGHT}px; background: #000000;"
 							>
 								<div
@@ -415,7 +620,7 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 						<div class="flex flex-col gap-2">
 							<span class="text-[#767676] text-sm">Preview</span>
 							<div
-								class="relative overflow-hidden border-2 border-white"
+								class="relative overflow-hidden"
 								style="width: {PREVIEW_2X2_WIDTH}px; height: {PREVIEW_2X2_HEIGHT}px; background: #000000;"
 							>
 								<div
@@ -472,18 +677,14 @@ Please provide both the 4x2 and 2x2 tile HTML code. Make sure it strictly follow
 						published by other users.</span
 					>
 					<Button text="copy live tile generator script" onClick={copyLiveTileGeneratorScript} />
-					<Button
-						text="browse custom live tiles"
-						onClick={() => {
-							addToast('Coming soon. i need some coffee.');
-						}}
-					/>
+					<Button text="browse live tiles" onClick={handleBrowse} />
 				</div>
 			</div>
-		{:else}
-			<span class="text-6xl font-[300]">No app selected</span>
-		{/if}
-	</div>
+			{:else}
+				<span class="text-6xl font-[300]">No app selected</span>
+			{/if}
+		</div>
+	{/if}
 </div>
 
 <style>
