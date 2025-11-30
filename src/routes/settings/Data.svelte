@@ -69,7 +69,7 @@
 <div class="page-holder">
 	<div class="page pt-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300] px-4">data</span>
-		<div class="flex flex-col gap-8 mt-6 flex-1 overflow-y-auto px-4">
+		<div class="flex flex-col gap-8 mt-6 flex-1 overflow-y-auto px-4 pb-24">
 			<span class="text-lg font-[300] text-[#a1a1a1]"
 				>Use this page to set information or reset the data on your device. This will reset all
 				data, including accounts, settings, and apps.</span
