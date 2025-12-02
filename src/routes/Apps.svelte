@@ -50,6 +50,13 @@
 			bgColor: 'bg-orange-600'
 		},
 		{
+			name: 'Camera',
+			content: '/camera',
+			isSystemApp: true,
+			icon: 'el:camera',
+			bgColor: 'bg-[#4b1a4b]'
+		},
+		{
 			name: 'Music',
 			content: '/music',
 			isSystemApp: true,
