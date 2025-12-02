@@ -65,9 +65,9 @@
 
 {#if currentPage === 'settings'}
 	<div class="page-holder">
-		<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
-			<span class="text-6xl font-[300]">settings</span>
-			<div class="flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-16">
+		<div class="page pt-4 flex flex-col h-screen" class:page-exit={isExiting}>
+			<span class="text-6xl font-[300] px-4">settings</span>
+			<div class="flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-16 px-4">
 				<div class="flex flex-col gap-3 items-start">
 					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">personalization</span>
 					<button class="flex flex-col items-start" on:click={() => {changePage('display')}}>
