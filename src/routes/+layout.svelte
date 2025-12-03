@@ -103,6 +103,30 @@
 			}
 		}
 		
+		// Prevent pull-to-refresh gesture
+		if (browser) {
+			let lastTouchY = 0;
+			let touchStartY = 0;
+			
+			document.addEventListener('touchstart', (e) => {
+				touchStartY = e.touches[0].clientY;
+			}, { passive: true });
+			
+			document.addEventListener('touchmove', (e) => {
+				const currentY = e.touches[0].clientY;
+				const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+				const isScrollingUp = currentY > lastTouchY;
+				const isAtTop = scrollTop === 0;
+				
+				// Prevent pull-to-refresh when at top and scrolling down
+				if (isAtTop && !isScrollingUp && currentY > touchStartY) {
+					e.preventDefault();
+				}
+				
+				lastTouchY = currentY;
+			}, { passive: false });
+		}
+		
 		// Set up audio element with music store after mount
 		if (browser && audioElement) {
 			musicStore.setAudioElement(audioElement);
@@ -137,4 +161,13 @@
 
 
 <style>
+	.app {
+		overscroll-behavior-y: none;
+		overscroll-behavior: none;
+	}
+	
+	main {
+		overscroll-behavior-y: none;
+		overscroll-behavior: none;
+	}
 </style>

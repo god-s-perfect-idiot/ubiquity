@@ -17,12 +17,19 @@
     src: url("/selawkl.ttf");
 }
 
+html {
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
+}
+
 body {
     font-family: "Noto Sans";
     font-weight: 300;
     font-size: 1.5rem;
     background-color: var(--body-bg-color, #000);
     color: var(--body-text-color, #fff);
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
 }
 
 .page-holder {

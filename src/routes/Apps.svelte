@@ -11,7 +11,12 @@
 	import { homescreenStore } from '../store/homescreen.js';
 	import { gridStore } from '../store/grid.js';
 	import { appInfoStore } from '../store/appInfo.js';
-	import { accentColorStore, textColorClassStore, borderColorClassStore, backgroundThemeStore } from '../utils/theme';
+	import {
+		accentColorStore,
+		textColorClassStore,
+		borderColorClassStore,
+		backgroundThemeStore
+	} from '../utils/theme';
 
 	export let onBackClick = () => {};
 
@@ -182,6 +187,9 @@
 	let showMenu = null;
 	let isLongPress = false;
 	let isMenuActionInProgress = false; // Flag to prevent menu from reopening after action
+	let launchingApp = null; // Track which app is being launched
+	let animatingApps = new Set(); // Track which apps are currently animating
+	let appEntryRefs = new Map(); // Store references to app entry elements
 
 	function handleTouchStart(appName) {
 		// Don't start long press if menu action is in progress
@@ -478,6 +486,170 @@
 			return false;
 		};
 	});
+
+	// Function to get all app entries in order (from top to bottom)
+	function getAllAppEntries() {
+		const entries = [];
+		const container = document.querySelector('.flex-1.overflow-y-auto');
+		if (!container) return entries;
+
+		// Get all app entry divs (the ones with class "flex flex-col relative")
+		const allAppDivs = container.querySelectorAll('.app-entry');
+		allAppDivs.forEach((div) => {
+			const appName = div.dataset.appName;
+			if (appName) {
+				entries.push({ element: div, name: appName, type: 'app' });
+			}
+		});
+
+		return entries;
+	}
+
+	// Function to get all letter headers in order (from top to bottom)
+	function getAllLetterEntries() {
+		const entries = [];
+		const container = document.querySelector('.flex-1.overflow-y-auto');
+		if (!container) return entries;
+
+		// Get all letter header divs
+		const allLetterDivs = container.querySelectorAll('.letter-header');
+		allLetterDivs.forEach((div) => {
+			const letter = div.dataset.letter;
+			if (letter) {
+				entries.push({ element: div, name: letter, type: 'letter' });
+			}
+		});
+
+		return entries;
+	}
+
+	// Function to get all entries (both apps and letters) in order
+	function getAllEntries() {
+		const appEntries = getAllAppEntries();
+		const letterEntries = getAllLetterEntries();
+
+		// Combine and sort by position in DOM
+		const container = document.querySelector('.flex-1.overflow-y-auto');
+		if (!container) return appEntries;
+
+		const allEntries = [...appEntries, ...letterEntries];
+
+		// Sort by position in DOM (top to bottom)
+		allEntries.sort((a, b) => {
+			const rectA = a.element.getBoundingClientRect();
+			const rectB = b.element.getBoundingClientRect();
+			return rectA.top - rectB.top;
+		});
+
+		return allEntries;
+	}
+
+	// Function to check if an element is visible in viewport
+	function isElementVisible(element, container) {
+		const rect = element.getBoundingClientRect();
+		const containerRect = container.getBoundingClientRect();
+
+		return (
+			rect.bottom >= containerRect.top &&
+			rect.top <= containerRect.bottom &&
+			rect.right >= containerRect.left &&
+			rect.left <= containerRect.right
+		);
+	}
+
+	// Function to handle app launch with animation
+	async function handleAppLaunch(event, app) {
+		// Prevent default navigation
+		event.preventDefault();
+
+		// Don't launch if menu is open or already launching
+		if (showMenu !== null || launchingApp !== null) {
+			return;
+		}
+
+		launchingApp = app.name;
+		await tick();
+
+		// Get all entries (both apps and letters)
+		const allEntries = getAllEntries();
+		const container = document.querySelector('.flex-1.overflow-y-auto');
+
+		// Get the clicked app's letter
+		const clickedAppLetter = app.name.charAt(0).toUpperCase();
+
+		// Filter out the clicked app and get entries from bottom to top
+		// For optimization, only include visible entries
+		const entriesToAnimate = allEntries
+			.filter((entry) => {
+				// Exclude the clicked app
+				if (entry.type === 'app' && entry.name === app.name) return false;
+				// Only include if visible in viewport (for optimization)
+				if (container) {
+					return isElementVisible(entry.element, container);
+				}
+				return true; // If no container, include all
+			})
+			.reverse(); // Reverse to get from bottom to top
+
+		// Get the back button element
+		const backButton = document.querySelector('.back-button');
+
+		// Animate each entry sequentially from bottom to top
+		const animationDelay = 30; // 30ms delay between each animation
+
+		// Animate all other entries first
+		for (let i = 0; i < entriesToAnimate.length; i++) {
+			const entry = entriesToAnimate[i];
+			animatingApps.add(entry.name);
+
+			setTimeout(() => {
+				let element;
+				if (entry.type === 'letter') {
+					// For letter headers, animate the element itself
+					element = entry.element;
+				} else {
+					// For apps, animate the content div
+					element = entry.element.querySelector('.app-entry-content');
+				}
+				if (element) {
+					element.classList.add('pivot-out');
+				}
+			}, i * animationDelay);
+		}
+
+		// Wait for all animations to complete
+		// If no entries to animate, still wait a bit for smooth transition
+		const totalAnimationTime = Math.max(70, (entriesToAnimate.length * animationDelay) - 30 ); // 400ms for the animation itself
+
+		setTimeout(async () => {
+			// Animate back button immediately before the tapped item
+			if (backButton) {
+				backButton.classList.add('pivot-out');
+			}
+
+			// Small delay before animating the clicked app
+			await tick();
+			setTimeout(async () => {
+				// Now animate the clicked app with pivot-out animation
+				const clickedEntry = allEntries.find(
+					(entry) => entry.type === 'app' && entry.name === app.name
+				);
+				if (clickedEntry) {
+					const clickedElement = clickedEntry.element.querySelector('.app-entry-content');
+					if (clickedElement) {
+						clickedElement.classList.add('pivot-out');
+						await tick();
+					}
+				}
+
+				// Wait for clicked app animation, then navigate
+				setTimeout(() => {
+					// Navigate to the app
+					window.location.href = app.content;
+				}, 150); // Wait for pivot-out animation (200ms)
+			}, 30); // Small delay between back button and clicked app
+		}, totalAnimationTime);
+	}
 </script>
 
 {#if showGrid}
@@ -493,12 +665,12 @@
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="flex flex-row gap-2 w-full h-full">
 		<button
-			class="fixed left-0 flex flex-col border h-10 w-10 mt-5 ml-6 z-[10] justify-center items-center {borderClass} rounded-full !border-2 p-2 font-bold"
+			class="fixed left-0 flex flex-col border h-10 w-10 mt-5 ml-6 z-[10] justify-center items-center {borderClass} rounded-full !border-2 p-2 font-bold back-button"
 			on:click={onBackClick}
 		>
 			<Icon icon="subway:left-arrow" width="18" height="18" strokeWidth="2" />
 		</button>
-		<div class="flex-1 overflow-y-auto pb-32 overflow-x-hidden">
+		<div class="flex-1 overflow-y-auto pb-32 overflow-x-hidden app-list-container">
 			<div
 				class={`mt-4 flex gap-2 flex-col w-full
 			${isEntering ? 'active-enter' : ''} 
@@ -511,31 +683,58 @@
 					<div class={`flex flex-col gap-2`}>
 						<!-- Touch event handler for each app entry -->
 						<div
-							class="ml-24 text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1"
-							style="color: {accentColor}; border-color: {accentColor};"
+							class="pl-24 w-full letter-header"
 							id={appEntry[0].toUpperCase()}
+							data-letter={appEntry[0].toUpperCase()}
 							on:click={() => {
 								showGrid = true;
 							}}
 						>
-							{appEntry[0]}
+							<div
+								class="text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1"
+								style="color: {accentColor}; border-color: {accentColor};"
+							>
+								{appEntry[0]}
+							</div>
 						</div>
 						{#each appEntry[1] as app}
 							<div
-								class="flex flex-col relative"
+								class="flex flex-col relative app-entry"
+								data-app-name={app.name}
 								on:touchstart={() => handleTouchStart(app.name)}
 								on:touchend={handleTouchEnd}
 								on:touchcancel={handleTouchEnd}
 								on:touchMove={handleTouchEnd}
 							>
 								<div
-									class={`ml-24 flex flex-row gap-4 items-center ${showMenu === app.name ? 'active' : ''}`}
+									class={`w-full pl-24 flex flex-row gap-4 items-center app-entry-content ${showMenu === app.name ? 'active' : ''} ${animatingApps.has(app.name) ? 'animating' : ''} ${launchingApp === app.name ? 'launching' : ''}`}
+									on:click={(event) => {
+										if (showMenu !== null) {
+											event.preventDefault();
+										} else {
+											handleAppLaunch(event, app);
+										}
+									}}
+									role="button"
+									tabindex="0"
+									on:keydown={(event) => {
+										if (event.key === 'Enter' || event.key === ' ') {
+											event.preventDefault();
+											if (showMenu === null) {
+												handleAppLaunch(event, app);
+											}
+										}
+									}}
 								>
 									{#if app.isSystemApp}
 										{@const adjustedBgColor = adjustBgColorForTheme(app.bgColor || '')}
 										<span
 											class={`w-12 h-12 justify-center items-center flex text-white font-[300] ${adjustedBgColor && !adjustedBgColor.startsWith('#') ? adjustedBgColor : ''}`}
-											style={!app.bgColor ? `background-color: ${accentColor};` : (adjustedBgColor && adjustedBgColor.startsWith('#') ? `background-color: ${adjustedBgColor};` : '')}
+											style={!app.bgColor
+												? `background-color: ${accentColor};`
+												: adjustedBgColor && adjustedBgColor.startsWith('#')
+													? `background-color: ${adjustedBgColor};`
+													: ''}
 										>
 											<Icon icon={app.icon} width="32" height="32" class="text-white" />
 										</span>
@@ -545,8 +744,9 @@
 											appInfoStore.getAppInfo(app.content) ||
 											appInfoStore.getAppInfo(app.url)}
 										{@const iconSrc =
-											(appInfo?.icon && (appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))) 
-												? appInfo.icon 
+											appInfo?.icon &&
+											(appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))
+												? appInfo.icon
 												: faviconCache[app.name]?.url}
 										{@const rawBgColor =
 											appInfo?.bgColor ||
@@ -559,7 +759,9 @@
 												src={iconSrc}
 												alt={`${app.name} icon`}
 												class={`w-12 h-12 object-contain p-1 ${bgColor && !bgColor.startsWith('#') ? bgColor : ''}`}
-												style={bgColor && bgColor.startsWith('#') ? `background-color: ${bgColor};` : ''}
+												style={bgColor && bgColor.startsWith('#')
+													? `background-color: ${bgColor};`
+													: ''}
 												on:error={(e) => {
 													// Fallback to letter if image fails to load
 													e.target.style.display = 'none';
@@ -579,12 +781,9 @@
 											>
 										{/if}
 									{/if}
-									<a
-										href={app.content}
-										on:click={(event) => showMenu !== null && event.preventDefault()}
-									>
+									<span>
 										{app.name}
-									</a>
+									</span>
 								</div>
 								{#if showMenu === app.name}
 									<div class="app-menu relative z-[102]">
@@ -628,6 +827,42 @@
 		transition:
 			transform 0.3s ease-out,
 			z-index 0.3s ease-out;
+	}
+
+	/* Container with perspective for 3D effect */
+	.app-list-container {
+		perspective: 1000px;
+		perspective-origin: left center;
+	}
+
+	/* Pivot out animation - door opening effect */
+	.app-entry-content,
+	.letter-header,
+	.back-button {
+		transform-origin: left center;
+		transform-style: preserve-3d;
+		transition:
+			transform 0.15s ease-out,
+			opacity 0.15s ease-out;
+		backface-visibility: hidden;
+	}
+
+	.app-entry-content.pivot-out,
+	.letter-header.pivot-out,
+	.back-button.pivot-out {
+		animation: pivotOut 0.15s ease-out forwards;
+	}
+
+
+	@keyframes pivotOut {
+		from {
+			transform: rotateY(0deg) scaleY(1);
+			opacity: 1;
+		}
+		to {
+			transform: rotateY(-90deg) scaleY(1.7);
+			opacity: 0;
+		}
 	}
 
 	@keyframes shrink {
