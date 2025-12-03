@@ -91,16 +91,20 @@ body {
 @keyframes flipIn {
     from {
         transform: rotateY(90deg);
+        opacity: 0;
     }
     to {
         transform: rotateY(0);
+        opacity: 1;
     }
 }
 @keyframes flipOut {
     from {
-        transform: rotateY(0);
+        transform: rotateY(0) scaleY(1);
+        opacity: 1;
     }
     to {
-        transform: rotateY(90deg);
+        transform: rotateY(-90deg) scaleY(1.5);
+        opacity: 0;
     }
 }
