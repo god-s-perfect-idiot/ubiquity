@@ -47,22 +47,52 @@
 	};
 
 	const removeAccounts = () => {
-		accountsStore.logout('spotify');
-		accountsStore.cleanupStorage('spotify');
+		// Remove all accounts including Spotify and ImgBB
+		if (browser) {
+			// Get all localStorage keys that are account-related
+			const accountKeysToRemove = [];
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				// Remove all account keys including Spotify and ImgBB
+				if (key && 
+					(key.includes('_access_token') || 
+					 key.includes('_refresh_token') || 
+					 key.includes('_expires_at') || 
+					 key.includes('_user') ||
+					 key === 'imgbb_api_key')) {
+					accountKeysToRemove.push(key);
+				}
+			}
+			
+			// Remove all account keys
+			accountKeysToRemove.forEach(key => {
+				localStorage.removeItem(key);
+			});
+			
+			// Logout all accounts from store
+			accountsStore.logoutAll();
+		}
 	};
 
 	const resetAccounts = () => {
 		removeAccounts();
-		addToast('Accounts reset successfully');
+		addToast('All accounts removed successfully');
 	};
 
 	const resetData = () => {
+		// Reset everything including accounts
 		kernel.fs.resetFS();
-		removeAccounts();
 		settingsStore.resetAll();
 		homescreenStore.resetAll();
 		appInfoStore.resetAll();
-		addToast('Data reset successfully');
+		accountsStore.logoutAll();
+		
+		// Clear ALL localStorage (including Spotify and ImgBB)
+		if (browser) {
+			localStorage.clear();
+		}
+		
+		addToast('All data reset successfully');
 	};
 </script>
 
