@@ -485,6 +485,53 @@
 		window.oncontextmenu = () => {
 			return false;
 		};
+
+		// Clean up any leftover animation classes when component mounts
+		// This fixes the issue where returning from a webview leaves elements invisible
+		function cleanupAnimations() {
+			// Reset state
+			launchingApp = null;
+			animatingApps.clear();
+
+			// Remove all pivot-out classes from app entries
+			const allAppEntries = document.querySelectorAll('.app-entry-content');
+			allAppEntries.forEach((element) => {
+				element.classList.remove('pivot-out', 'app-launch');
+			});
+
+			// Remove pivot-out classes from letter headers
+			const allLetterHeaders = document.querySelectorAll('.letter-header');
+			allLetterHeaders.forEach((element) => {
+				element.classList.remove('pivot-out');
+			});
+
+			// Remove pivot-out class from back button
+			const backButton = document.querySelector('.back-button');
+			if (backButton) {
+				backButton.classList.remove('pivot-out');
+			}
+		}
+
+		// Clean up immediately
+		cleanupAnimations();
+
+		// Also clean up after a short delay to catch any late animations
+		setTimeout(cleanupAnimations, 500);
+
+		// Clean up when page becomes visible again (handles returning from webview)
+		const handleVisibilityChange = () => {
+			if (!document.hidden) {
+				// Page is visible again, clean up animations
+				setTimeout(cleanupAnimations, 100);
+			}
+		};
+
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
+		// Cleanup on unmount
+		return () => {
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+		};
 	});
 
 	// Function to get all app entries in order (from top to bottom)
@@ -693,8 +740,8 @@
 							<div
 								class="text-3xl lowercase border-2 w-12 h-12 justify-start items-end flex pl-1 pb-1"
 								style="color: {accentColor}; border-color: {accentColor};"
-							>
-								{appEntry[0]}
+						>
+							{appEntry[0]}
 							</div>
 						</div>
 						{#each appEntry[1] as app}
@@ -746,7 +793,7 @@
 										{@const iconSrc =
 											appInfo?.icon &&
 											(appInfo.icon.startsWith('http://') || appInfo.icon.startsWith('https://'))
-												? appInfo.icon
+												? appInfo.icon 
 												: faviconCache[app.name]?.url}
 										{@const rawBgColor =
 											appInfo?.bgColor ||
