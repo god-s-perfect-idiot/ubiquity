@@ -37,7 +37,7 @@
 	};
 </script>
 
-<div class="flex flex-col gap-4 items-start justify-start w-full h-full">
+<div class="flex flex-col gap-4 items-start justify-start w-full h-full p-4">
 	<span class="text-lg text-left w-full font-semibold {textClass}">IMGBB SETUP</span>
 
 	<p class="text-lg {textClass}">

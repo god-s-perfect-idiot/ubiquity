@@ -9,7 +9,7 @@
 	$: textClass = $textColorClassStore;
 </script>
 
-<div class="flex flex-col gap-4 items-start justify-start w-full h-full">
+<div class="flex flex-col gap-4 items-start justify-start w-full h-full p-4">
 	<span class="text-4xl text-left w-full {textClass}">You are all set!</span>
 
 	<p class="text-lg {textClass}">

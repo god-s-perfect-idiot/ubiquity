@@ -160,7 +160,7 @@
 	<div class="">
 		<div class="">
 			<!-- Step content -->
-			<div class="p-4">
+			<div>
 				<!-- Previous stage (exiting) -->
 				{#if PreviousStageComponent && isExiting}
 					<div

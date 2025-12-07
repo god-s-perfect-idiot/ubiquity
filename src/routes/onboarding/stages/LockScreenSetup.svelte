@@ -297,12 +297,12 @@
 	}
 </script>
 
-<div class="flex flex-col gap-4 items-start justify-start w-full h-full min-h-0">
-	<span class="text-lg text-left w-full font-semibold {textClass}">LOCKSCREEN SETUP</span>
+<div class="flex flex-col items-start justify-start w-full min-h-[calc(100vh-2rem)] p-4">
+	<span class="text-lg text-left w-full font-semibold {textClass} flex-shrink-0">LOCKSCREEN SETUP</span>
 
-	<p class="text-lg {textClass}">Configure your lock screen security and appearance settings.</p>
+	<p class="text-lg {textClass} flex-shrink-0">Configure your lock screen security and appearance settings.</p>
 
-	<div class="flex flex-col gap-4 w-full flex-1 min-h-0 overflow-y-auto">
+	<div class="flex flex-col gap-4 w-full flex-1 min-h-0 mb-24">
 		<!-- Security Settings -->
 		<div class="flex flex-col w-full mt-2">
 			<span class="text-lg font-[400]" style="color: {accentColor};">security</span>

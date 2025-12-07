@@ -16,7 +16,7 @@
 	});
 </script>
 
-<div class="flex flex-col gap-4 items-start justify-start w-full h-full">
+<div class="flex flex-col gap-4 items-start justify-start w-full h-full p-4">
 	<span class="text-4xl text-left w-full {textClass}">Welcome to your Ubiquity Setup</span>
 
 	<div class="my-2 flex flex-row gap-2 text-xl items-center">
