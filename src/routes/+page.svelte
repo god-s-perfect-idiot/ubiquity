@@ -3,6 +3,9 @@
 	import StartMenu from './StartMenu.svelte';
 	import { settingsStore } from '../store/settings';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { shouldShowOnboarding } from '../utils/onboarding';
+	import { browser } from '$app/environment';
     
 	// Initialize showMenu immediately using synchronous get to avoid animation on load
 	const initialSetting = settingsStore.get('appearance.showHomescreenWhenOpened');
@@ -13,6 +16,12 @@
 	
 	// Reset interaction flag when component mounts
 	onMount(() => {
+		// Check if onboarding should be shown
+		if (browser && shouldShowOnboarding()) {
+			goto('/onboarding');
+			return;
+		}
+
 		userHasInteracted = false; // Reset on each navigation to home
 		// Ensure showMenu matches setting on mount (in case store wasn't ready initially)
 		const currentSetting = settingsStore.get('appearance.showHomescreenWhenOpened');

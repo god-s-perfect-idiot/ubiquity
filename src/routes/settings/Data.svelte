@@ -10,6 +10,8 @@
 	import { homescreenStore } from '../../store/homescreen';
 	import { appInfoStore } from '../../store/appInfo';
 	import { borderColorClassStore, accentColorStore } from '../../utils/theme';
+	import { resetOnboarding } from '../../utils/onboarding';
+	import { goto } from '$app/navigation';
 	import Input from '../../components/Input.svelte';
 
 	$: borderClass = $borderColorClassStore;
@@ -92,7 +94,15 @@
 			localStorage.clear();
 		}
 		
+		// Reset onboarding flag so user sees onboarding again
+		resetOnboarding();
+		
 		addToast('All data reset successfully');
+		
+		// Redirect to onboarding
+		setTimeout(() => {
+			goto('/onboarding');
+		}, 500);
 	};
 </script>
 

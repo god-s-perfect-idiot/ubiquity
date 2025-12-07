@@ -13,9 +13,9 @@ export async function POST({ request, url }) {
 			return json({ error: 'Authorization code is required' }, { status: 400 });
 		}
 
-		// Get credentials from request (user-configured) or fallback to environment variables
-		const clientId = requestClientId || import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-		const clientSecret = requestClientSecret || import.meta.env.VITE_SPOTIFY_CLIENT_SECRET;
+		// Get credentials from request (user-configured) only
+		const clientId = requestClientId;
+		const clientSecret = requestClientSecret;
 
 		// Use redirect URI from request (must match what was used in authorization)
 		// Fallback to environment variable or production if not provided

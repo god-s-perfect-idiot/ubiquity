@@ -87,6 +87,14 @@ const createSettingsStore = () => {
         maxResults: 10, // Maximum number of results per search
         safeSearch: true, // Enable safe search filtering
         autoComplete: true, // Enable auto-complete suggestions
+      },
+      
+      // Lock screen settings
+      lockScreen: {
+        backgroundType: 'solid', // 'solid', 'image', 'custom', 'bing'
+        backgroundColor: '#dc143c', // Default background color
+        backgroundImage: '', // Custom background image URL
+        selectedImageUrl: '' // Selected image from gallery
       }
     }
   });
@@ -278,6 +286,12 @@ const createSettingsStore = () => {
           defaultEngine: 'DUCKDUCKGO',
           maxResults: 10,
           safeSearch: true,
+        },
+        lockScreen: {
+          backgroundType: 'solid',
+          backgroundColor: '#dc143c',
+          backgroundImage: '',
+          selectedImageUrl: ''
         }
       };
     },
@@ -299,6 +313,9 @@ const createSettingsStore = () => {
           for (const [category, categorySettings] of Object.entries(parsed)) {
             if (defaults[category] && typeof categorySettings === 'object') {
               mergedSettings[category] = categorySettings; // Use stored values directly
+            } else if (typeof categorySettings === 'object') {
+              // Include categories that aren't in defaults (like lockScreen)
+              mergedSettings[category] = categorySettings;
             }
           }
           

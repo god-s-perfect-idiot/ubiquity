@@ -49,11 +49,9 @@
 			debugInfo += '\nAuthorization code received successfully!';
 			
 			try {
-				// Get stored credentials from localStorage
-				const storedClientId = localStorage.getItem('spotify_client_id') || 
-					import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
-				const storedClientSecret = localStorage.getItem('spotify_client_secret') || 
-					import.meta.env.VITE_SPOTIFY_CLIENT_SECRET || '';
+				// Get stored credentials from localStorage only
+				const storedClientId = localStorage.getItem('spotify_client_id') || '';
+				const storedClientSecret = localStorage.getItem('spotify_client_secret') || '';
 				
 				// Get the redirect URI (must match what was used in auth)
 				const redirectUri = getRedirectUri();

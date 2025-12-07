@@ -246,7 +246,7 @@
 				{:else}
 					{#each filteredSources as item}
 						<button
-							class="flex flex-row gap-4 items-start w-full text-left hover:bg-gray-800 p-2 rounded transition-colors"
+							class="flex flex-row gap-4 items-start w-full text-left p-2 rounded transition-colors"
 							on:click={() => handleSourceClick(item)}
 							on:keydown={(e) => e.key === 'Enter' && handleSourceClick(item)}
 						>

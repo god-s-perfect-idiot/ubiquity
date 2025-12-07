@@ -22,7 +22,7 @@
 	let isPublic = true;
 	let isExiting = false;
 	let isSubmitting = false;
-	
+
 	$: bgClass = $backgroundClassStore;
 	$: backgroundTheme = $backgroundThemeStore;
 	$: bottomBarBg = backgroundTheme === 'light' ? '#dedede' : '#1f1f1f';
@@ -41,7 +41,7 @@
 	};
 
 	$: availableCategories = categories[itemType] || [];
-	
+
 	// Reset category when item type changes
 	$: if (availableCategories.length > 0 && !availableCategories.includes(category)) {
 		category = availableCategories[0];
@@ -132,7 +132,12 @@
 			/>
 		</div>
 		<div class="btn w-full">
-			<Button text="close" onClick={close} className="btn !w-full bg-[#1f1f1f]" />
+			<Button
+				text="close"
+				onClick={close}
+				className="btn !w-full bg-[#1f1f1f]"
+				style="background-color: {bottomBarBg};"
+			/>
 		</div>
 	</div>
 {/if}

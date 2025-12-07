@@ -34,15 +34,11 @@
 	const loadSpotifySettings = () => {
 		if (!browser) return;
 
-		// Load Client ID from localStorage or fallback to env var
-		spotifyClientId =
-			localStorage.getItem('spotify_client_id') || import.meta.env.VITE_SPOTIFY_CLIENT_ID || '';
+		// Load Client ID from localStorage only
+		spotifyClientId = localStorage.getItem('spotify_client_id') || '';
 
-		// Load Client Secret from localStorage or fallback to env var
-		spotifyClientSecret =
-			localStorage.getItem('spotify_client_secret') ||
-			import.meta.env.VITE_SPOTIFY_CLIENT_SECRET ||
-			'';
+		// Load Client Secret from localStorage only
+		spotifyClientSecret = localStorage.getItem('spotify_client_secret') || '';
 	};
 
 	const saveSpotifySettings = () => {

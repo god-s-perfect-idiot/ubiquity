@@ -52,12 +52,12 @@
 	let accentColorName = 'Fuschia';
 	let colorPickerOpen = false;
 	let showHomescreenWhenOpened = false;
-	
+
 	// Get accent color reactively from store
 	$: accentColor = $accentColorStore;
 	$: borderClass = $borderColorClassStore;
 	$: background = $backgroundThemeStore;
-	
+
 	// Initialize showHomescreenWhenOpened from settings
 	$: {
 		const setting = settingsStore.get('appearance.showHomescreenWhenOpened');
@@ -109,8 +109,8 @@
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300] truncate">start + theme</span>
 		<p class="text-base font-[300] mt-8">
-			Change your phone's background and <span style="color: {accentColor}">accent color</span> to match your
-			mood today, this week or all month.
+			Change your phone's background and <span style="color: {accentColor}">accent color</span> to match
+			your mood today, this week or all month.
 		</p>
 		{#if background === 'light'}
 			<div class="mt-6" transition:slide={{ duration: 300, axis: 'y' }}>
@@ -136,8 +136,8 @@
 				<span class="text-sm font-[400] text-[#767676]">Accent color</span>
 				<!-- svelte-ignore a11y-click-events-have-key-events -->
 				<!-- svelte-ignore a11y-no-static-element-interactions -->
-							<div
-								class="flex flex-row gap-2 border-2 {borderClass} p-1 pl-2 justify-start items-center transition-opacity"
+				<div
+					class="flex flex-row gap-2 border-2 {borderClass} p-1 pl-2 justify-start items-center transition-opacity"
 					on:click={() => (colorPickerOpen = true)}
 					role="button"
 					tabindex="0"
@@ -148,18 +148,18 @@
 						}
 					}}
 				>
-					<div
-						class="w-4 h-4"
-						style="background-color: {getColorHex(accentColorName)};"
-					></div>
+					<div class="w-4 h-4" style="background-color: {getColorHex(accentColorName)};"></div>
 					<span class="text-base font-[300]">{accentColorName}</span>
 				</div>
 			</div>
-			<ColorPicker
-				colors={accentColors}
-				bind:open={colorPickerOpen}
-				on:colorSelected={handleColorSelected}
-			/>
+			<div class="flex flex-col mx-4 w-full">
+				<ColorPicker
+					colors={accentColors}
+					bind:open={colorPickerOpen}
+					on:colorSelected={handleColorSelected}
+					className="p-4"
+				/>
+			</div>
 			<Switch
 				title="Show Homescreen when opened"
 				value={showHomescreenWhenOpened}

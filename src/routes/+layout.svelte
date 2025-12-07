@@ -10,6 +10,11 @@
 	import { settingsStore } from '../store/settings';
 	import { musicStore, currentTrack } from '../store/music.js';
 	import { browser } from '$app/environment';
+	import LockScreen from '../components/LockScreen.svelte';
+
+	// SvelteKit automatically passes params to layout components
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	export let params = {};
 
 	// Get theme reactively
 	$: backgroundTheme = $backgroundThemeStore;
@@ -157,6 +162,9 @@
 			style="display: none;"
 		></audio>
 	{/if}
+	
+	<!-- Lock Screen - shows for each session if auto-lock is enabled -->
+	<LockScreen onUnlock={() => {}} />
 </div>
 
 

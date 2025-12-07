@@ -9,6 +9,7 @@
 
 	let isExiting = false;
 	let isVisible = false;
+	export let className = '';
 	
 	// Get theme-aware classes reactively
 	$: bgClass = $backgroundClassStore;
@@ -44,15 +45,16 @@
 
 {#if open || isVisible}
 	<div
-		class="fixed inset-0 z-[200] {bgClass} flex flex-col"
+		class="fixed inset-0 z-[200] {bgClass} flex flex-col {className}"
+		style="background-color: {bgClass === 'bg-white' ? '#ffffff' : '#000000'};"
 		role="dialog"
 		aria-modal="true"
 		aria-label="Color picker"
 	>
-		<div class="flex justify-between items-center p-6">
+		<div class="flex justify-between items-center">
 			<span class="{textClass} text-xl font-[500]">ACCENTS</span>
 		</div>
-		<div class="flex-1 flex items-start mt-12 justify-center px-6 pb-6">
+		<div class="flex-1 flex items-start mt-12 mb-6 justify-center">
 			<div class="grid grid-cols-4 gap-3 w-full max-w-md color-grid">
 				{#each colors as color, i (color.hex)}
 					<button

@@ -1,6 +1,7 @@
 <script>
 	import BottomControls from '../../components/BottomControls.svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import Data from './Data.svelte';
 	import Accounts from './Accounts.svelte';
@@ -12,6 +13,8 @@
 	import Apps from './Apps.svelte';
 	import Storage from './Storage.svelte';
 	import DeviceInfo from './DeviceInfo.svelte';
+	import Security from './Security.svelte';
+	import LockScreen from './LockScreen.svelte';
 	import { accentColorStore, borderColorClassStore, backgroundThemeStore } from '../../utils/theme';
 
 	let isExpanded = false;
@@ -60,6 +63,15 @@
 
 	onMount(() => {
 		isExpanded = false;
+		// Check for page query parameter (only use it once, then clear it)
+		const pageParam = $page.url.searchParams.get('page');
+		if (pageParam) {
+			currentPage = pageParam;
+			// Remove the query parameter from URL to prevent it from persisting on reload
+			if (typeof window !== 'undefined') {
+				window.history.replaceState({}, '', '/settings');
+			}
+		}
 	});
 </script>
 
@@ -80,6 +92,12 @@
 						<span class="text-3xl font-[300]" >start + theme</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>choose light or dark theme. Change accent color.</span
+						>
+					</button>
+					<button class="flex flex-col items-start" on:click={() => {changePage('lock-screen')}}>
+						<span class="text-3xl font-[300]">lock screen</span>
+						<span class="text-sm font-[300] text-[#818181]"
+							>customize lock screen appearance and display options</span
 						>
 					</button>
 					<button class="flex flex-col items-start" on:click={() => {}}>
@@ -103,9 +121,9 @@
 							>explore local storage usage</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
-						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">security</span>
-						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
+					<button class="flex flex-col items-start" on:click={() => {changePage('security')}}>
+						<span class="text-3xl font-[300]">security</span>
+						<span class="text-sm font-[300] text-[#818181]"
 							>set your pin code and encryption for your data</span
 						>
 					</button>
@@ -180,6 +198,10 @@
 	<Storage {isExiting} />
 {:else if currentPage === 'device-info'}
 	<DeviceInfo {isExiting} />
+{:else if currentPage === 'security'}
+	<Security {isExiting} />
+{:else if currentPage === 'lock-screen'}
+	<LockScreen {isExiting} />
 {/if}
 
 {#if !hiddenBottomBar}

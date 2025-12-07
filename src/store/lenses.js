@@ -48,6 +48,16 @@ const DEFAULT_LENSES = [
 		cssFilter: 'contrast(1.5) brightness(1.1)',
 		applyFunction: 'pixelart',
 		isDefault: true
+	},
+	{
+		id: 'tilt-shift',
+		name: 'Tilt Shift',
+		icon: 'material-symbols:blur',
+		bgColor: '#4a5568',
+		bgImage: "https://images.pexels.com/photos/1546168/pexels-photo-1546168.jpeg",
+		cssFilter: 'none',
+		applyFunction: 'tiltshift',
+		isDefault: true
 	}
 ];
 

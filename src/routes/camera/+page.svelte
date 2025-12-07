@@ -11,6 +11,9 @@
 	import LensGrid from '../../components/LensGrid.svelte';
 	import { applyLensEffect } from '../../utils/lens-effects';
 
+	// SvelteKit automatically passes params to page components
+	export let params = {};
+
 	let isExpanded = false;
 	let isUnmounting = false;
 	let isExiting = false;
@@ -294,11 +297,11 @@
 		if (canvasElement.width !== videoWidth || canvasElement.height !== videoHeight) {
 			canvasElement.width = videoWidth;
 			canvasElement.height = videoHeight;
-			canvasCtx = canvasElement.getContext('2d');
+			canvasCtx = canvasElement.getContext('2d', { willReadFrequently: true });
 		}
 
 		if (!canvasCtx) {
-			canvasCtx = canvasElement.getContext('2d');
+			canvasCtx = canvasElement.getContext('2d', { willReadFrequently: true });
 		}
 
 		// Draw video frame to canvas at full resolution
