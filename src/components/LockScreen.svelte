@@ -219,8 +219,25 @@
     
     export let onUnlock = () => {};
     
+    // Play unlock sound
+    function playUnlockSound() {
+        if (browser) {
+            try {
+                const audio = new Audio('/Unlock.mp3');
+                audio.volume = 1; // Set volume to 100%
+                audio.play().catch(err => {
+                    console.error('Failed to play unlock sound:', err);
+                });
+            } catch (error) {
+                console.error('Error playing unlock sound:', error);
+            }
+        }
+    }
+    
     // Unlock animation function
     function animateUnlock() {
+        // Play unlock sound
+        playUnlockSound();
         const startTime = Date.now();
         const duration = 800; // 800ms animation
         const screenHeight = window.innerHeight;
@@ -449,6 +466,7 @@
             if (currentPosition >= threshold) {
                 // Unlock directly
                 isUnlocked = true;
+                playUnlockSound();
                 if (browser) {
                     sessionStorage.setItem('isUnlocked', 'true');
                 }
@@ -519,6 +537,7 @@
             if (currentPosition >= threshold) {
                 // Unlock directly
                 isUnlocked = true;
+                playUnlockSound();
                 if (browser) {
                     sessionStorage.setItem('isUnlocked', 'true');
                 }
@@ -587,9 +606,9 @@
                 class="flex flex-col h-full w-full items-start justify-end mb-24 ml-8"
                 style="opacity: {lockOpacity}; transition: opacity 200ms ease-out;"
             >
-                <span class="text-7xl font-[200]">{currentTime}</span>
-                <span class="text-3xl font-[200]">{currentDay}</span>
-                <span class="text-3xl font-[200]">{currentDate}</span>
+                <span class="text-8xl font-[300]">{currentTime}</span>
+                <span class="text-3xl font-[300]">{currentDay}</span>
+                <span class="text-3xl font-[300]">{currentDate}</span>
             </div>
         </div>
         {#if requirePassword}

@@ -205,7 +205,7 @@
 	</div>
 	<div class="btn-animate w-full" class:animate={!isExiting && !restoringFromColorPicker}>
 		<Button
-			text={currentStep === 0 ? 'get started' : currentStep === totalSteps - 1 ? 'finish' : 'next'}
+			text={currentStep === 0 ? 'get started' : currentStep === totalSteps - 1 ? 'done' : 'next'}
 			onClick={handleNext}
 			className="!w-full"
 			style="background-color: {bottomBarBg} !important;"

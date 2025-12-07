@@ -3,6 +3,7 @@
 	import { settingsStore } from '../../../store/settings';
 	import Select from '../../../components/Select.svelte';
 	import ColorPicker from '../../../components/ColorPicker.svelte';
+	import Switch from '../../../components/Switch.svelte';
 	import { onMount, getContext } from 'svelte';
 
 	$: accentColor = $accentColorStore;
@@ -55,6 +56,7 @@
 	let accentColorName = 'Fuschia';
 	let colorPickerOpen = false;
 	let selectedFont = 'Noto Sans';
+	let showHomescreenWhenOpened = false;
 
 	// Get hideBottomBar function from context
 	const hideBottomBar = getContext('hideBottomBar');
@@ -72,6 +74,7 @@
 		const accentHex = settingsStore.get('appearance.accentColor') || '#ff00ff';
 		accentColorName = getColorName(accentHex);
 		selectedFont = settingsStore.get('appearance.font') || 'Noto Sans';
+		showHomescreenWhenOpened = settingsStore.get('appearance.showHomescreenWhenOpened') || false;
 	});
 
 	// Handle background change
@@ -95,6 +98,12 @@
 		accentColorName = selectedColor.name;
 		settingsStore.set('appearance.accentColor', selectedColor.hex);
 		colorPickerOpen = false;
+	}
+
+	// Handle show homescreen when opened toggle
+	function handleShowHomescreenToggle(value) {
+		settingsStore.set('appearance.showHomescreenWhenOpened', value);
+		showHomescreenWhenOpened = value;
 	}
 </script>
 
@@ -152,13 +161,23 @@
 		/>
 	</div>
 
-	<!-- Font Selection -->
+	<!-- Font Selection -->	
 	<div class="flex flex-col gap-4 w-full">
 		<Select
 			label="Font"
 			data={fontOptions}
 			bind:selection={selectedFont}
 			onSelectionChange={handleFontChange}
+		/>
+	</div>
+
+	<!-- Show Homescreen when opened -->
+	<div class="flex flex-col gap-4 w-full mt-2">
+		<Switch
+			title="Show Homescreen when opened"
+			value={showHomescreenWhenOpened}
+			onToggle={handleShowHomescreenToggle}
+			description="Show the homescreen when opened."
 		/>
 	</div>
 </div>
