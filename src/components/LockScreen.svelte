@@ -137,6 +137,11 @@
             fetchBingWallpaper();
         }
         
+        // Update keypad height on window resize
+        if (browser) {
+            window.addEventListener('resize', updateKeypadHeight);
+        }
+        
         isLoading = false;
     });
     
@@ -144,6 +149,28 @@
     $: passwordDisplay = enteredPassword.length > 0 
         ? '•'.repeat(enteredPassword.length) 
         : 'enter your password';
+    
+    // Handle key press feedback
+    function handleKeyPress(number) {
+        if (isUnlocked) return;
+        
+        // Clear any existing timeout
+        if (pressTimeout) {
+            clearTimeout(pressTimeout);
+        }
+        
+        // Set pressed key for visual feedback
+        pressedKey = number;
+        
+        // Clear pressed state after 1 second
+        pressTimeout = setTimeout(() => {
+            pressedKey = null;
+            pressTimeout = null;
+        }, 200);
+        
+        // Handle the actual number press
+        handleNumberPress(number);
+    }
     
     // Handle number button press
     function handleNumberPress(number) {
@@ -165,7 +192,29 @@
     // Handle backspace
     function handleBackspace() {
         if (isUnlocked) return;
+        
+        // Clear any existing timeout
+        if (pressTimeout) {
+            clearTimeout(pressTimeout);
+        }
+        
+        // Set pressed key for visual feedback (use 'backspace' as identifier)
+        pressedKey = 'backspace';
+        
+        // Clear pressed state after 1 second
+        pressTimeout = setTimeout(() => {
+            pressedKey = null;
+            pressTimeout = null;
+        }, 1000);
+        
         enteredPassword = enteredPassword.slice(0, -1);
+    }
+    
+    // Handle report issue button click
+    function handleReportIssue() {
+        if (browser) {
+            window.open('https://github.com/god-s-perfect-idiot/ubiquity/issues', '_blank');
+        }
     }
     
     export let onUnlock = () => {};
@@ -175,6 +224,7 @@
         const startTime = Date.now();
         const duration = 800; // 800ms animation
         const screenHeight = window.innerHeight;
+        const actualKeypadHeight = keypadHeight > 0 ? keypadHeight : screenHeight / 2;
         
         // Current visual positions (container translateY + section position)
         const containerOffset = translateY; // Current container position
@@ -230,6 +280,25 @@
     let isBouncing = false;
     const threshold = 0.2; // 20% threshold
     
+    // Keypad height tracking
+    let keypadElement;
+    let keypadHeight = 0;
+    
+    // Keypad key press state for visual feedback
+    let pressedKey = null;
+    let pressTimeout = null;
+    
+    // Measure keypad height when it's rendered
+    function updateKeypadHeight() {
+        if (keypadElement && browser) {
+            keypadHeight = keypadElement.offsetHeight;
+        }
+    }
+    
+    $: if (keypadElement && browser && requirePassword) {
+        updateKeypadHeight();
+    }
+    
     // Time and date state
     let currentTime = '';
     let currentDay = '';
@@ -265,6 +334,12 @@
         if (timeInterval) {
             clearInterval(timeInterval);
         }
+        if (pressTimeout) {
+            clearTimeout(pressTimeout);
+        }
+        if (browser) {
+            window.removeEventListener('resize', updateKeypadHeight);
+        }
     });
 
     // Calculate opacity based on drag position
@@ -273,10 +348,9 @@
         if (isUnlocking) return 0; // Hide during unlock animation
         // If password is not required, always show time/date (opacity = 1)
         if (!requirePassword) return 1;
-        const screenHeight = window.innerHeight;
-        const maxTranslate = -screenHeight / 2;
+        const maxTranslate = keypadHeight > 0 ? -keypadHeight : -window.innerHeight / 2;
         // Opacity goes from 1 (at translateY = 0) to 0 (at maxTranslate)
-        // When keypad is shown (translateY = -screenHeight/2), opacity should be 0
+        // When keypad is shown, opacity should be 0
         // Formula: opacity = 1 - (|translateY| / |maxTranslate|)
         // Since both are negative, we use absolute values
         const opacity = Math.max(0, Math.min(1, 1 - (Math.abs(translateY) / Math.abs(maxTranslate))));
@@ -348,8 +422,8 @@
         currentY = e.touches[0].clientY;
         const deltaY = startY - currentY; // Positive when dragging up
         const screenHeight = window.innerHeight;
-        // If password not required, allow dragging all the way up. Otherwise, cap at half screen height for keypad
-        const maxTranslate = requirePassword ? -screenHeight / 2 : -screenHeight;
+        // If password not required, allow dragging all the way up. Otherwise, cap at keypad height
+        const maxTranslate = requirePassword ? (keypadHeight > 0 ? -keypadHeight : -screenHeight / 2) : -screenHeight;
         
         // Calculate new position relative to starting position
         const newTranslateY = startTranslateY - deltaY;
@@ -367,7 +441,8 @@
         isDragging = false;
         
         const screenHeight = window.innerHeight;
-        const currentPosition = Math.abs(translateY) / screenHeight;
+        const actualKeypadHeight = keypadHeight > 0 ? keypadHeight : screenHeight / 2;
+        const currentPosition = Math.abs(translateY) / actualKeypadHeight;
         
         // If password is not required, unlock directly when threshold is reached
         if (!requirePassword) {
@@ -387,16 +462,16 @@
         }
         
         // Password required - show keypad logic
-        const keypadPosition = 0.5; // Half screen height
+        const keypadPosition = 1.0; // Full keypad height
         
         // If we're at or past the keypad position, snap to keypad
         if (currentPosition >= keypadPosition - 0.05) { // Small threshold for snapping
             isShowingKeypad = true;
-            translateY = -screenHeight / 2;
+            translateY = -actualKeypadHeight;
         } else if (currentPosition >= threshold) {
             // If dragged past threshold but not at keypad, snap to keypad
             isShowingKeypad = true;
-            translateY = -screenHeight / 2;
+            translateY = -actualKeypadHeight;
         } else {
             // Bounce back to lock with more bounce
             isShowingKeypad = false;
@@ -417,8 +492,8 @@
         currentY = e.clientY;
         const deltaY = startY - currentY;
         const screenHeight = window.innerHeight;
-        // If password not required, allow dragging all the way up. Otherwise, cap at half screen height for keypad
-        const maxTranslate = requirePassword ? -screenHeight / 2 : -screenHeight;
+        // If password not required, allow dragging all the way up. Otherwise, cap at keypad height
+        const maxTranslate = requirePassword ? (keypadHeight > 0 ? -keypadHeight : -screenHeight / 2) : -screenHeight;
         
         // Calculate new position relative to starting position
         const newTranslateY = startTranslateY - deltaY;
@@ -436,7 +511,8 @@
         isDragging = false;
         
         const screenHeight = window.innerHeight;
-        const currentPosition = Math.abs(translateY) / screenHeight;
+        const actualKeypadHeight = keypadHeight > 0 ? keypadHeight : screenHeight / 2;
+        const currentPosition = Math.abs(translateY) / actualKeypadHeight;
         
         // If password is not required, unlock directly when threshold is reached
         if (!requirePassword) {
@@ -456,16 +532,16 @@
         }
         
         // Password required - show keypad logic
-        const keypadPosition = 0.5; // Half screen height
+        const keypadPosition = 1.0; // Full keypad height
         
         // If we're at or past the keypad position, snap to keypad
         if (currentPosition >= keypadPosition - 0.05) { // Small threshold for snapping
             isShowingKeypad = true;
-            translateY = -screenHeight / 2;
+            translateY = -actualKeypadHeight;
         } else if (currentPosition >= threshold) {
             // If dragged past threshold but not at keypad, snap to keypad
             isShowingKeypad = true;
-            translateY = -screenHeight / 2;
+            translateY = -actualKeypadHeight;
         } else {
             // Bounce back to lock with more bounce
             isShowingKeypad = false;
@@ -518,63 +594,75 @@
         </div>
         {#if requirePassword}
         <div 
-            class="flex flex-col w-full h-[30rem] bg-[#1f1f1f] items-center gap-3 justify-end"
+            bind:this={keypadElement}
+            class="flex flex-col w-full min-h-[50vh] bg-[#1f1f1f] items-center justify-end"
             class:transition-transform={isUnlocking}
             class:duration-700={isUnlocking}
             class:ease-out={isUnlocking}
             style="transform: translateY({isUnlocking ? keypadTranslateY : 0}px);"
         >
-            <span class="text-2xl font-[400] py-2">{passwordDisplay}</span>
+            <span class="text-2xl font-[400] py-4">{passwordDisplay}</span>
             <div class="grid grid-cols-3 gap-1 w-full px-1 mb-4">
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('1')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '1' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('1')}
                 >1</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('2')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '2' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('2')}
                 >2</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('3')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '3' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('3')}
                 >3</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('4')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '4' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('4')}
                 >4</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('5')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '5' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('5')}
                 >5</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('6')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '6' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('6')}
                 >6</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('7')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '7' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('7')}
                 >7</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('8')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '8' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('8')}
                 >8</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('9')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '9' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('9')}
                 >9</button>
                 <button class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"></button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
-                    on:click={() => handleNumberPress('0')}
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === '0' ? '#8fceff' : '#414141'};"
+                    on:click={() => handleKeyPress('0')}
                 >0</button>
                 <button 
-                    class="aspect-square flex items-center justify-center text-3xl font-[400] bg-[#414141] h-[4.5rem] w-full"
+                    class="aspect-square flex items-center justify-center text-3xl font-[400] h-[4.5rem] w-full transition-colors duration-150"
+                    style="background-color: {pressedKey === 'backspace' ? '#8fceff' : '#414141'};"
                     on:click={handleBackspace}
                 >
                     <Icon icon="material-symbols:backspace-outline-sharp" width="40" height="40" />
                 </button>
             </div>
-            <Button text="emergency call" className="w-fit mb-10 self-start ml-4 !bg-[#1f1f1f]" />
+            <Button text="report issue" className="w-fit mb-4 self-start ml-4 !bg-[#1f1f1f]" onClick={handleReportIssue} />
         </div>
         {/if}
     </div>
