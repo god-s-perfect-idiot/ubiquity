@@ -219,6 +219,16 @@
 		showMenu = appName;
 	}
 
+	function handleContextMenu(event, appName) {
+		event.preventDefault();
+		event.stopPropagation();
+		if (pressTimer) {
+			clearTimeout(pressTimer);
+			pressTimer = null;
+		}
+		handleLongPress(appName);
+	}
+
 	function handleOutsideTouch(event) {
 		// This is so ugly, I'm sorry if this repo ever gets popular
 		// if (event.target.classList.contains('override-touch-controls')) {
@@ -725,6 +735,7 @@
 			${isExiting ? 'active-exit' : ''}`}
 				on:touchstart={handleOutsideTouch}
 				on:click={handleOutsideTouch}
+				on:contextmenu={handleOutsideTouch}
 			>
 				{#each Object.entries(appList) as appEntry}
 					<div class={`flex flex-col gap-2`}>
@@ -752,6 +763,7 @@
 								on:touchend={handleTouchEnd}
 								on:touchcancel={handleTouchEnd}
 								on:touchMove={handleTouchEnd}
+								on:contextmenu={(event) => handleContextMenu(event, app.name)}
 							>
 								<div
 									class={`w-full pl-24 flex flex-row gap-4 items-center app-entry-content ${showMenu === app.name ? 'active' : ''} ${animatingApps.has(app.name) ? 'animating' : ''} ${launchingApp === app.name ? 'launching' : ''}`}

@@ -1,5 +1,6 @@
 <script>
 	import { accentColorStore, textColorClassStore } from '../../../utils/theme';
+	import { getDeviceLabel } from '../../../utils/device';
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
@@ -9,9 +10,9 @@
 
 	let deviceName = 'Generic Device';
 
-	onMount(() => {
-		if (browser && typeof navigator !== 'undefined') {
-			deviceName = navigator.platform || navigator.userAgentData?.platform || 'Generic Device';
+	onMount(async () => {
+		if (browser) {
+			deviceName = await getDeviceLabel();
 		}
 	});
 </script>
@@ -24,9 +25,7 @@
 		{deviceName}
 	</div>
 
-	<p class="text-lg {textClass }">
-		Lets get started.
-	</p>
+	<p class="text-lg {textClass}">Lets get started.</p>
 </div>
 
 <style>
