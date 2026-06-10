@@ -264,7 +264,7 @@
 									<img
 										src={item.icon}
 										alt=""
-										class="w-20 h-20 object-contain"
+										class="w-full h-full object-cover"
 										onerror={() => {
 											iconErrors.add(item.id);
 											iconErrors = iconErrors;
