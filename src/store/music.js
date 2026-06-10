@@ -5,7 +5,7 @@ import { browser } from '$app/environment';
 function createMusicStore() {
   const { subscribe, set, update } = writable({
     // Current track info
-    currentTrack: null, // { name, source, type: 'local' | 'spotify', uri?, album?, artists? }
+    currentTrack: null, // { name, source, type: 'local' | 'spotify' | 'ytmusic', uri?, videoId?, album?, artists? }
     currentIndex: -1,
     queue: [],
     
@@ -16,11 +16,12 @@ function createMusicStore() {
     seekValue: 0,
     
     // Service type
-    serviceType: null, // 'local' | 'spotify'
+    serviceType: null, // 'local' | 'spotify' | 'ytmusic'
     
     // Internal references (not reactive)
     audioElement: null,
     spotifyApi: null,
+    youtubePlayer: null,
     selectedDeviceId: null,
     playbackPollInterval: null
   });
@@ -29,6 +30,7 @@ function createMusicStore() {
   let internalState = {
     audioElement: null,
     spotifyApi: null,
+    youtubePlayer: null,
     selectedDeviceId: null,
     playbackPollInterval: null
   };
@@ -122,6 +124,12 @@ function createMusicStore() {
       internalState.selectedDeviceId = deviceId;
       update(s => ({ ...s, selectedDeviceId: deviceId }));
     },
+
+    // Set YouTube IFrame player instance (for YTMusic playback)
+    setYoutubePlayer(player) {
+      internalState.youtubePlayer = player;
+      update(s => ({ ...s, youtubePlayer: player }));
+    },
     
     // Set queue
     setQueue(queue) {
@@ -153,6 +161,8 @@ function createMusicStore() {
         await this.playLocalTrack(track);
       } else if (serviceType === 'spotify') {
         await this.playSpotifyTrack(track);
+      } else if (serviceType === 'ytmusic') {
+        await this.playYouTubeTrack(track);
       }
     },
     
@@ -223,6 +233,22 @@ function createMusicStore() {
         throw error;
       }
     },
+
+    // Play YouTube Music track (via YouTube IFrame Player API)
+    async playYouTubeTrack(track) {
+      if (!internalState.youtubePlayer || !track.videoId) return;
+
+      try {
+        internalState.youtubePlayer.loadVideoById(track.videoId);
+        internalState.youtubePlayer.playVideo();
+        update(s => ({ ...s, isPlaying: true }));
+        this.startYouTubePolling();
+      } catch (error) {
+        console.error('Error playing YouTube track:', error);
+        update(s => ({ ...s, isPlaying: false }));
+        throw error;
+      }
+    },
     
     // Toggle play/pause
     async togglePlayPause() {
@@ -260,6 +286,20 @@ function createMusicStore() {
           }
         } catch (error) {
           console.error('Error toggling Spotify playback:', error);
+        }
+      } else if (currentState.serviceType === 'ytmusic') {
+        if (!internalState.youtubePlayer) return;
+
+        try {
+          if (currentState.isPlaying) {
+            internalState.youtubePlayer.pauseVideo();
+            update(s => ({ ...s, isPlaying: false }));
+          } else {
+            internalState.youtubePlayer.playVideo();
+            update(s => ({ ...s, isPlaying: true }));
+          }
+        } catch (error) {
+          console.error('Error toggling YouTube playback:', error);
         }
       }
     },
@@ -323,7 +363,58 @@ function createMusicStore() {
         } catch (error) {
           console.error('Error seeking Spotify track:', error);
         }
+      } else if (currentState.serviceType === 'ytmusic') {
+        if (!internalState.youtubePlayer || !currentState.duration) return;
+
+        try {
+          const newTime = (position / 100) * currentState.duration;
+          internalState.youtubePlayer.seekTo(newTime, true);
+          update(s => ({ ...s, currentTime: newTime, seekValue: position }));
+        } catch (error) {
+          console.error('Error seeking YouTube track:', error);
+        }
       }
+    },
+
+    // Start polling for YouTube playback progress
+    startYouTubePolling() {
+      // Clear existing interval
+      if (internalState.playbackPollInterval) {
+        clearInterval(internalState.playbackPollInterval);
+      }
+
+      const pollInterval = setInterval(() => {
+        const currentState = getCurrentStateSync();
+
+        if (!currentState.currentTrack || !internalState.youtubePlayer || currentState.serviceType !== 'ytmusic') {
+          clearInterval(pollInterval);
+          internalState.playbackPollInterval = null;
+          update(s => ({ ...s, playbackPollInterval: null }));
+          return;
+        }
+
+        try {
+          const player = internalState.youtubePlayer;
+          if (typeof player.getCurrentTime !== 'function' || typeof player.getDuration !== 'function') {
+            return;
+          }
+
+          const currentTime = player.getCurrentTime() || 0;
+          const duration = player.getDuration() || 0;
+          const seekValue = duration > 0 ? (currentTime / duration) * 100 : 0;
+          // YT.PlayerState.PLAYING === 1
+          const isPlaying = typeof player.getPlayerState === 'function'
+            ? player.getPlayerState() === 1
+            : currentState.isPlaying;
+
+          update(s => ({ ...s, currentTime, duration, seekValue, isPlaying }));
+        } catch (error) {
+          console.error('YouTube playback polling error:', error);
+        }
+      }, 1000);
+
+      internalState.playbackPollInterval = pollInterval;
+      update(s => ({ ...s, playbackPollInterval: pollInterval }));
     },
     
     // Start polling for Spotify playback state
@@ -384,6 +475,14 @@ function createMusicStore() {
       if (currentState.serviceType === 'local' && internalState.audioElement) {
         internalState.audioElement.pause();
         internalState.audioElement.currentTime = 0;
+      }
+
+      if (currentState.serviceType === 'ytmusic' && internalState.youtubePlayer) {
+        try {
+          internalState.youtubePlayer.pauseVideo();
+        } catch (error) {
+          console.error('Error pausing YouTube player:', error);
+        }
       }
       
       if (internalState.playbackPollInterval) {

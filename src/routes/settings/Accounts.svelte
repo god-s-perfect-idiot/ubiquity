@@ -21,6 +21,11 @@
 	let spotifyClientSecret = '';
 	const SPOTIFY_REDIRECT_URI = 'https://ubiquity-1.netlify.app/spotify/callback';
 
+	let isYtmusicConnected = false;
+	let ytmusicClientId = '';
+	let ytmusicClientSecret = '';
+	const YTMUSIC_REDIRECT_URI = 'https://ubiquity-1.netlify.app/ytmusic/callback';
+
 	let imgbbApiKey = '';
 	let isImgbbConfigured = false;
 
@@ -28,6 +33,8 @@
 		hideBottomBar(false);
 		checkSpotifyStatus();
 		loadSpotifySettings();
+		checkYtmusicStatus();
+		loadYtmusicSettings();
 		loadImgbbSettings();
 	});
 
@@ -79,6 +86,35 @@
 		window.location.href = '/spotify';
 	};
 
+	const loadYtmusicSettings = () => {
+		if (!browser) return;
+		ytmusicClientId = localStorage.getItem('ytmusic_client_id') || '';
+		ytmusicClientSecret = localStorage.getItem('ytmusic_client_secret') || '';
+	};
+
+	const saveYtmusicSettings = () => {
+		if (!browser) return;
+		localStorage.setItem('ytmusic_client_id', ytmusicClientId);
+		localStorage.setItem('ytmusic_client_secret', ytmusicClientSecret);
+		addToast('YTMusic credentials saved successfully.');
+	};
+
+	const checkYtmusicStatus = () => {
+		isYtmusicConnected = accountsStore.isAuthenticated('ytmusic');
+	};
+
+	const disconnectYtmusic = () => {
+		accountsStore.logout('ytmusic');
+		accountsStore.cleanupStorage('ytmusic');
+		isYtmusicConnected = false;
+		addToast('YTMusic account disconnected successfully.');
+		showMainPage();
+	};
+
+	const openYtmusicApp = () => {
+		window.location.href = '/ytmusic';
+	};
+
 	const loadImgbbSettings = () => {
 		if (!browser) return;
 		imgbbApiKey = localStorage.getItem('imgbb_api_key') || '';
@@ -112,6 +148,15 @@
 						<span class="text-3xl font-[300]">spotify</span>
 						<span class="text-sm font-[300] text-[#a1a1a1]">
 							{isSpotifyConnected ? 'connected' : 'not connected'}
+						</span>
+					</div>
+				</button>
+				<button class="flex flex-row gap-4 text-left" on:click={() => showSubPage('ytmusic')}>
+					<Icon icon="simple-icons:youtubemusic" width="64" height="64" class="text-white" />
+					<div class="flex flex-col gap-1">
+						<span class="text-3xl font-[300]">ytmusic</span>
+						<span class="text-sm font-[300] text-[#a1a1a1]">
+							{isYtmusicConnected ? 'connected' : 'not connected'}
 						</span>
 					</div>
 				</button>
@@ -213,6 +258,106 @@
 				<Button
 					text="connect"
 					onClick={openSpotifyApp}
+					className="btn !w-full"
+					style="background-color: {bottomBarBg};"
+				/>
+			</div>
+		{/if}
+		<div class="btn w-full">
+			<Button
+				text="close"
+				onClick={showMainPage}
+				className="btn !w-full"
+				style="background-color: {bottomBarBg};"
+			/>
+		</div>
+	</div>
+{:else if page === 'ytmusic'}
+	<div class="page-holder">
+		<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
+			<span class="text-6xl font-[300]">ytmusic</span>
+			<div class="flex flex-col gap-6 mt-12 flex-1 overflow-y-auto pb-24">
+				<!-- Developer Setup -->
+				<div class="flex flex-col gap-4">
+					<span class="text-xl font-[300]" style="color: {accentColor};">developer setup</span>
+					<span class="text-sm font-[300] text-[#a1a1a1]"
+						>Create an OAuth client (with the YouTube Data API v3 enabled) in the
+						<a
+							href="https://console.cloud.google.com/apis/credentials"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-blue-400 underline">Google Cloud Console</a
+						>.</span
+					>
+
+					<div class="flex flex-col gap-4">
+						<Input label="Client ID" bind:content={ytmusicClientId} />
+						<div class="flex flex-col gap-2 font-[400]">
+							<label for="ytmusic-client-secret" class="text-[#767676] text-sm">Client Secret</label
+							>
+							<input
+								id="ytmusic-client-secret"
+								type="password"
+								bind:value={ytmusicClientSecret}
+								class="bg-[#bebebe] w-full py-2 pl-2 outline-none text-[#121212] text-base"
+							/>
+						</div>
+					</div>
+
+					<div class="flex flex-col gap-2">
+						<span class="text-sm font-[300] text-[#a1a1a1]">Redirect URI:</span>
+						<span class="text-base font-[300] text-[#767676] mt-1">{YTMUSIC_REDIRECT_URI}</span>
+					</div>
+
+					<div class="mt-2">
+						<Button text="save" onClick={saveYtmusicSettings} className="btn" />
+					</div>
+				</div>
+
+				<!-- Connection Status -->
+				<div class="flex flex-col gap-2">
+					{#if isYtmusicConnected}
+						<span class="text-xl font-[300]"
+							>Your ytmusic account is connected. To remove it, click the disconnect button below.</span
+						>
+						<span class="text-sm font-[300] text-[#a1a1a1]"
+							>You connected your account by performing oAuth from your browser. Dont worry, we dont
+							store any of your credentials. Everything only exists on your device's local storage.</span
+						>
+					{:else}
+						<span class="text-xl font-[300]"
+							>Your ytmusic account is not connected. You can connect it from the ytmusic music
+							player app.</span
+						>
+						<span class="text-sm font-[300] text-[#a1a1a1]"
+							>After configuring your credentials above, you can click the button below to open the
+							music player app and connect your account.</span
+						>
+					{/if}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div
+		class="w-full justify-between flex flex-row fixed bottom-0 right-0 px-4 py-2 gap-8 z-10 bottom-bar"
+		class:bottom-bar-exit={isExiting}
+		style="background-color: {bottomBarBg};"
+	>
+		{#if isYtmusicConnected}
+			<div class="btn w-full">
+				<Button
+					text="disconnect"
+					onClick={disconnectYtmusic}
+					className="btn !w-full"
+					style="background-color: {bottomBarBg};"
+				/>
+			</div>
+		{:else}
+			<div class="btn w-full">
+				<Button
+					text="connect"
+					onClick={openYtmusicApp}
 					className="btn !w-full"
 					style="background-color: {bottomBarBg};"
 				/>

@@ -1,522 +1,405 @@
 <script>
 	import { onMount, onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { gridStore } from '../store/grid.js';
 	import GridItem from './GridItem.svelte';
-	import Icon from '@iconify/svelte';
 	import { backgroundClassStore } from '../utils/theme';
+	import {
+		GRID_COLS,
+		getSpan,
+		getRect,
+		rectsOverlap,
+		clampCol,
+		findFreeSpot,
+		usedRows
+	} from '../utils/gridLayout.js';
 
-	export let cols = 4;
+	export let cols = GRID_COLS;
 	export let scrollContainer = null;
 
-	// Calculate required rows based on items and their sizes
-	let calculatedRows = 0;
+	const GAP = 12; // px gap between cells
+	const PAD = 16; // px padding around the grid (matches Tailwind p-4)
+	const LONG_PRESS_MS = 450;
+	const DRAG_THRESHOLD = 8; // px before a press becomes a drag
 
-	let gridContainer;
-	let draggedItem = null;
-	let dragOverPosition = null;
-	let dragOverItemId = null;
-	let editMode = false;
-	let touchDragPosition = null;
-	let isTouchDragging = false;
-	let dropIndicatorPosition = null;
-	let removingItemId = null;
-	let autoScrollInterval = null;
-	let autoScrollSpeed = 100; // pixels per frame
-	
-	// Get theme-aware background
 	$: bgClass = $backgroundClassStore;
 
-	// Subscribe to grid store
 	$: gridState = $gridStore;
 	$: editMode = gridState.editMode;
 	$: selectedItemId = gridState.selectedItemId;
 	$: items = gridState.items;
 
-	// Debug edit mode changes
-	$: console.log('GridContainer editMode changed:', editMode);
+	let gridEl;
+	let containerWidth = 0;
+	let resizeObserver;
 
-	// Calculate required rows based on items
-	function calculateRequiredRows(items, cols) {
-		if (!items || items.length === 0) return 0; // No rows if empty
+	// --- Drag / interaction state -------------------------------------------
+	let pressId = null; // tile currently pressed (drag not yet started)
+	let pressTimer = null;
+	let pressStart = { x: 0, y: 0 };
+	let pressMoved = false;
 
-		// Simulate CSS Grid auto-placement more accurately
-		const grid = Array(cols).fill(0); // Track occupied cells per column
-		let maxRow = 0;
+	let draggingId = null; // tile currently being dragged
+	let dragOffset = { x: 0, y: 0 }; // pointer offset within the tile
+	let floatX = 0;
+	let floatY = 0;
+	let draggedOrigin = null; // committed {col,row} where the drag began
+	let targetCell = null; // current snap target {col,row}
+	let lastTargetKey = '';
+	let previewPositions = {}; // id -> {col,row} for tiles making room
 
-		console.log('Calculating rows for', items.length, 'items with', cols, 'columns');
+	let autoScrollInterval = null;
+	const autoScrollSpeed = 14; // px per tick
 
-		for (const item of items) {
-			const size = item.size || '1x1';
-			const [width, height] = size.split('x').map(Number);
+	let removingId = null; // tile currently playing its shrink-away animation
 
-			console.log(`Placing item ${item.name} (${size}) - width: ${width}, height: ${height}`);
+	// --- Derived geometry ----------------------------------------------------
+	$: cellSize =
+		containerWidth > 0
+			? Math.max(40, (containerWidth - PAD * 2 - GAP * (cols - 1)) / cols)
+			: 0;
+	$: step = cellSize + GAP;
 
-			// Find the first available position (CSS Grid auto-placement behavior)
-			let bestRow = 0;
-			let bestCol = 0;
-			let found = false;
-
-			// Try each row until we find a position that fits
-			for (let row = 0; row <= maxRow + 2 && !found; row++) {
-				for (let col = 0; col <= cols - width; col++) {
-					// Check if this position is available
-					let canPlace = true;
-					for (let c = col; c < col + width; c++) {
-						if (grid[c] > row) {
-							canPlace = false;
-							break;
-						}
-					}
-
-					if (canPlace) {
-						bestRow = row;
-						bestCol = col;
-						found = true;
-						break;
-					}
-				}
-			}
-
-			// Place the item
-			for (let col = bestCol; col < bestCol + width; col++) {
-				grid[col] = bestRow + height;
-			}
-
-			maxRow = Math.max(maxRow, bestRow + height);
-			console.log(`Placed at row ${bestRow}, col ${bestCol}. Max row now: ${maxRow}`);
-		}
-
-		// Return the actual maxRow needed (no minimum enforced)
-		const result = maxRow;
-		console.log('Final calculated rows:', result);
-		return result;
-	}
-
-	// Reactive calculation of rows
-	$: calculatedRows = calculateRequiredRows(items, cols);
-
-	// Calculate row height to maintain square proportions
-	// For 4 columns: ~90px per row, for 6 columns: proportionally smaller
-	// Row height should scale inversely with column count to maintain square tiles
-	$: rowHeight = Math.round(90 * (4 / cols));
-
-	// Debug logging
-	$: console.log(
-		'Calculated rows:',
-		calculatedRows,
-		'Items:',
-		items.length,
-		'Item sizes:',
-		items.map((i) => i.size),
-		'Row height:',
-		rowHeight,
-		'Columns:',
-		cols
-	);
-
-	// Update grid size when calculatedRows changes
-	$: if (calculatedRows) {
-		gridStore.setGridSize(cols, calculatedRows);
-	}
-
-	// Initialize grid size
-	onMount(() => {
-		// Load items from homescreen store (localStorage)
-		gridStore.loadFromHomescreen();
-	});
-
-	// Handle long press to enter edit mode
-	function handleLongPress(event) {
-		const itemId = event.detail.itemId;
-		gridStore.setSelectedItem(itemId);
-		gridStore.setEditMode(true);
-	}
-
-	// Handle item click (select item in edit mode or exit edit mode)
-	function handleItemClick(event) {
-		if (editMode) {
-			// If clicking on an item, select it
-			const itemId = event.detail.itemId;
-			if (itemId) {
-				gridStore.setSelectedItem(itemId);
-			} else {
-				// If clicking outside items, exit edit mode
-				gridStore.setEditMode(false);
+	// Rows needed to contain everything (plus breathing room while editing).
+	$: contentRows = (() => {
+		let rows = usedRows(items);
+		for (const id in previewPositions) {
+			const it = items.find((i) => i.id === id);
+			if (it) {
+				const span = getSpan(it.size);
+				rows = Math.max(rows, previewPositions[id].row + span.h);
 			}
 		}
-	}
-
-	// Handle item removal
-	function handleItemRemove(event) {
-		const itemId = event.detail.itemId;
-		removingItemId = itemId;
-
-		// Remove item after animation completes
-		setTimeout(() => {
-			gridStore.removeItem(itemId);
-			removingItemId = null;
-		}, 300); // Slightly longer to ensure animation completes
-	}
-
-	// Handle grid background click (exit edit mode)
-	function handleGridClick(event) {
-		if (editMode) {
-			// Check if click was on a grid item or button
-			const target = event.target.closest('.grid-item, button');
-			if (!target) {
-				gridStore.setEditMode(false);
-			}
+		if (draggingId && targetCell) {
+			const it = items.find((i) => i.id === draggingId);
+			if (it) rows = Math.max(rows, targetCell.row + getSpan(it.size).h);
 		}
-	}
+		if (editMode) rows += 2; // room to drop tiles at the bottom
+		return rows;
+	})();
 
-	// Handle drag start
-	function handleDragStart(event) {
-		draggedItem = event.detail.item;
-		gridStore.setDraggedItem(draggedItem.id);
+	$: contentHeight = step > 0 && contentRows > 0 ? PAD * 2 + contentRows * step - GAP : 0;
 
-		// Check if this is a touch drag (will have touchPosition in subsequent events)
-		isTouchDragging = false; // Will be set to true when touch move happens
-		dropIndicatorPosition = null; // Clear any existing indicator
-	}
+	// Builds the inline style for a tile. All reactive dependencies are passed
+	// in explicitly so Svelte re-evaluates the expression when they change
+	// (it only tracks variables referenced directly in the template).
+	function tileStyle(item, _cell, _step, _edit, _selected, _dragId, _fx, _fy, _preview) {
+		const span = getSpan(item.size);
+		const w = span.w * _cell + (span.w - 1) * GAP;
+		const h = span.h * _cell + (span.h - 1) * GAP;
 
-	// Handle drag end
-	function handleDragEnd(event) {
-		// Handle touch drag end if we have touch position
-		if (touchDragPosition) {
-			handleTouchDragEnd();
+		if (_dragId === item.id) {
+			return (
+				`width:${w}px;height:${h}px;` +
+				`transform:translate3d(${_fx}px,${_fy}px,0) scale(1.06);` +
+				`transition:none;z-index:1000;opacity:0.92;` +
+				`box-shadow:0 18px 40px rgba(0,0,0,0.45);touch-action:none;`
+			);
 		}
 
-		// Stop auto-scrolling
-		stopAutoScroll();
+		const preview = _preview[item.id];
+		const col = preview ? preview.col : getRect(item).col;
+		const row = preview ? preview.row : getRect(item).row;
+		const x = PAD + col * _step;
+		const y = PAD + row * _step;
 
-		gridStore.clearDragState();
-		draggedItem = null;
-		dragOverPosition = null;
-		dragOverItemId = null;
-		touchDragPosition = null;
-		isTouchDragging = false;
-		dropIndicatorPosition = null;
+		const opacity = _edit && _selected !== item.id ? 0.55 : 1;
+
+		return (
+			`width:${w}px;height:${h}px;` +
+			`transform:translate3d(${x}px,${y}px,0);` +
+			`opacity:${opacity};z-index:1;` +
+			`touch-action:${_edit ? 'none' : 'pan-y'};`
+		);
 	}
 
-	// Handle item drag over
-	function handleItemDragOver(event) {
-		if (!editMode || !draggedItem) return;
-
-		const { item, touchPosition } = event.detail;
-		dragOverItemId = item.id;
-
-		// Store touch position for mobile drag
-		if (touchPosition) {
-			touchDragPosition = touchPosition;
-			isTouchDragging = true;
-
-			// Update drop indicator for touch drag
-			updateDropIndicator(touchPosition);
-
-			// Check for auto-scroll
-			checkAutoScroll(touchPosition);
-		}
+	// --- Pointer helpers -----------------------------------------------------
+	function pointInContainer(e) {
+		const rect = gridEl.getBoundingClientRect();
+		return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 	}
 
-	// Handle auto-scroll check from touch drag
-	function handleAutoScrollCheck(event) {
-		if (!editMode || !draggedItem) return;
-
-		const { touchPosition } = event.detail;
-		if (touchPosition) {
-			checkAutoScroll(touchPosition);
-		}
+	function cellFromFloat() {
+		if (step <= 0) return { col: 0, row: 0 };
+		const it = items.find((i) => i.id === draggingId);
+		const span = it ? getSpan(it.size) : { w: 1, h: 1 };
+		let col = Math.round((floatX - PAD) / step);
+		let row = Math.round((floatY - PAD) / step);
+		col = clampCol(col, span.w, cols);
+		row = Math.max(0, row);
+		return { col, row };
 	}
 
-	// Handle drag over - simplified for flexbox
-	function handleDragOver(event) {
-		if (!editMode || !draggedItem) return;
-		event.preventDefault();
-		event.dataTransfer.dropEffect = 'move';
-
-		// Update drop indicator position
-		updateDropIndicator({ x: event.clientX, y: event.clientY });
-
-		// Check for auto-scroll
-		checkAutoScroll({ x: event.clientX, y: event.clientY });
-	}
-
-	// Handle drop - simplified for flexbox
-	function handleDrop(event) {
-		if (!editMode || !draggedItem) return;
-		event.preventDefault();
-
-		// Check if dropping on an existing item or empty space
-		const elementAtPoint = document.elementFromPoint(event.clientX, event.clientY);
-		const targetGridItem = elementAtPoint?.closest('.grid-item');
-
-		if (targetGridItem) {
-			// Dropping on an existing item - handled by handleItemDrop
+	// Recompute which tiles need to move out of the dragged tile's way.
+	function recomputePreview() {
+		if (!draggingId || !targetCell) {
+			previewPositions = {};
 			return;
-		} else {
-			// Dropping in empty space
-			const emptyPosition = findBestEmptyPosition({ x: event.clientX, y: event.clientY });
-			if (emptyPosition !== -1) {
-				gridStore.moveItemToPosition(draggedItem.id, emptyPosition);
-			}
 		}
-	}
+		const dragged = items.find((i) => i.id === draggingId);
+		if (!dragged) return;
+		const span = getSpan(dragged.size);
+		const footprint = { col: targetCell.col, row: targetCell.row, w: span.w, h: span.h };
 
-	// Handle item drop for reordering
-	function handleItemDrop(event) {
-		if (!editMode || !draggedItem) return;
+		const others = items.filter((i) => i.id !== draggingId);
+		const overlapping = others.filter((o) => rectsOverlap(getRect(o), footprint));
+		const kept = others.filter((o) => !rectsOverlap(getRect(o), footprint));
 
-		const { targetItem, draggedItemId } = event.detail;
+		const preview = {};
 
-		if (draggedItemId !== targetItem.id) {
-			// Move the dragged item to the target position
-			gridStore.moveItem(draggedItemId, targetItem.id);
-
-			// Optional: Optimize layout after move to reduce gaps
-			// gridStore.optimizeLayout();
-		}
-	}
-
-	// Handle touch drag end - detect drop target
-	function handleTouchDragEnd() {
-		if (!editMode || !draggedItem || !touchDragPosition) return;
-
-		// Find the item at the touch position
-		const elementAtPoint = document.elementFromPoint(touchDragPosition.x, touchDragPosition.y);
-		const targetGridItem = elementAtPoint?.closest('.grid-item');
-
-		if (targetGridItem) {
-			// Dropping on an existing item
-			const targetItemId =
-				targetGridItem.dataset.itemId ||
-				targetGridItem.querySelector('[data-item-id]')?.dataset.itemId;
-
-			if (targetItemId && targetItemId !== draggedItem.id) {
-				// Move the dragged item to the target position
-				gridStore.moveItem(draggedItem.id, targetItemId);
-			}
-		} else {
-			// Dropping in empty space - find the best position
-			const emptyPosition = findBestEmptyPosition(touchDragPosition);
-			if (emptyPosition !== -1) {
-				// Move the dragged item to the empty position
-				gridStore.moveItemToPosition(draggedItem.id, emptyPosition);
-			}
-		}
-	}
-
-	// Find the best empty position based on actual DOM element positions
-	function findBestEmptyPosition(touchPosition) {
-		if (!gridContainer) return -1;
-
-		// Get all grid items and their positions
-		const gridItems = gridContainer.querySelectorAll('.grid-item');
-		const itemPositions = Array.from(gridItems).map((item, index) => {
-			const rect = item.getBoundingClientRect();
-			const itemId = item.dataset.itemId;
-			return {
-				id: itemId,
-				index: index,
-				left: rect.left,
-				right: rect.right,
-				top: rect.top,
-				bottom: rect.bottom,
-				centerX: rect.left + rect.width / 2,
-				centerY: rect.top + rect.height / 2
-			};
-		});
-
-		// Sort items by their visual reading order (top to bottom, left to right)
-		const sortedItems = itemPositions.sort((a, b) => {
-			// First sort by row (top position) with some tolerance for flexbox
-			const rowDiff = Math.abs(a.top - b.top);
-			if (rowDiff > 30) {
-				// Different rows
-				return a.top - b.top;
-			}
-			// Then sort by column (left position)
-			return a.left - b.left;
-		});
-
-		// Find the closest item to the touch position
-		let closestItem = null;
-		let minDistance = Infinity;
-
-		for (const item of sortedItems) {
-			const distance = Math.sqrt(
-				Math.pow(touchPosition.x - item.centerX, 2) + Math.pow(touchPosition.y - item.centerY, 2)
-			);
-
-			if (distance < minDistance) {
-				minDistance = distance;
-				closestItem = item;
-			}
-		}
-
-		if (!closestItem) {
-			// No items found, place at the end
-			return items.length;
-		}
-
-		// Find the visual position of the closest item in the sorted array
-		const visualIndex = sortedItems.findIndex((item) => item.id === closestItem.id);
-
-		// Determine if we should place before or after the closest item
-		const isLeftOfCenter = touchPosition.x < closestItem.centerX;
-		const isAboveCenter = touchPosition.y < closestItem.centerY;
-
-		let targetVisualIndex;
-
-		// Simplified positioning logic
-		if (isLeftOfCenter || isAboveCenter) {
-			// Left or above the item - place before it
-			targetVisualIndex = visualIndex;
-		} else {
-			// Right or below the item - place after it
-			targetVisualIndex = visualIndex + 1;
-		}
-
-		// Convert visual index back to DOM index for the indicator
-		if (targetVisualIndex < sortedItems.length) {
-			const targetItem = sortedItems[targetVisualIndex];
-			return targetItem.index;
-		} else {
-			// Place at the end
-			return items.length;
-		}
-	}
-
-	// Update drop indicator position
-	function updateDropIndicator(position) {
-		if (!editMode || !draggedItem) return;
-
-		// Find the best position for the drop indicator
-		const bestPosition = findBestEmptyPosition(position);
-
-		// Only show indicator if we're not hovering over the dragged item itself
-		// and if the position is different from the dragged item's current position
+		// Clean swap: dropping a tile squarely onto a single same-sized tile
+		// sends that tile back to where the dragged tile came from.
 		if (
-			bestPosition !== -1 &&
-			!isHoveringOverDraggedItem(position) &&
-			bestPosition !== getCurrentDraggedItemIndex()
+			overlapping.length === 1 &&
+			draggedOrigin &&
+			!rectsOverlap(
+				{ col: draggedOrigin.col, row: draggedOrigin.row, w: span.w, h: span.h },
+				footprint
+			)
 		) {
-			dropIndicatorPosition = bestPosition;
-		} else {
-			dropIndicatorPosition = null;
-		}
-	}
-
-	// Check if the position is over the currently dragged item
-	function isHoveringOverDraggedItem(position) {
-		if (!draggedItem) return false;
-
-		const gridItems = gridContainer.querySelectorAll('.grid-item');
-		for (const item of gridItems) {
-			if (item.dataset.itemId === draggedItem.id) {
-				const rect = item.getBoundingClientRect();
-				return (
-					position.x >= rect.left &&
-					position.x <= rect.right &&
-					position.y >= rect.top &&
-					position.y <= rect.bottom
-				);
-			}
-		}
-		return false;
-	}
-
-	// Get the current index of the dragged item
-	function getCurrentDraggedItemIndex() {
-		if (!draggedItem) return -1;
-
-		return items.findIndex((item) => item.id === draggedItem.id);
-	}
-
-	// Reactive statements for placeholder sizing
-	$: placeholderGridColumn = draggedItem
-		? (() => {
-				const sizeMap = {
-					'1x1': 'span 1',
-					'2x2': 'span 2',
-					'4x2': 'span 4'
-				};
-				return sizeMap[draggedItem.size] || sizeMap['1x1'];
-			})()
-		: 'span 1';
-
-	$: placeholderGridRow = draggedItem
-		? (() => {
-				const sizeMap = {
-					'1x1': 'span 1',
-					'2x2': 'span 2',
-					'4x2': 'span 2'
-				};
-				return sizeMap[draggedItem.size] || sizeMap['1x1'];
-			})()
-		: 'span 1';
-
-	// Auto-scroll functionality
-	function checkAutoScroll(position) {
-		if (!scrollContainer || !draggedItem) return;
-
-		const containerRect = scrollContainer.getBoundingClientRect();
-		const maxScrollThreshold = 120; // pixels from edge to trigger auto-scroll
-
-		// Calculate distance from edges
-		const distanceFromTop = position.y - containerRect.top;
-		const distanceFromBottom = containerRect.bottom - position.y;
-
-		// Check if position is near edges
-		const nearTop = distanceFromTop < maxScrollThreshold;
-		const nearBottom = distanceFromBottom < maxScrollThreshold;
-
-		// Stop existing auto-scroll
-		stopAutoScroll();
-
-		// Start auto-scroll if near edges with distance-based speed
-		if (nearTop && scrollContainer.scrollTop > 0) {
-			// Calculate speed based on how close to the edge (closer = faster)
-			const speedMultiplier = Math.max(
-				0.3,
-				(maxScrollThreshold - distanceFromTop) / maxScrollThreshold
-			);
-			startAutoScroll('up', speedMultiplier);
-		} else if (
-			nearBottom &&
-			scrollContainer.scrollTop < scrollContainer.scrollHeight - scrollContainer.clientHeight
-		) {
-			// Calculate speed based on how close to the edge (closer = faster)
-			const speedMultiplier = Math.max(
-				0.3,
-				(maxScrollThreshold - distanceFromBottom) / maxScrollThreshold
-			);
-			startAutoScroll('down', speedMultiplier);
-		}
-	}
-
-	function startAutoScroll(direction, speedMultiplier = 1) {
-		if (autoScrollInterval) return;
-
-		autoScrollInterval = setInterval(() => {
-			if (!scrollContainer || !draggedItem) {
-				stopAutoScroll();
+			const o = overlapping[0];
+			const os = getSpan(o.size);
+			if (os.w === span.w && os.h === span.h) {
+				preview[o.id] = { col: draggedOrigin.col, row: draggedOrigin.row };
+				previewPositions = preview;
 				return;
 			}
+		}
 
-			// Apply speed multiplier for graceful acceleration
-			const adjustedSpeed = autoScrollSpeed * speedMultiplier;
-			const scrollAmount = direction === 'up' ? -adjustedSpeed : adjustedSpeed;
-			scrollContainer.scrollTop += scrollAmount;
+		// Otherwise push each overlapping tile to the next free spot.
+		const occupied = kept.map(getRect);
+		occupied.push(footprint);
+		const movers = [...overlapping].sort((a, b) => {
+			const ar = getRect(a);
+			const br = getRect(b);
+			return ar.row - br.row || ar.col - br.col;
+		});
+		for (const m of movers) {
+			const ms = getSpan(m.size);
+			const spot = findFreeSpot(occupied, ms.w, ms.h, cols);
+			preview[m.id] = spot;
+			occupied.push({ col: spot.col, row: spot.row, w: ms.w, h: ms.h });
+		}
 
-			// Stop if we've reached the limits
-			if (
-				(direction === 'up' && scrollContainer.scrollTop <= 0) ||
-				(direction === 'down' &&
-					scrollContainer.scrollTop >= scrollContainer.scrollHeight - scrollContainer.clientHeight)
-			) {
-				stopAutoScroll();
+		previewPositions = preview;
+	}
+
+	// --- Press / drag lifecycle ---------------------------------------------
+	function handlePointerDown(e, item) {
+		if (e.button === 2) return; // ignore right click
+		// Let interactive controls inside a tile (edit buttons, live-tile
+		// buttons) handle their own taps.
+		if (e.target.closest('button')) return;
+
+		pressId = item.id;
+		pressMoved = false;
+		pressStart = { x: e.clientX, y: e.clientY };
+
+		window.addEventListener('pointermove', handlePointerMove, { passive: false });
+		window.addEventListener('pointerup', handlePointerUp);
+		window.addEventListener('pointercancel', handlePointerCancel);
+
+		if (!editMode) {
+			pressTimer = setTimeout(() => {
+				if (pressId === item.id && !pressMoved && !draggingId) {
+					gridStore.setEditMode(true);
+					gridStore.setSelectedItem(item.id);
+				}
+			}, LONG_PRESS_MS);
+		}
+	}
+
+	function beginDrag(item) {
+		draggingId = item.id;
+		gridStore.setEditMode(true);
+		gridStore.setSelectedItem(item.id);
+		gridStore.setDraggedItem(item.id);
+
+		const rect = getRect(item);
+		draggedOrigin = { col: rect.col, row: rect.row };
+
+		const p = pointInContainer({ clientX: pressStart.x, clientY: pressStart.y });
+		const tileX = PAD + rect.col * step;
+		const tileY = PAD + rect.row * step;
+		dragOffset = { x: p.x - tileX, y: p.y - tileY };
+		floatX = tileX;
+		floatY = tileY;
+
+		targetCell = { col: rect.col, row: rect.row };
+		lastTargetKey = `${targetCell.col},${targetCell.row}`;
+		previewPositions = {};
+	}
+
+	function handlePointerMove(e) {
+		if (draggingId) {
+			e.preventDefault();
+			const p = pointInContainer(e);
+			floatX = p.x - dragOffset.x;
+			floatY = p.y - dragOffset.y;
+
+			const cell = cellFromFloat();
+			const key = `${cell.col},${cell.row}`;
+			if (key !== lastTargetKey) {
+				lastTargetKey = key;
+				targetCell = cell;
+				recomputePreview();
 			}
-		}, 8); // ~120fps for smoother, faster scrolling
+			handleAutoScroll(e.clientY);
+			return;
+		}
+
+		if (!pressId) return;
+
+		const dx = e.clientX - pressStart.x;
+		const dy = e.clientY - pressStart.y;
+		if (Math.hypot(dx, dy) <= DRAG_THRESHOLD) return;
+
+		pressMoved = true;
+		clearTimeout(pressTimer);
+
+		if (editMode) {
+			const item = items.find((i) => i.id === pressId);
+			pressId = null;
+			if (item) {
+				e.preventDefault();
+				beginDrag(item);
+			}
+		} else {
+			// A move outside edit mode is a scroll - let it through.
+			pressId = null;
+		}
+	}
+
+	function commitDrop() {
+		const next = items.map((it) => {
+			if (it.id === draggingId) {
+				return { ...it, col: targetCell.col, row: targetCell.row };
+			}
+			if (previewPositions[it.id]) {
+				return { ...it, col: previewPositions[it.id].col, row: previewPositions[it.id].row };
+			}
+			return { ...it };
+		});
+		gridStore.setPositions(next);
+	}
+
+	function endDrag() {
+		stopAutoScroll();
+		commitDrop();
+		gridStore.clearDragState();
+		draggingId = null;
+		previewPositions = {};
+		targetCell = null;
+		draggedOrigin = null;
+	}
+
+	// After a drag the browser dispatches a synthetic `click`. Because the
+	// dragged tile has `pointer-events:none`, that click resolves to the grid
+	// background and would be read as "tapped empty space" (exiting edit mode).
+	// Swallow exactly that one click so dropping a tile keeps the reorder view.
+	function suppressNextClick() {
+		if (typeof window === 'undefined') return;
+		const handler = (ev) => {
+			ev.stopPropagation();
+			window.removeEventListener('click', handler, true);
+			clearTimeout(cleanup);
+		};
+		window.addEventListener('click', handler, true);
+		const cleanup = setTimeout(() => {
+			window.removeEventListener('click', handler, true);
+		}, 350);
+	}
+
+	function handlePointerUp(e) {
+		removeWindowListeners();
+		clearTimeout(pressTimer);
+
+		if (draggingId) {
+			endDrag();
+			suppressNextClick();
+			return;
+		}
+
+		if (pressId && !pressMoved) {
+			const item = items.find((i) => i.id === pressId);
+			pressId = null;
+			if (!item) return;
+			if (editMode) {
+				gridStore.setSelectedItem(item.id);
+			} else {
+				navigate(item);
+			}
+			return;
+		}
+		pressId = null;
+	}
+
+	function handlePointerCancel() {
+		removeWindowListeners();
+		clearTimeout(pressTimer);
+		stopAutoScroll();
+		// Revert any in-progress drag without committing.
+		draggingId = null;
+		previewPositions = {};
+		targetCell = null;
+		draggedOrigin = null;
+		pressId = null;
+		gridStore.clearDragState();
+	}
+
+	function removeWindowListeners() {
+		if (typeof window === 'undefined') return;
+		window.removeEventListener('pointermove', handlePointerMove);
+		window.removeEventListener('pointerup', handlePointerUp);
+		window.removeEventListener('pointercancel', handlePointerCancel);
+	}
+
+	function navigate(item) {
+		if (!item?.src) return;
+		if (item.src.startsWith('http://') || item.src.startsWith('https://')) {
+			window.location.href = item.src;
+		} else {
+			goto(item.src);
+		}
+	}
+
+	// --- Tile control events -------------------------------------------------
+	function handleResize(item) {
+		gridStore.updateItemSize(item.id);
+	}
+
+	function handleRemove(item) {
+		// Let the tile shrink away before it's actually removed from the grid.
+		removingId = item.id;
+		setTimeout(() => {
+			gridStore.removeItem(item.id);
+			if (selectedItemId === item.id) gridStore.setSelectedItem(null);
+			removingId = null;
+		}, 220);
+	}
+
+	// --- Auto-scroll while dragging near the edges --------------------------
+	function handleAutoScroll(clientY) {
+		if (!scrollContainer) return;
+		const rect = scrollContainer.getBoundingClientRect();
+		const threshold = 90;
+		stopAutoScroll();
+		if (clientY - rect.top < threshold && scrollContainer.scrollTop > 0) {
+			startAutoScroll(-1);
+		} else if (
+			rect.bottom - clientY < threshold &&
+			scrollContainer.scrollTop < scrollContainer.scrollHeight - scrollContainer.clientHeight
+		) {
+			startAutoScroll(1);
+		}
+	}
+
+	function startAutoScroll(dir) {
+		if (autoScrollInterval) return;
+		autoScrollInterval = setInterval(() => {
+			if (!scrollContainer || !draggingId) return stopAutoScroll();
+			scrollContainer.scrollTop += dir * autoScrollSpeed;
+		}, 16);
 	}
 
 	function stopAutoScroll() {
@@ -526,79 +409,88 @@
 		}
 	}
 
-	// Clean up on destroy
-	onDestroy(() => {
-		stopAutoScroll();
+	// --- Lifecycle -----------------------------------------------------------
+	onMount(() => {
+		gridStore.loadFromHomescreen();
+		if (gridEl) {
+			containerWidth = gridEl.clientWidth;
+			resizeObserver = new ResizeObserver((entries) => {
+				for (const entry of entries) containerWidth = entry.contentRect.width;
+			});
+			resizeObserver.observe(gridEl);
+		}
 	});
 
-	// No need for position-based functions with flexbox
+	onDestroy(() => {
+		stopAutoScroll();
+		removeWindowListeners();
+		clearTimeout(pressTimer);
+		if (resizeObserver) resizeObserver.disconnect();
+	});
 </script>
 
-<div class="grid-container w-full relative flex-1" bind:this={gridContainer}>
-	<!-- Grid with Windows Phone 8.1 style -->
+<div class="grid-container w-full relative flex-1">
 	<div
-		class="grid w-full transition-all duration-300 ease-in-out p-4 relative z-10 {bgClass}"
-		style="grid-template-columns: repeat({cols}, 1fr); grid-template-rows: repeat({calculatedRows}, minmax({rowHeight}px, auto)); gap: 12px;"
-		on:click={handleGridClick}
-		on:dragover={handleDragOver}
+		class="wp-grid w-full relative {bgClass}"
+		class:editing={editMode}
+		bind:this={gridEl}
+		style="height:{contentHeight}px;"
 		role="grid"
 		tabindex="0"
-		on:keydown={(e) => e.preventDefault()}
 	>
-		<!-- Grid items -->
-		{#each items as item, index (item.id)}
-			<!-- Drop placeholder before this item -->
-			{#if dropIndicatorPosition === index && editMode && draggedItem}
-				<div
-					class="drop-placeholder {draggedItem.bgColor} {bgClass} opacity-0 flex items-center justify-center"
-					style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};"
-				>
-					<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
-				</div>
-			{/if}
-
-			<GridItem
-				{item}
-				{editMode}
-				isSelected={selectedItemId === item.id}
-				isDragging={draggedItem?.id === item.id}
-				isDragOver={dragOverItemId === item.id && draggedItem?.id !== item.id}
-				isRemoving={removingItemId === item.id}
-				on:longPress={handleLongPress}
-				on:click={handleItemClick}
-				on:remove={handleItemRemove}
-				on:dragStart={handleDragStart}
-				on:dragEnd={handleDragEnd}
-				on:dragOver={handleItemDragOver}
-				on:autoScrollCheck={handleAutoScrollCheck}
-				on:drop={handleItemDrop}
-			/>
-		{/each}
-
-		<!-- Drop placeholder at the end -->
-		{#if dropIndicatorPosition === items.length && editMode && draggedItem}
+		{#each items as item (item.id)}
 			<div
-				class="drop-placeholder {draggedItem.bgColor} {bgClass} opacity-0 flex items-center justify-center"
-				style="grid-column: {placeholderGridColumn}; grid-row: {placeholderGridRow};"
+				class="tile-wrapper"
+				class:dragging={draggingId === item.id}
+				data-item-id={item.id}
+				style={tileStyle(item, cellSize, step, editMode, selectedItemId, draggingId, floatX, floatY, previewPositions)}
+				on:pointerdown={(e) => handlePointerDown(e, item)}
 			>
-				<Icon icon={draggedItem.icon} width="24" height="24" class="text-white opacity-50" />
+				<GridItem
+					{item}
+					{editMode}
+					isSelected={selectedItemId === item.id}
+					isDragging={draggingId === item.id}
+					isRemoving={removingId === item.id}
+					on:resize={() => handleResize(item)}
+					on:remove={() => handleRemove(item)}
+				/>
 			</div>
-		{/if}
+		{/each}
 	</div>
 </div>
 
 <style>
 	.grid-container {
-		overflow: hidden;
+		overflow: visible;
+		-webkit-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
 	}
 
-	.drop-placeholder {
-		transition: all 200ms ease-in-out;
-		pointer-events: none;
-		user-select: none;
-		min-height: 60px;
-		min-width: 60px;
-		border-radius: 0;
+	.wp-grid {
+		position: relative;
+		min-height: 1px;
+		transition: height 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
-	
+
+	.tile-wrapper {
+		position: absolute;
+		top: 0;
+		left: 0;
+		box-sizing: border-box;
+		transition:
+			transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+			width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+			height 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+			opacity 0.2s ease;
+		will-change: transform, width, height;
+		-webkit-user-select: none;
+		user-select: none;
+		-webkit-touch-callout: none;
+	}
+
+	.tile-wrapper.dragging {
+		pointer-events: none;
+	}
 </style>

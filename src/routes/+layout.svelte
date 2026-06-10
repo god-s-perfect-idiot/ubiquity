@@ -11,6 +11,7 @@
 	import { musicStore, currentTrack } from '../store/music.js';
 	import { browser } from '$app/environment';
 	import LockScreen from '../components/LockScreen.svelte';
+	import YtMusicPlayer from '../components/YtMusicPlayer.svelte';
 
 	// SvelteKit automatically passes params to layout components
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -162,6 +163,9 @@
 			style="display: none;"
 		></audio>
 	{/if}
+
+	<!-- Persistent YouTube IFrame player for YTMusic playback -->
+	<YtMusicPlayer />
 	
 	<!-- Lock Screen - shows for each session if auto-lock is enabled -->
 	<LockScreen onUnlock={() => {}} />

@@ -104,11 +104,18 @@
 			bgColor: 'bg-purple-900'
 		},
 		{
-			name: 'Spotify (Metro)',
+			name: 'Spotify Metro',
 			content: '/spotify',
 			isSystemApp: true,
 			icon: 'mdi:spotify',
 			bgColor: 'bg-green-700'
+		},
+		{
+			name: 'YTMusic Metro',
+			content: '/ytmusic',
+			isSystemApp: true,
+			icon: 'simple-icons:youtubemusic',
+			bgColor: 'bg-red-700'
 		},
 		{
 			name: 'Weather',

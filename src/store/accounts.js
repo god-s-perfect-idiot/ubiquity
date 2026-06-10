@@ -10,10 +10,16 @@ const createAccountsStore = () => {
         expires_at: null,
         user: null,
         is_authenticated: false
+      },
+      ytmusic: {
+        access_token: null,
+        refresh_token: null,
+        expires_at: null,
+        user: null,
+        is_authenticated: false
       }
       // Future OAuth providers can be added here:
       // github: { ... },
-      // google: { ... },
       // etc.
     }
   });
@@ -129,6 +135,13 @@ const createAccountsStore = () => {
             expires_at: null,
             user: null,
             is_authenticated: false
+          },
+          ytmusic: {
+            access_token: null,
+            refresh_token: null,
+            expires_at: null,
+            user: null,
+            is_authenticated: false
           }
         }
       });
@@ -157,35 +170,36 @@ const createAccountsStore = () => {
     // Initialize accounts from localStorage
     initFromStorage() {
       if (typeof window === 'undefined') return;
-      
-      try {
-        // Load Spotify account data
-        const spotifyToken = localStorage.getItem('spotify_access_token');
-        const spotifyExpires = localStorage.getItem('spotify_expires_at');
-        const spotifyRefresh = localStorage.getItem('spotify_refresh_token');
-        const spotifyUser = localStorage.getItem('spotify_user');
-        
-        if (spotifyToken && spotifyExpires) {
-          const expiresAt = parseInt(spotifyExpires);
-          
-          // Check if token is still valid
-          if (Date.now() < expiresAt) {
-            this.updateAccount('spotify', {
-              access_token: spotifyToken,
-              expires_at: expiresAt,
-              refresh_token: spotifyRefresh,
-              user: spotifyUser ? JSON.parse(spotifyUser) : null,
-              is_authenticated: true
-            });
-          } else {
-            // Token expired, clean up localStorage
-            this.cleanupStorage('spotify');
+
+      ['spotify', 'ytmusic'].forEach((provider) => {
+        try {
+          const token = localStorage.getItem(`${provider}_access_token`);
+          const expires = localStorage.getItem(`${provider}_expires_at`);
+          const refresh = localStorage.getItem(`${provider}_refresh_token`);
+          const user = localStorage.getItem(`${provider}_user`);
+
+          if (token && expires) {
+            const expiresAt = parseInt(expires);
+
+            // Check if token is still valid
+            if (Date.now() < expiresAt) {
+              this.updateAccount(provider, {
+                access_token: token,
+                expires_at: expiresAt,
+                refresh_token: refresh,
+                user: user ? JSON.parse(user) : null,
+                is_authenticated: true
+              });
+            } else {
+              // Token expired, clean up localStorage
+              this.cleanupStorage(provider);
+            }
           }
+        } catch (error) {
+          console.error(`Error initializing ${provider} account from storage:`, error);
+          this.cleanupStorage(provider);
         }
-      } catch (error) {
-        console.error('Error initializing accounts from storage:', error);
-        this.cleanupStorage('spotify');
-      }
+      });
     },
 
     // Save account data to localStorage

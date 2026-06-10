@@ -32,6 +32,28 @@ body {
     overscroll-behavior: none;
 }
 
+/* Holding / long-pressing should never trigger text selection or the
+   native callout menu anywhere in the app (WP8.1 behaves this way). */
+* {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Re-enable selection where the user actually needs to edit/select text. */
+input,
+textarea,
+select,
+[contenteditable="true"] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
 .page-holder {
     perspective: 1000px;
 }

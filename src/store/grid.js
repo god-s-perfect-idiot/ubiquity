@@ -1,12 +1,22 @@
 import { writable } from 'svelte/store';
 import { homescreenStore } from './homescreen.js';
 import { getAccentColor } from '../utils/theme.js';
+import {
+	GRID_COLS,
+	SIZE_ORDER,
+	getSpan,
+	getRect,
+	findFreeSpot,
+	assignPositions,
+	resolveOverlaps
+} from '../utils/gridLayout.js';
 
 // Grid store for managing grid items and edit mode
 function createGridStore() {
-	// Load initial items from homescreen store
+	// Load initial items from homescreen store, migrating any legacy items
+	// (which lacked explicit coordinates) to the coordinate-based layout.
 	const homescreenState = homescreenStore.getState();
-	const initialItems = homescreenState.items || [];
+	const initialItems = assignPositions(homescreenState.items || [], GRID_COLS);
 
 	const initialState = {
 		items: initialItems,
@@ -14,180 +24,97 @@ function createGridStore() {
 		selectedItemId: null,
 		draggedItem: null,
 		dragOverPosition: null,
-		gridSize: { cols: 4, rows: 4 } // Default 4x4 grid
+		gridSize: { cols: GRID_COLS, rows: 4 }
 	};
 
 	const { subscribe, set, update } = writable(initialState);
 
 	// Size progression order
-	const sizeOrder = ['1x1', '2x2', '4x2'];
+	const sizeOrder = SIZE_ORDER;
 
 	return {
 		subscribe,
 
-		// Add item to grid - simplified for flexbox
+		// Add item to grid at the first free coordinate.
 		addItem(item) {
 			update((state) => {
+				if (state.items.some((i) => i.id === item.id)) {
+					return state;
+				}
+
+				const size = item.size || '1x1';
+				const { w, h } = getSpan(size);
+				const occupied = state.items.map(getRect);
+				const spot = findFreeSpot(occupied, w, h, GRID_COLS);
+
 				const newItem = {
 					id: item.id || `item-${Date.now()}`,
 					name: item.name,
 					src: item.src,
 					icon: item.icon,
-					bgColor: item.bgColor || getAccentColor(), // Default to accent color (as hex)
-					size: item.size || '1x1',
-					...item
+					bgColor: item.bgColor || getAccentColor(),
+					size,
+					...item,
+					col: spot.col,
+					row: spot.row
 				};
 
 				const newItems = [...state.items, newItem];
-				
-				// Save to homescreen store (which saves to localStorage)
 				homescreenStore.updateItems(newItems);
 
-				return {
-					...state,
-					items: newItems
-				};
+				return { ...state, items: newItems };
 			});
 		},
 
-		// Remove item from grid - simplified for flexbox
+		// Remove item from grid (leaves the cells empty - gaps are allowed).
 		removeItem(itemId) {
 			update((state) => {
 				const updatedItems = state.items.filter((item) => item.id !== itemId);
-				
-				// Save to homescreen store (which saves to localStorage)
 				homescreenStore.updateItems(updatedItems);
-				
-				return {
-					...state,
-					items: updatedItems
-				};
+				return { ...state, items: updatedItems };
 			});
 		},
 
-		// Update item size - simplified for flexbox
+		// Cycle item size and reflow any tiles the larger footprint collides with.
 		updateItemSize(itemId) {
 			update((state) => {
 				const itemIndex = state.items.findIndex((item) => item.id === itemId);
-				if (itemIndex === -1) {
-					return state;
-				}
+				if (itemIndex === -1) return state;
 
 				const currentSize = state.items[itemIndex].size;
 				const currentIndex = sizeOrder.indexOf(currentSize);
 				const nextIndex = (currentIndex + 1) % sizeOrder.length;
 				const newSize = sizeOrder[nextIndex];
 
-				// Update the item size - flexbox handles positioning automatically
-				const updatedItems = [...state.items];
-				updatedItems[itemIndex] = {
-					...updatedItems[itemIndex],
-					size: newSize
-				};
+				let updatedItems = [...state.items];
+				updatedItems[itemIndex] = { ...updatedItems[itemIndex], size: newSize };
 
-				// Save to homescreen store (which saves to localStorage)
+				// The resized tile keeps its position; collisions are pushed away.
+				updatedItems = resolveOverlaps(updatedItems, GRID_COLS, itemId);
+
 				homescreenStore.updateItems(updatedItems);
-
-				return {
-					...state,
-					items: updatedItems
-				};
+				return { ...state, items: updatedItems };
 			});
 		},
 
-		// Move item - improved to handle different sizes and grid positions
-		moveItem(itemId, targetItemId) {
+		// Replace all item positions at once (used after a drag/drop commit).
+		setPositions(items) {
 			update((state) => {
-				const items = [...state.items];
-				const draggedItemIndex = items.findIndex((item) => item.id === itemId);
-				const targetItemIndex = items.findIndex((item) => item.id === targetItemId);
+				const cleaned = resolveOverlaps(items, GRID_COLS, state.draggedItem);
+				homescreenStore.updateItems(cleaned);
+				return { ...state, items: cleaned };
+			});
+		},
 
-				if (draggedItemIndex === -1 || targetItemIndex === -1) return state;
-
-				const draggedItem = items[draggedItemIndex];
-
-				// Remove the dragged item
-				items.splice(draggedItemIndex, 1);
-
-				// Find the new index for the target item (it may have shifted after removing the dragged item)
-				const newTargetIndex = items.findIndex((item) => item.id === targetItemId);
-
-				// Insert the dragged item at the target position
-				items.splice(newTargetIndex, 0, draggedItem);
-
-				// Save to homescreen store (which saves to localStorage)
+		// Set a single item's coordinates, pushing collisions out of the way.
+		setItemPosition(itemId, col, row) {
+			update((state) => {
+				let items = state.items.map((it) =>
+					it.id === itemId ? { ...it, col, row } : { ...it }
+				);
+				items = resolveOverlaps(items, GRID_COLS, itemId);
 				homescreenStore.updateItems(items);
-
-				return {
-					...state,
-					items
-				};
-			});
-		},
-
-		// Optimize grid layout to minimize gaps and improve visual order
-		optimizeLayout() {
-			update((state) => {
-				const items = [...state.items];
-
-				// Sort items by size (larger items first) for better packing
-				const sortedItems = items.sort((a, b) => {
-					const sizeOrder = { '4x2': 2, '2x2': 1, '1x1': 0 };
-					return sizeOrder[b.size] - sizeOrder[a.size];
-				});
-
-				// Save to homescreen store (which saves to localStorage)
-				homescreenStore.updateItems(sortedItems);
-
-				return {
-					...state,
-					items: sortedItems
-				};
-			});
-		},
-
-		// Move item by index (legacy support)
-		moveItemByIndex(itemId, newIndex) {
-			update((state) => {
-				const items = [...state.items];
-				const itemIndex = items.findIndex((item) => item.id === itemId);
-
-				if (itemIndex === -1) return state;
-
-				const [item] = items.splice(itemIndex, 1);
-				items.splice(newIndex, 0, item);
-
-				// Save to homescreen store (which saves to localStorage)
-				homescreenStore.updateItems(items);
-
-				return {
-					...state,
-					items
-				};
-			});
-		},
-
-		// Move item to a specific position index
-		moveItemToPosition(itemId, positionIndex) {
-			update((state) => {
-				const items = [...state.items];
-				const itemIndex = items.findIndex((item) => item.id === itemId);
-
-				if (itemIndex === -1) return state;
-
-				const [item] = items.splice(itemIndex, 1);
-
-				// Clamp position to valid range
-				const clampedPosition = Math.max(0, Math.min(items.length, positionIndex));
-				items.splice(clampedPosition, 0, item);
-
-				// Save to homescreen store (which saves to localStorage)
-				homescreenStore.updateItems(items);
-
-				return {
-					...state,
-					items
-				};
+				return { ...state, items };
 			});
 		},
 
@@ -241,16 +168,19 @@ function createGridStore() {
 			}));
 		},
 
-		// Load items from homescreen store
+		// Load items from homescreen store (migrating legacy items to coordinates).
 		loadFromHomescreen() {
 			const homescreenState = homescreenStore.getState();
+			const items = assignPositions(homescreenState.items || [], GRID_COLS);
+			// Persist migrated coordinates so they stick across sessions.
+			homescreenStore.updateItems(items);
 			set({
-				items: homescreenState.items || [],
+				items,
 				editMode: false,
 				selectedItemId: null,
 				draggedItem: null,
 				dragOverPosition: null,
-				gridSize: { cols: 4, rows: 4 }
+				gridSize: { cols: GRID_COLS, rows: 4 }
 			});
 		},
 

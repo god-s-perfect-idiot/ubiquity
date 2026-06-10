@@ -59,7 +59,8 @@
                 <span>Video v-1.0</span>
                 <span>Settings v-1.0</span>
                 <span>Documents v-1.0</span>
-                <span>Spotify (Metro) v-1.0</span>
+                <span>Spotify Metro v-1.0</span>
+                <span>YTMusic Metro v-1.0</span>
                 <span>Weather v-1.0</span>
             </div>
             <div class="mt-12 mb-8">
