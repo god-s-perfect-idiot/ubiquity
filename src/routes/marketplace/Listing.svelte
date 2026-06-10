@@ -190,6 +190,29 @@
 		}
 	};
 
+	const isItemAdded = (item) => {
+		if (!localSources?.length) return false;
+		const itemUrl = item.source
+			.replace('https://', '')
+			.replace('http://', '')
+			.replace('www.', '')
+			.replace(/\/$/, '');
+		return localSources.some((a) => {
+			const aUrl = a.content
+				.replace('https://', '')
+				.replace('http://', '')
+				.replace('www.', '')
+				.replace(/\/$/, '');
+			return aUrl === itemUrl;
+		});
+	};
+
+	const getPhotoImageUrl = (item) => {
+		if (item.icon && isValidUrl(item.icon)) return item.icon;
+		if (item.source && isValidUrl(item.source)) return item.source;
+		return null;
+	};
+
 	onMount(() => {
 		initializeLocalSources();
 		loadMarketplaceItems();
@@ -238,11 +261,53 @@
 					</span>
 				</div>
 			{/if}
-			<div class="flex flex-col gap-4 mt-8 flex-1 overflow-y-auto pb-16 px-4">
+			<div
+				class="mt-8 flex-1 overflow-y-auto pb-16 px-4"
+				class:flex={listingType !== 'photos'}
+				class:flex-col={listingType !== 'photos'}
+				class:gap-4={listingType !== 'photos'}
+			>
 				{#if isLoading}
 					<div class="flex flex-col items-center justify-center py-12 h-full my-16">
 						<Loader />
 					</div>
+				{:else if listingType === 'photos'}
+					<div class="photos-grid">
+						{#each filteredSources as item, index}
+							<button
+								class="photo-item flip-in"
+								style="animation-delay: {Math.min(index * 30, 360)}ms;{isItemAdded(item) ? ` outline: 3px solid ${accentColor};` : ''}"
+								on:click={() => handleSourceClick(item)}
+								on:keydown={(e) => e.key === 'Enter' && handleSourceClick(item)}
+							>
+								{#if isIconError(item) || !getPhotoImageUrl(item)}
+									<div
+										class="w-full h-full flex items-end justify-start pl-4 pb-4 {textClass} text-4xl font-[300] lowercase"
+										style="background-color: {item.background || '#2a2a2a'};"
+									>
+										{getFirstLetter(item.name)}
+									</div>
+								{:else}
+									<img
+										src={getPhotoImageUrl(item)}
+										alt={item.name}
+										class="photo-image"
+										onerror={() => {
+											iconErrors.add(item.id);
+											iconErrors = iconErrors;
+										}}
+									/>
+								{/if}
+							</button>
+						{/each}
+					</div>
+					{#if filteredSources.length === 0}
+						<div class="flex flex-col gap-4 items-start justify-center">
+							<span class="text-2xl font-[300]"
+								>No {listingType} found. Be the first to publish one!</span
+							>
+						</div>
+					{/if}
 				{:else}
 					{#each filteredSources as item}
 						<button
@@ -277,20 +342,7 @@
 								<span class="text-base font-[300] text-[#7e7e7e]">{item.owner}</span>
 								<span class="text-sm font-[300]"
 									>{localSources && localSources.length > 0
-										? localSources.some((a) => {
-												// remove https:// and http:// and www. and trailing slash and compare.
-												const aUrl = a.content
-													.replace('https://', '')
-													.replace('http://', '')
-													.replace('www.', '')
-													.replace(/\/$/, '');
-												const itemUrl = item.source
-													.replace('https://', '')
-													.replace('http://', '')
-													.replace('www.', '')
-													.replace(/\/$/, '');
-												return aUrl === itemUrl;
-											})
+										? isItemAdded(item)
 											? 'added'
 											: 'not added'
 										: 'checking...'}</span
@@ -298,7 +350,7 @@
 							</div>
 						</button>
 					{/each}
-					{#if filteredSources.length === 0 && !isLoading}
+					{#if filteredSources.length === 0}
 						<div class="flex flex-col gap-4 items-start justify-center">
 							<span class="text-2xl font-[300]"
 								>No {listingType} found. Be the first to publish one!</span
@@ -332,3 +384,52 @@
 		</div>
 	{/if}
 {/if}
+
+<style>
+	.photos-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
+		width: 100%;
+		perspective: 1000px;
+	}
+
+	.photo-item {
+		aspect-ratio: 1;
+		width: 100%;
+		height: auto;
+		padding: 0;
+		border: none;
+		background: none;
+		cursor: pointer;
+		overflow: hidden;
+		transform-origin: left center;
+		backface-visibility: hidden;
+	}
+
+	.photo-item.flip-in {
+		animation: photoFlipIn 0.2s ease-out backwards;
+	}
+
+	.photo-item:active {
+		transform: scale(0.98);
+	}
+
+	@keyframes photoFlipIn {
+		from {
+			transform: rotateY(90deg);
+			opacity: 0;
+		}
+		to {
+			transform: rotateY(0deg);
+			opacity: 1;
+		}
+	}
+
+	.photo-image {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+</style>

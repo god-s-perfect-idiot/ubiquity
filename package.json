@@ -10,7 +10,14 @@
 		"host": "vite dev --host",
 		"seed:marketplace": "node seed-marketplace.js",
 		"reset:marketplace": "node reset-marketplace.js",
-		"update:marketplace": "node update-marketplace.js"
+		"update:marketplace": "node update-marketplace.js",
+		"marketplace:fix-thumbnails": "node scripts/fix-thumbnails.js",
+		"marketplace:discover-apps": "node scripts/discover-apps.js",
+		"marketplace:discover-music": "node scripts/discover-music.js",
+		"marketplace:discover-videos": "node scripts/discover-videos.js",
+		"marketplace:discover-photos": "node scripts/discover-photos.js",
+		"marketplace:discover-documents": "node scripts/discover-documents.js",
+		"marketplace:bot": "node scripts/run-marketplace-bot.js"
 	},
 	"devDependencies": {
 		"@fontsource/fira-mono": "^4.5.10",

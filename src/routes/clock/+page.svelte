@@ -3,8 +3,9 @@
 	import { goto } from '$app/navigation';
 	import BottomControls from '../../components/BottomControls.svelte';
 	import Icon from '@iconify/svelte';
-	import { borderColorClassStore } from '../../utils/theme';
-	
+	import { accentColorStore, borderColorClassStore } from '../../utils/theme';
+
+	$: accentColor = $accentColorStore;
 	$: borderClass = $borderColorClassStore;
 	
 	let isExiting = false;
@@ -34,14 +35,27 @@
 
 	function formatDate(date) {
 		const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-		const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-		
-		const dayName = days[date.getDay()];
-		const monthName = months[date.getMonth()];
-		const day = date.getDate();
-		const year = date.getFullYear();
-		
-		return `${dayName}, ${monthName} ${day}, ${year}`;
+		const months = [
+			'January',
+			'February',
+			'March',
+			'April',
+			'May',
+			'June',
+			'July',
+			'August',
+			'September',
+			'October',
+			'November',
+			'December'
+		];
+
+		return {
+			dayName: days[date.getDay()],
+			monthName: months[date.getMonth()],
+			day: date.getDate(),
+			year: date.getFullYear()
+		};
 	}
 
 	function handleToggle(event) {
@@ -81,21 +95,25 @@
 	<div class="page pt-4 px-4 flex flex-col h-screen overflow-y-auto" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300] lowercase mb-8">date + time</span>
 		
-		<div class="flex flex-col flex-1 gap-2">
-			<!-- Time Display -->
-			<div class="flex flex-col gap-4 mt-16">
-				<div class="flex flex-row items-baseline gap-2 w-full">
-					<span class="text-6xl font-[300]">{timeDisplay.hours}</span>
-					<span class="text-6xl font-[300]">:</span>
-					<span class="text-6xl font-[300]">{timeDisplay.minutes}</span>
-					<span class="text-3xl font-[300] opacity-60">{timeDisplay.seconds}</span>
-					<span class="text-5xl font-[300] ml-2">{timeDisplay.ampm}</span>
-				</div>
+		<div class="flex flex-col flex-1 mt-8">
+			<div class="flex flex-row items-baseline gap-2">
+				<span
+					class="text-8xl font-[200] tabular-nums leading-none tracking-tight"
+					style="color: {accentColor}"
+				>
+					{timeDisplay.hours}:{timeDisplay.minutes}
+				</span>
+				<span class="text-2xl font-[300] text-[#818181] tabular-nums leading-none"
+					>:{timeDisplay.seconds}</span
+				>
+				<span class="text-3xl font-[300] leading-none ml-1">{timeDisplay.ampm}</span>
 			</div>
-			
-			<!-- Date Display -->
-			<div class="flex flex-col gap-2 mt-2">
-				<span class="text-2xl font-[300] opacity-80">{dateDisplay}</span>
+
+			<div class="flex flex-col gap-0 mt-6">
+				<span class="text-3xl font-[300]">{dateDisplay.dayName}</span>
+				<span class="text-xl font-[300] text-[#818181]"
+					>{dateDisplay.monthName} {dateDisplay.day}, {dateDisplay.year}</span
+				>
 			</div>
 		</div>
 	</div>

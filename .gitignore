@@ -10,6 +10,9 @@ node_modules
 .DS_Store
 Thumbs.db
 
+# Marketplace discovery cursors (local script state)
+scripts/.discovery-state.json
+
 # Env
 .env
 .env.*
