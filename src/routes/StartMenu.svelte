@@ -10,9 +10,10 @@
 	let gridContainer;
 	let scrollContainer;
 
-	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
-	$: cols = showMoreCols ? 6 : 4;
-	$: minRows = showMoreCols ? 6 : 4;
+	$: showMoreCols = $settingsStore.settings.appearance?.showMoreCols || false;
+	$: desktopStartMenu = $settingsStore.settings.appearance?.desktopStartMenu || false;
+	$: cols = desktopStartMenu ? 10 : showMoreCols ? 6 : 4;
+	$: minRows = desktopStartMenu || showMoreCols ? 6 : 4;
 	
 	// Get theme-aware background reactively
 	$: bgClass = $backgroundClassStore;

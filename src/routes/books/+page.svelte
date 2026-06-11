@@ -11,11 +11,7 @@
 	import { booksStore } from '../../store/books.js';
 	import { addToast } from '../../store/toast';
 	import { searchBooks, fetchBookText } from '../../lib/books-api.js';
-	import {
-		getGutenbergCoverUrl,
-		getGutenbergUrl,
-		parseGutenbergId
-	} from '../../lib/books-utils.js';
+	import { getGutenbergCoverUrl, getGutenbergUrl, parseGutenbergId } from '../../lib/books-utils.js';
 	import {
 		READER_FONTS,
 		getReaderFontFamily,
@@ -69,7 +65,7 @@
 	$: readerBorderClass = readerNightMode ? 'border-white' : 'border-black';
 	$: navbarHeight = isExpanded ? 80 : 40;
 	$: readerToolbarBottom = `${navbarHeight}px`;
-	$: readerContentPadding = `${navbarHeight + 72}px`;
+	$: readerContentPadding = `${navbarHeight + 112}px`;
 	$: readerFontFamily = getReaderFontFamily(readerFont);
 	$: readerFontLabel = READER_FONTS[readerFont]?.label ?? 'Readerly';
 
@@ -173,7 +169,9 @@
 		try {
 			const data = await fetchBookText(gutenbergId);
 			readerPages = data.pages || [];
-			if (currentPage >= readerPages.length) currentPage = 0;
+			if (currentPage >= readerPages.length) {
+				currentPage = Math.max(0, readerPages.length - 1);
+			}
 		} catch (error) {
 			readerError = error.message || 'Could not load this book';
 		} finally {
@@ -181,10 +179,14 @@
 		}
 	}
 
-	function closeReader() {
+	function saveReaderProgress() {
 		if (selectedBook && readerPages.length) {
 			booksStore.setPage(getProgressKey(selectedBook), currentPage);
 		}
+	}
+
+	function closeReader() {
+		saveReaderProgress();
 		showReader = false;
 		selectedBook = null;
 		readerPages = [];
@@ -225,8 +227,11 @@
 	}
 
 	function closePage() {
-		if (showReader) closeReader();
-		if (showDiscover) showDiscover = false;
+		if (showReader) {
+			saveReaderProgress();
+		} else if (showDiscover) {
+			showDiscover = false;
+		}
 
 		isUnmounting = true;
 		setTimeout(() => {
@@ -318,7 +323,10 @@
 					{/if}
 				</div>
 
-				<div class="flex-1 overflow-y-auto px-4 min-h-0" style="padding-bottom: {readerContentPadding};">
+				<div
+					class="flex-1 overflow-y-auto px-4 min-h-0"
+					style="padding-bottom: {readerContentPadding};"
+				>
 					{#if isLoadingBook}
 						<div class="flex items-center justify-center h-full">
 							<Loader theme={readerNightMode ? 'dark' : 'light'} />
@@ -327,7 +335,7 @@
 						<p class="text-lg font-[300] {readerMutedClass}">{readerError}</p>
 					{:else if readerPages[currentPage]}
 						<p
-							class="reader-text text-lg leading-relaxed whitespace-pre-wrap {readerTextClass}"
+							class="reader-text text-lg whitespace-pre-wrap {readerTextClass}"
 							style="font-family: {readerFontFamily};"
 						>
 							{readerPages[currentPage]}
@@ -595,6 +603,10 @@
 {/if}
 
 <style>
+	.reader-text {
+		line-height: 2;
+	}
+
 	.btn-animate {
 		transform: translateY(120%);
 		opacity: 0;

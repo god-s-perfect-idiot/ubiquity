@@ -1,16 +1,23 @@
 import { json } from '@sveltejs/kit';
-import { pickTextUrl, stripGutenbergBoilerplate, paginateText } from '../../../../lib/books-utils.js';
+import {
+	fetchWithTimeout,
+	gutenbergFallbackBook,
+	pickTextUrl,
+	stripGutenbergBoilerplate,
+	paginateText
+} from '../../../../lib/books-utils.js';
 
 export async function GET({ params, url }) {
 	try {
 		const { id } = params;
-		const metaResp = await fetch(`https://gutendex.com/books/${id}`);
+		let book;
 
-		if (!metaResp.ok) {
-			return json({ error: 'Book not found' }, { status: metaResp.status });
+		try {
+			const metaResp = await fetchWithTimeout(`https://gutendex.com/books/${id}`);
+			book = metaResp.ok ? await metaResp.json() : gutenbergFallbackBook(id);
+		} catch {
+			book = gutenbergFallbackBook(id);
 		}
-
-		const book = await metaResp.json();
 
 		if (url.searchParams.get('text') !== 'true') {
 			return json(book);
@@ -21,7 +28,7 @@ export async function GET({ params, url }) {
 			return json({ error: 'No readable text format available' }, { status: 404 });
 		}
 
-		const textResp = await fetch(textUrl);
+		const textResp = await fetchWithTimeout(textUrl, {}, 15000);
 		if (!textResp.ok) {
 			return json({ error: 'Failed to fetch book text' }, { status: textResp.status });
 		}
@@ -30,7 +37,7 @@ export async function GET({ params, url }) {
 		const cleaned = stripGutenbergBoilerplate(raw);
 		const pages = paginateText(cleaned);
 
-		return json({ text: cleaned, pages, pageCount: pages.length });
+		return json({ pages, pageCount: pages.length });
 	} catch (error) {
 		console.error('Books fetch error:', error);
 		return json({ error: error.message }, { status: 500 });

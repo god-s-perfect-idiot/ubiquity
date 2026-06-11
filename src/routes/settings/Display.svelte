@@ -12,13 +12,14 @@
 		stepIndexToScale
 	} from '../../utils/font-scale';
 	import StepSlider from '../../components/StepSlider.svelte';
+	import { FONT_OPTIONS, ensureAppFontLoaded, unloadAppFont } from '../../lib/app-fonts.js';
 
 	export let isExiting = false;
 
-	// Font options
-	const fontOptions = ['Noto Sans', 'selawik', 'selawik light'];
+	const fontOptions = FONT_OPTIONS;
 
 	let showMoreCols = false;
+	let desktopStartMenu = false;
 	let selectedFont = 'Noto Sans';
 	let customFontEnabled = false;
 	let customFontCdn = '';
@@ -26,6 +27,7 @@
 	let fontScaleStep = 3;
 
 	$: showMoreCols = $settingsStore.settings.appearance?.showMoreCols || false;
+	$: desktopStartMenu = $settingsStore.settings.appearance?.desktopStartMenu || false;
 	$: fontScale = normalizeFontScale(
 		$settingsStore.settings.appearance?.fontScale ??
 			$settingsStore.settings.appearance?.fontSize
@@ -55,6 +57,8 @@
 			console.warn('Custom font name is required');
 			return;
 		}
+
+		unloadAppFont();
 
 		// Remove existing custom font link if any
 		const existingLink = document.getElementById('custom-font-link');
@@ -98,10 +102,7 @@
 			existingLink.remove();
 		}
 
-		// Apply font to body
-		if (typeof document !== 'undefined') {
-			document.body.style.fontFamily = font;
-		}
+		ensureAppFontLoaded(font);
 	}
 
 	// Handle custom font toggle
@@ -118,9 +119,8 @@
 			if (existingLink) {
 				existingLink.remove();
 			}
-			if (typeof document !== 'undefined') {
-				document.body.style.fontFamily = selectedFont;
-			}
+			unloadAppFont();
+			ensureAppFontLoaded(selectedFont);
 		}
 	}
 
@@ -159,11 +159,7 @@
 			// Load custom font
 			loadCustomFont(cdn, fontName);
 		} else {
-			// Use regular font
-			const font = settingsStore.get('appearance.font') || 'Noto Sans';
-			if (typeof document !== 'undefined') {
-				document.body.style.fontFamily = font;
-			}
+			ensureAppFontLoaded(settingsStore.get('appearance.font') || 'Noto Sans');
 		}
 	});
 </script>
@@ -218,6 +214,16 @@
 					bind:value={showMoreCols}
 					onToggle={(value) => {
 						settingsStore.updateSettings({ 'appearance.showMoreCols': value });
+					}}
+				/>
+			</div>
+			<div class="flex flex-col gap-4">
+				<Switch
+					title="Desktop Start Menu"
+					description="Increases the number of columns in the start menu."
+					bind:value={desktopStartMenu}
+					onToggle={(value) => {
+						settingsStore.updateSettings({ 'appearance.desktopStartMenu': value });
 					}}
 				/>
 			</div>

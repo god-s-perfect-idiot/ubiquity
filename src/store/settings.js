@@ -15,6 +15,7 @@ const createSettingsStore = () => {
         animations: true, // Enable/disable animations
         compactMode: false, // Compact UI mode
         showMoreCols: false, // Denser homescreen: 6 cols × 6 rows instead of 4 × 4
+        desktopStartMenu: false, // Desktop-style start menu: 10 columns
         showHomescreenWhenOpened: false // Show homescreen when app is opened
       },
       
@@ -229,6 +230,7 @@ const createSettingsStore = () => {
           animations: true,
           compactMode: false,
           showMoreCols: false,
+          desktopStartMenu: false,
           showHomescreenWhenOpened: false
         },
         system: {

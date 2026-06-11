@@ -9,6 +9,7 @@
 	import { backgroundThemeStore, textColorClassStore } from '../utils/theme';
 	import { settingsStore } from '../store/settings';
 	import { applyFontScale, normalizeFontScale } from '../utils/font-scale';
+	import { ensureAppFontLoaded, unloadAppFont } from '../lib/app-fonts.js';
 	import { musicStore, currentTrack } from '../store/music.js';
 	import { browser } from '$app/environment';
 	import LockScreen from '../components/LockScreen.svelte';
@@ -41,6 +42,8 @@
 			return;
 		}
 		
+		unloadAppFont();
+
 		// Remove existing custom font link if any
 		const existingLink = document.getElementById('custom-font-link');
 		if (existingLink) {
@@ -81,9 +84,8 @@
 				// Load and apply custom font
 				loadCustomFont(customFontCdn, customFontName);
 			} else {
-				// Use regular font
-				document.body.style.fontFamily = selectedFont;
-				
+				ensureAppFontLoaded(selectedFont);
+
 				// Remove custom font link if switching to regular font
 				const existingLink = document.getElementById('custom-font-link');
 				if (existingLink) {
@@ -111,8 +113,7 @@
 				// Load and apply custom font
 				loadCustomFont(customFontCdn, customFontName);
 			} else {
-				// Use regular font
-				document.body.style.fontFamily = selectedFont;
+				ensureAppFontLoaded(selectedFont);
 			}
 		}
 		

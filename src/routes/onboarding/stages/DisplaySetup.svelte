@@ -5,6 +5,7 @@
 	import ColorPicker from '../../../components/ColorPicker.svelte';
 	import Switch from '../../../components/Switch.svelte';
 	import { onMount, getContext } from 'svelte';
+	import { FONT_OPTIONS, ensureAppFontLoaded } from '../../../lib/app-fonts.js';
 
 	$: accentColor = $accentColorStore;
 	$: textClass = $textColorClassStore;
@@ -37,8 +38,7 @@
 	// Background options
 	const backgroundOptions = ['dark', 'light'];
 
-	// Font options
-	const fontOptions = ['Noto Sans', 'selawik', 'selawik light'];
+	const fontOptions = FONT_OPTIONS;
 
 	// Get color name from hex value
 	function getColorName(hex) {
@@ -87,9 +87,7 @@
 	function handleFontChange(font) {
 		selectedFont = font;
 		settingsStore.set('appearance.font', font);
-		if (typeof document !== 'undefined') {
-			document.body.style.fontFamily = font;
-		}
+		ensureAppFontLoaded(font);
 	}
 
 	// Handle color selection

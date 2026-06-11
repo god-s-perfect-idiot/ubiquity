@@ -1,7 +1,10 @@
 export async function searchBooks(query, page = 1) {
 	const params = new URLSearchParams({ q: query, page: String(page) });
 	const resp = await fetch(`/api/books/search?${params}`);
-	if (!resp.ok) throw new Error('Book search failed');
+	if (!resp.ok) {
+		const body = await resp.json().catch(() => ({}));
+		throw new Error(body.error || 'Book search failed');
+	}
 	return resp.json();
 }
 
