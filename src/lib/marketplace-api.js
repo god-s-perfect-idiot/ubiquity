@@ -73,6 +73,7 @@ export async function getMarketplaceItems(options = {}) {
 			type = null,
 			category = null,
 			limitCount = 50,
+			offset = 0,
 			orderByField = 'createdAt',
 			orderDirection = 'desc',
 			featured = null,
@@ -114,8 +115,8 @@ export async function getMarketplaceItems(options = {}) {
 				: (aValue > bValue ? 1 : -1);
 		});
 
-		// Apply limit
-		items = items.slice(0, limitCount);
+		// Apply pagination
+		items = items.slice(offset, offset + limitCount);
 
 		return items;
 	} catch (error) {

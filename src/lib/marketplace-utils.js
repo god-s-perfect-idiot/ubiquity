@@ -16,6 +16,7 @@ export async function fetchMarketplaceItems(options = {}) {
 		if (options.search) params.append('search', options.search);
 		if (options.featured !== null) params.append('featured', options.featured);
 		if (options.limit) params.append('limit', options.limit);
+		if (options.offset) params.append('offset', options.offset);
 		if (options.orderBy) params.append('orderBy', options.orderBy);
 		if (options.orderDirection) params.append('orderDirection', options.orderDirection);
 

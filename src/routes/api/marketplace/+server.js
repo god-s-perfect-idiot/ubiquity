@@ -12,6 +12,7 @@ export async function GET({ url }) {
 		const search = url.searchParams.get('search');
 		const featured = url.searchParams.get('featured');
 		const limit = parseInt(url.searchParams.get('limit')) || 50;
+		const offset = parseInt(url.searchParams.get('offset')) || 0;
 		const orderBy = url.searchParams.get('orderBy') || 'createdAt';
 		const orderDirection = url.searchParams.get('orderDirection') || 'desc';
 
@@ -28,6 +29,7 @@ export async function GET({ url }) {
 				type,
 				category,
 				limitCount: limit,
+				offset,
 				orderByField: orderBy,
 				orderDirection
 			};

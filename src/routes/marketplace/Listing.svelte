@@ -1,7 +1,7 @@
 <script>
 	import Item from './Item.svelte';
 	import { kernel } from '../../kernel/store';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import {
 		fetchApps,
 		fetchVideos,
@@ -24,12 +24,28 @@
 	$: accentColor = $accentColorStore;
 	$: textClass = $textColorClassStore;
 
+	const PAGE_SIZE = 50;
+
 	let marketplaceItems = [];
 	let localSources = [];
 	let selectedSource = null;
 	let searchQuery = '';
 	let isLoading = true;
+	let isLoadingMore = false;
+	let hasMore = true;
+	let listOffset = 0;
+	let scrollContainer;
 	let iconErrors = new Set();
+
+	const typeMapping = {
+		apps: 'app',
+		music: 'music',
+		videos: 'video',
+		documents: 'document',
+		photos: 'image'
+	};
+
+	const getItemType = () => typeMapping[listingType] || listingType.slice(0, -1);
 
 	const initializeLocalSources = () => {
 		switch (listingType) {
@@ -52,24 +68,69 @@
 		console.log(localSources);
 	};
 
-	const loadMarketplaceItems = async () => {
+	const fetchPage = async (offset) => {
+		return fetchMarketplaceItems({
+			type: getItemType(),
+			limit: PAGE_SIZE,
+			offset
+		});
+	};
+
+	const resetAndLoad = async () => {
+		listOffset = 0;
+		hasMore = true;
+		marketplaceItems = [];
 		try {
 			isLoading = true;
-			// Map plural listing types to singular item types
-			const typeMapping = {
-				'apps': 'app',
-				'music': 'music',
-				'videos': 'video',
-				'documents': 'document',
-				'photos': 'image'
-			};
-			const type = typeMapping[listingType] || listingType.slice(0, -1);
-			marketplaceItems = await fetchMarketplaceItems({ type });
+			const items = await fetchPage(0);
+			marketplaceItems = items;
+			hasMore = items.length === PAGE_SIZE;
+			listOffset = items.length;
 		} catch (error) {
 			console.error('Error loading marketplace items:', error);
 			addToast('Failed to load marketplace items', 3000);
 		} finally {
 			isLoading = false;
+			await fillViewportIfNeeded();
+		}
+	};
+
+	const loadMore = async () => {
+		if (!hasMore || isLoading || isLoadingMore || searchQuery.length > 0) return;
+
+		try {
+			isLoadingMore = true;
+			const items = await fetchPage(listOffset);
+			marketplaceItems = [...marketplaceItems, ...items];
+			hasMore = items.length === PAGE_SIZE;
+			listOffset += items.length;
+		} catch (error) {
+			console.error('Error loading more marketplace items:', error);
+			addToast('Failed to load more items', 3000);
+		} finally {
+			isLoadingMore = false;
+			await fillViewportIfNeeded();
+		}
+	};
+
+	const fillViewportIfNeeded = async () => {
+		await tick();
+		if (!scrollContainer || !hasMore || isLoading || isLoadingMore || searchQuery.length > 0) return;
+
+		const distanceFromBottom =
+			scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
+		if (distanceFromBottom < 300) {
+			await loadMore();
+		}
+	};
+
+	const handleScroll = (event) => {
+		if (!hasMore || isLoading || isLoadingMore || searchQuery.length > 0) return;
+
+		const el = event.currentTarget;
+		const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+		if (distanceFromBottom < 300) {
+			loadMore();
 		}
 	};
 
@@ -213,9 +274,17 @@
 		return null;
 	};
 
+	let prevListingType = listingType;
+
+	$: if (listingType !== prevListingType) {
+		prevListingType = listingType;
+		initializeLocalSources();
+		resetAndLoad();
+	}
+
 	onMount(() => {
 		initializeLocalSources();
-		loadMarketplaceItems();
+		resetAndLoad();
 	});
 </script>
 
@@ -262,10 +331,12 @@
 				</div>
 			{/if}
 			<div
+				bind:this={scrollContainer}
 				class="mt-8 flex-1 overflow-y-auto pb-16 px-4"
 				class:flex={listingType !== 'photos'}
 				class:flex-col={listingType !== 'photos'}
 				class:gap-4={listingType !== 'photos'}
+				on:scroll={handleScroll}
 			>
 				{#if isLoading}
 					<div class="flex flex-col items-center justify-center py-12 h-full my-16">
@@ -306,6 +377,11 @@
 							<span class="text-2xl font-[300]"
 								>No {listingType} found. Be the first to publish one!</span
 							>
+						</div>
+					{/if}
+					{#if isLoadingMore}
+						<div class="flex justify-center py-6 w-full">
+							<Loader />
 						</div>
 					{/if}
 				{:else}
@@ -355,6 +431,11 @@
 							<span class="text-2xl font-[300]"
 								>No {listingType} found. Be the first to publish one!</span
 							>
+						</div>
+					{/if}
+					{#if isLoadingMore}
+						<div class="flex justify-center py-6 w-full">
+							<Loader />
 						</div>
 					{/if}
 				{/if}
