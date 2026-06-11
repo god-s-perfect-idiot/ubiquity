@@ -15,6 +15,7 @@
 	} from '../utils/gridLayout.js';
 
 	export let cols = GRID_COLS;
+	export let minRows = 4;
 	export let scrollContainer = null;
 
 	const GAP = 12; // px gap between cells
@@ -75,7 +76,7 @@
 			if (it) rows = Math.max(rows, targetCell.row + getSpan(it.size).h);
 		}
 		if (editMode) rows += 2; // room to drop tiles at the bottom
-		return rows;
+		return Math.max(minRows, rows);
 	})();
 
 	$: contentHeight = step > 0 && contentRows > 0 ? PAD * 2 + contentRows * step - GAP : 0;
@@ -410,8 +411,10 @@
 	}
 
 	// --- Lifecycle -----------------------------------------------------------
+	$: gridStore.setGridSize(cols, minRows);
+
 	onMount(() => {
-		gridStore.loadFromHomescreen();
+		gridStore.loadFromHomescreen(cols, minRows);
 		if (gridEl) {
 			containerWidth = gridEl.clientWidth;
 			resizeObserver = new ResizeObserver((entries) => {

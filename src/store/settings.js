@@ -14,7 +14,7 @@ const createSettingsStore = () => {
         borderRadius: 'medium', // 'none', 'small', 'medium', 'large'
         animations: true, // Enable/disable animations
         compactMode: false, // Compact UI mode
-        showMoreCols: false, // Show 6 columns instead of 4 in start menu (false = 4 cols, true = 6 cols)
+        showMoreCols: false, // Denser homescreen: 6 cols × 6 rows instead of 4 × 4
         showHomescreenWhenOpened: false // Show homescreen when app is opened
       },
       

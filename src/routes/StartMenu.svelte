@@ -9,7 +9,10 @@
 
 	let gridContainer;
 	let scrollContainer;
-	let cols = 4; // Fixed to 4 columns
+
+	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
+	$: cols = showMoreCols ? 6 : 4;
+	$: minRows = showMoreCols ? 6 : 4;
 	
 	// Get theme-aware background reactively
 	$: bgClass = $backgroundClassStore;
@@ -52,7 +55,7 @@
 	<div class="relative z-10">
 		<!-- Grid container -->
 		<div bind:this={gridContainer} class="w-full">
-			<GridContainer {cols} {scrollContainer} />
+			<GridContainer {cols} {minRows} {scrollContainer} />
 		</div>
 	</div>
 

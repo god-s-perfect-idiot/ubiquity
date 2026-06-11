@@ -29,6 +29,8 @@ function createGridStore() {
 
 	const { subscribe, set, update } = writable(initialState);
 
+	const getCols = (state) => state.gridSize?.cols ?? GRID_COLS;
+
 	// Size progression order
 	const sizeOrder = SIZE_ORDER;
 
@@ -45,7 +47,7 @@ function createGridStore() {
 				const size = item.size || '1x1';
 				const { w, h } = getSpan(size);
 				const occupied = state.items.map(getRect);
-				const spot = findFreeSpot(occupied, w, h, GRID_COLS);
+				const spot = findFreeSpot(occupied, w, h, getCols(state));
 
 				const newItem = {
 					id: item.id || `item-${Date.now()}`,
@@ -90,7 +92,7 @@ function createGridStore() {
 				updatedItems[itemIndex] = { ...updatedItems[itemIndex], size: newSize };
 
 				// The resized tile keeps its position; collisions are pushed away.
-				updatedItems = resolveOverlaps(updatedItems, GRID_COLS, itemId);
+				updatedItems = resolveOverlaps(updatedItems, getCols(state), itemId);
 
 				homescreenStore.updateItems(updatedItems);
 				return { ...state, items: updatedItems };
@@ -100,7 +102,7 @@ function createGridStore() {
 		// Replace all item positions at once (used after a drag/drop commit).
 		setPositions(items) {
 			update((state) => {
-				const cleaned = resolveOverlaps(items, GRID_COLS, state.draggedItem);
+				const cleaned = resolveOverlaps(items, getCols(state), state.draggedItem);
 				homescreenStore.updateItems(cleaned);
 				return { ...state, items: cleaned };
 			});
@@ -112,7 +114,7 @@ function createGridStore() {
 				let items = state.items.map((it) =>
 					it.id === itemId ? { ...it, col, row } : { ...it }
 				);
-				items = resolveOverlaps(items, GRID_COLS, itemId);
+				items = resolveOverlaps(items, getCols(state), itemId);
 				homescreenStore.updateItems(items);
 				return { ...state, items };
 			});
@@ -160,18 +162,27 @@ function createGridStore() {
 			}));
 		},
 
-		// Set grid size
+		// Set grid size (reflows tiles when column count changes)
 		setGridSize(cols, rows) {
-			update((state) => ({
-				...state,
-				gridSize: { cols, rows }
-			}));
+			update((state) => {
+				const prevCols = getCols(state);
+				let items = state.items;
+				if (cols !== prevCols) {
+					items = resolveOverlaps(items, cols);
+					homescreenStore.updateItems(items);
+				}
+				return {
+					...state,
+					items,
+					gridSize: { cols, rows }
+				};
+			});
 		},
 
 		// Load items from homescreen store (migrating legacy items to coordinates).
-		loadFromHomescreen() {
+		loadFromHomescreen(cols = GRID_COLS, rows = 4) {
 			const homescreenState = homescreenStore.getState();
-			const items = assignPositions(homescreenState.items || [], GRID_COLS);
+			const items = assignPositions(homescreenState.items || [], cols);
 			// Persist migrated coordinates so they stick across sessions.
 			homescreenStore.updateItems(items);
 			set({
@@ -180,7 +191,7 @@ function createGridStore() {
 				selectedItemId: null,
 				draggedItem: null,
 				dragOverPosition: null,
-				gridSize: { cols: GRID_COLS, rows: 4 }
+				gridSize: { cols, rows }
 			});
 		},
 

@@ -78,101 +78,101 @@
 {#if currentPage === 'settings'}
 	<div class="page-holder">
 		<div class="page pt-4 flex flex-col h-screen" class:page-exit={isExiting}>
-			<span class="text-6xl font-[300] px-4">settings</span>
-			<div class="flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-16 px-4">
-				<div class="flex flex-col gap-3 items-start">
+			<span class="text-6xl font-[300] px-4 text-left">settings</span>
+			<div class="flex flex-col gap-4 mt-4 flex-1 overflow-y-auto pb-16 px-4 text-left items-start">
+				<div class="flex flex-col gap-3 items-start text-left w-full">
 					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">personalization</span>
-					<button class="flex flex-col items-start" on:click={() => {changePage('display')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('display')}}>
 						<span class="text-3xl font-[300]">display</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>change display settings.</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {changePage('theme')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('theme')}}>
 						<span class="text-3xl font-[300]" >start + theme</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>choose light or dark theme. Change accent color.</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {changePage('lock-screen')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('lock-screen')}}>
 						<span class="text-3xl font-[300]">lock screen</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>customize lock screen appearance and display options</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {}}>
 						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">icon pack</span>
 						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>change app pack and app icon overrides</span
 						>
 					</button>
 				</div>
-				<div class="flex flex-col gap-3 items-start">
+				<div class="flex flex-col gap-3 items-start text-left w-full">
 					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">on this device</span>
-					<button class="flex flex-col items-start" on:click={() => {changePage('apps')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('apps')}}>
 						<span class="text-3xl font-[300]">apps</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>check installed apps</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {changePage('storage')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('storage')}}>
 						<span class="text-3xl font-[300]">storage</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>explore local storage usage</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {changePage('security')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('security')}}>
 						<span class="text-3xl font-[300]">security</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>set your pin code and encryption for your data</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {}}>
 						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">ubiquity experience</span>
 						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>ubiquity device ID and other unique features</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => changePage('search')}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => changePage('search')}>
 						<span class="text-3xl font-[300]">search</span>
 						<span class="text-sm font-[300] text-[#818181]">change search engine and settings</span>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => changePage('accounts')}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => changePage('accounts')}>
 						<span class="text-3xl font-[300]">accounts</span>
 						<span class="text-sm font-[300] text-[#818181]">google and other accounts</span>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => changePage('region+units')}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => changePage('region+units')}>
 						<span class="text-3xl font-[300]">region+units</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>change region and units of measurements</span
 						>
 					</button>
 				</div>
-				<div class="flex flex-col gap-3 items-start">
+				<div class="flex flex-col gap-3 items-start text-left w-full">
 					<span class="text-2xl font-[300] mt-2" style="color: {accentColor}">extras+info</span>
-					<button class="flex flex-col items-start" on:click={() => changePage('data')}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => changePage('data')}>
 						<span class="text-3xl font-[300]">data</span>
 						<span class="text-sm font-[300] text-[#818181]">system data related information</span>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {}}>
 						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">backups+restore</span>
 						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>backup and restore your data</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {}}>
 						<span class="text-3xl font-[300]" style="color: {disabledTextColor};">google services</span>
 						<span class="text-sm font-[300] text-[#818181]" style="color: {disabledTextColor};"
 							>login to google services for importing data</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => {changePage('device-info')}}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => {changePage('device-info')}}>
 						<span class="text-3xl font-[300]">device information</span>
 						<span class="text-sm font-[300] text-[#818181]"
 							>get device level information using navigator</span
 						>
 					</button>
-					<button class="flex flex-col items-start" on:click={() => goto('/about')}>
+					<button class="flex flex-col items-start text-left w-full" on:click={() => goto('/about')}>
 						<span class="text-3xl font-[300]">about the project</span>
 						<span class="text-sm font-[300] text-[#818181]">learn more about ubiquity</span>
 					</button>

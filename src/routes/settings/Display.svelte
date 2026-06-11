@@ -16,9 +16,9 @@
 	let customFontEnabled = false;
 	let customFontCdn = '';
 	let customFontName = '';
-	
+
 	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
-	
+
 	// Get font settings from store
 	$: {
 		const font = settingsStore.get('appearance.font');
@@ -29,7 +29,7 @@
 
 		const cdn = settingsStore.get('appearance.customFontCdn');
 		customFontCdn = cdn || '';
-		
+
 		const fontName = settingsStore.get('appearance.customFontName');
 		customFontName = fontName || '';
 	}
@@ -37,7 +37,7 @@
 	// Load custom font from CDN
 	function loadCustomFont(cdnUrl, fontFamilyName) {
 		if (!cdnUrl || typeof document === 'undefined') return;
-		
+
 		if (!fontFamilyName || fontFamilyName.trim() === '') {
 			console.warn('Custom font name is required');
 			return;
@@ -54,7 +54,7 @@
 		link.id = 'custom-font-link';
 		link.rel = 'stylesheet';
 		link.href = cdnUrl;
-		
+
 		// Wait for stylesheet to load before applying font
 		link.onload = () => {
 			// Apply the font after stylesheet loads
@@ -62,7 +62,7 @@
 				document.body.style.fontFamily = `"${fontFamilyName}", sans-serif`;
 			}
 		};
-		
+
 		// Fallback: apply font immediately (in case onload doesn't fire)
 		document.head.appendChild(link);
 		if (typeof document !== 'undefined') {
@@ -124,7 +124,7 @@
 				loadCustomFont(customFontCdn, customFontName);
 			}
 		}
-		
+
 		if (customFontName !== undefined && customFontName !== lastFontNameValue) {
 			lastFontNameValue = customFontName;
 			settingsStore.set('appearance.customFontName', customFontName);
@@ -184,11 +184,12 @@
 					</span>
 					<Input label="Font Family Name" bind:content={customFontName} />
 					<span class="text-sm font-[300] text-[#a1a1a1]">
-						Enter the exact font family name as defined in the CSS (e.g., "Segoe WP", "Roboto", "Open Sans").
+						Enter the exact font family name as defined in the CSS (e.g., "Segoe WP", "Roboto",
+						"Open Sans").
 					</span>
 				</div>
 			{/if}
-			<!-- <div class="flex flex-col gap-4">
+			<div class="flex flex-col gap-4">
 				<Switch
 					title="Show More Columns"
 					description="Show more columns in the start menu."
@@ -197,7 +198,7 @@
 						settingsStore.updateSettings({ 'appearance.showMoreCols': value });
 					}}
 				/>
-			</div> -->
+			</div>
 		</div>
 	</div>
 </div>
