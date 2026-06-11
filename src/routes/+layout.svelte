@@ -8,6 +8,7 @@
 	import { onMount } from 'svelte';
 	import { backgroundThemeStore, textColorClassStore } from '../utils/theme';
 	import { settingsStore } from '../store/settings';
+	import { applyFontScale, normalizeFontScale } from '../utils/font-scale';
 	import { musicStore, currentTrack } from '../store/music.js';
 	import { browser } from '$app/environment';
 	import LockScreen from '../components/LockScreen.svelte';
@@ -22,10 +23,14 @@
 	$: textColorClass = $textColorClassStore;
 	$: bodyBgColor = backgroundTheme === 'light' ? '#ffffff' : '#000000';
 	$: bodyTextColor = backgroundTheme === 'light' ? '#000000' : '#ffffff';
-	$: selectedFont = settingsStore.get('appearance.font') || 'Noto Sans';
-	$: customFontEnabled = settingsStore.get('appearance.customFontEnabled') || false;
-	$: customFontCdn = settingsStore.get('appearance.customFontCdn') || '';
-	$: customFontName = settingsStore.get('appearance.customFontName') || '';
+	$: selectedFont = $settingsStore.settings.appearance?.font || 'Noto Sans';
+	$: customFontEnabled = $settingsStore.settings.appearance?.customFontEnabled || false;
+	$: customFontCdn = $settingsStore.settings.appearance?.customFontCdn || '';
+	$: customFontName = $settingsStore.settings.appearance?.customFontName || '';
+	$: fontScale = normalizeFontScale(
+		$settingsStore.settings.appearance?.fontScale ??
+			$settingsStore.settings.appearance?.fontSize
+	);
 
 	// Load custom font from CDN
 	function loadCustomFont(cdnUrl, fontFamilyName) {
@@ -68,6 +73,7 @@
 		// Update body styles reactively
 	$: {
 		if (typeof document !== 'undefined') {
+			applyFontScale(fontScale);
 			document.body.style.backgroundColor = bodyBgColor;
 			document.body.style.color = bodyTextColor;
 			
@@ -97,6 +103,7 @@
 		
 		// Set initial body styles
 		if (typeof document !== 'undefined') {
+			applyFontScale(fontScale);
 			document.body.style.backgroundColor = bodyBgColor;
 			document.body.style.color = bodyTextColor;
 			

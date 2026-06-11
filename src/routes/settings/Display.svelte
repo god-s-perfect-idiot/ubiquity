@@ -5,6 +5,13 @@
 	import Switch from '../../components/Switch.svelte';
 	import Select from '../../components/Select.svelte';
 	import Input from '../../components/Input.svelte';
+	import {
+		FONT_SCALE_STEPS,
+		normalizeFontScale,
+		scaleToStepIndex,
+		stepIndexToScale
+	} from '../../utils/font-scale';
+	import StepSlider from '../../components/StepSlider.svelte';
 
 	export let isExiting = false;
 
@@ -16,22 +23,28 @@
 	let customFontEnabled = false;
 	let customFontCdn = '';
 	let customFontName = '';
+	let fontScaleStep = 3;
 
-	$: showMoreCols = settingsStore.get('appearance.showMoreCols') || false;
+	$: showMoreCols = $settingsStore.settings.appearance?.showMoreCols || false;
+	$: fontScale = normalizeFontScale(
+		$settingsStore.settings.appearance?.fontScale ??
+			$settingsStore.settings.appearance?.fontSize
+	);
+	$: fontScaleStep = scaleToStepIndex(fontScale);
+	$: previewFontSize = `calc(1.5rem * ${stepIndexToScale(fontScaleStep)})`;
 
 	// Get font settings from store
 	$: {
-		const font = settingsStore.get('appearance.font');
-		selectedFont = font || 'Noto Sans';
+		const appearance = $settingsStore.settings.appearance || {};
+		selectedFont = appearance.font || 'Noto Sans';
+		customFontEnabled = appearance.customFontEnabled || false;
+		customFontCdn = appearance.customFontCdn || '';
+		customFontName = appearance.customFontName || '';
+	}
 
-		const customEnabled = settingsStore.get('appearance.customFontEnabled');
-		customFontEnabled = customEnabled || false;
-
-		const cdn = settingsStore.get('appearance.customFontCdn');
-		customFontCdn = cdn || '';
-
-		const fontName = settingsStore.get('appearance.customFontName');
-		customFontName = fontName || '';
+	function handleFontScaleStepChange(step) {
+		fontScaleStep = step;
+		settingsStore.set('appearance.fontScale', stepIndexToScale(step));
 	}
 
 	// Load custom font from CDN
@@ -159,6 +172,15 @@
 	<div class="page pt-4 px-4 flex flex-col h-screen" class:page-exit={isExiting}>
 		<span class="text-6xl font-[300]">display</span>
 		<div class="flex flex-col gap-8 mt-8 flex-1 overflow-y-auto">
+			<StepSlider
+				label="Text size"
+				description="Changes the text size across apps, settings, lock screen, and other screens."
+				previewText="Sample"
+				previewFontSize={previewFontSize}
+				steps={FONT_SCALE_STEPS}
+				bind:value={fontScaleStep}
+				on:change={(event) => handleFontScaleStepChange(event.detail)}
+			/>
 			<div class="flex flex-col gap-4">
 				<Select
 					label="Font"

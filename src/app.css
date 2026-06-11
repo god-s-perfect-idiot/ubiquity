@@ -17,7 +17,12 @@
     src: url("/selawkl.ttf");
 }
 
+:root {
+    --font-scale: 1;
+}
+
 html {
+    font-size: calc(16px * var(--font-scale));
     overscroll-behavior-y: none;
     overscroll-behavior: none;
 }

@@ -8,7 +8,7 @@ const createSettingsStore = () => {
       appearance: {
         theme: 'system', // 'light', 'dark', 'system'
         background: 'dark', // 'light' or 'dark'
-        fontSize: 'medium', // 'small', 'medium', 'large'
+        fontScale: 1, // Global text scale multiplier (0.75–1.5)
         fontFamily: 'system', // 'system', 'monospace', 'serif'
         accentColor: '#ff00ff', // Primary accent color (Fuschia default)
         borderRadius: 'medium', // 'none', 'small', 'medium', 'large'
@@ -222,7 +222,7 @@ const createSettingsStore = () => {
         appearance: {
           theme: 'system',
           background: 'dark',
-          fontSize: 'medium',
+          fontScale: 1,
           fontFamily: 'system',
           accentColor: '#ff00ff',
           borderRadius: 'medium',
