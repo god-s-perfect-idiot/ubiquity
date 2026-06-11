@@ -1,3 +1,10 @@
+import { appInfoStore } from '../store/appInfo.js';
+
+function isBookEntry(entry, appInfo) {
+	const info = appInfo[entry.name] || appInfo[entry.content];
+	return info?.category === 'book';
+}
+
 export function findType(file) {
 	if (typeof Object.values(file)[0] !== 'string') return 'directory';
 	switch (Object.keys(file)[0].slice(0, 1)) {
@@ -89,10 +96,21 @@ export function fetchVideos(files) {
 }
 
 export function fetchDocuments(files) {
-	const documents = []
     const state = [];
     flatten(files, state);
-    return  state.filter(file => file.type === 'document');
+    const appInfo = appInfoStore.getState().apps;
+    return state.filter(
+		(file) => file.type === 'document' && !isBookEntry(file, appInfo)
+	);
+}
+
+export function fetchBooks(files) {
+    const state = [];
+    flatten(files, state);
+    const appInfo = appInfoStore.getState().apps;
+    return state.filter(
+		(file) => file.type === 'document' && isBookEntry(file, appInfo)
+	);
 }
 
 /**

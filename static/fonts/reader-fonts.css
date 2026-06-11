@@ -1,0 +1,71 @@
+@font-face {
+	font-family: 'Readerly';
+	src: url('/fonts/readerly/Readerly-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Readerly';
+	src: url('/fonts/readerly/Readerly-Italic.woff2') format('woff2');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Readerly';
+	src: url('/fonts/readerly/Readerly-Bold.woff2') format('woff2');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Sourcerer';
+	src: url('/fonts/sourcerer/Sourcerer-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Sourcerer';
+	src: url('/fonts/sourcerer/Sourcerer-Italic.ttf') format('truetype');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Sourcerer';
+	src: url('/fonts/sourcerer/Sourcerer-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Cartisse';
+	src: url('/fonts/cartisse/Cartisse-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Cartisse';
+	src: url('/fonts/cartisse/Cartisse-Italic.ttf') format('truetype');
+	font-weight: 400;
+	font-style: italic;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: 'Cartisse';
+	src: url('/fonts/cartisse/Cartisse-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}

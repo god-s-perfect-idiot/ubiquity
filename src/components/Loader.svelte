@@ -1,7 +1,16 @@
 <script>
-	import { accentColorStore } from '../utils/theme';
-	
+	import { accentColorStore, textColorClassStore } from '../utils/theme';
+
+	/** @type {'default' | 'light' | 'dark'} */
+	export let theme = 'default';
+
 	$: accentColor = $accentColorStore;
+	$: labelClass =
+		theme === 'light'
+			? 'text-black'
+			: theme === 'dark'
+				? $textColorClassStore
+				: 'text-gray-300';
 </script>
 
 <div class="flex items-center justify-center py-12">
@@ -15,7 +24,7 @@
 		</div>
 
 		<!-- Loading Text -->
-		<span class="text-lg text-gray-300 font-light">Loading...</span>
+		<span class="text-lg font-light {labelClass}">Loading...</span>
 	</div>
 </div>
 

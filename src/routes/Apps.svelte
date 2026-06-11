@@ -90,6 +90,13 @@
 			bgColor: 'bg-red-700'
 		},
 		{
+			name: 'Books',
+			content: '/books',
+			isSystemApp: true,
+			icon: 'mdi:book-open-page-variant',
+			bgColor: 'bg-amber-800'
+		},
+		{
 			name: 'Feedback',
 			content: '/feedback',
 			isSystemApp: true,
