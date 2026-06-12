@@ -51,17 +51,23 @@
             </div>
             <span class="text-lg mt-4 underline font-[300]"> Privacy Policy </span>
             <div class="flex flex-col gap-2 mt-6 text-lg font-[300]">
-                <span>Ubiquity Version v-1.0</span>
+                <span>Ubiquity Version v-1.5.0</span>
+                <span>Settings v-2.1.1</span>
+                <span>Search v-2.0</span>
                 <span>File Explorer v-1.0</span>
-                <span>Marketplace v-1.0</span>
+                <span>Photos v-1.2.0</span>
+                <span>Camera v-1.0</span>
                 <span>Music Player v-1.0</span>
-                <span>Photos v-1.0</span>
                 <span>Video v-1.0</span>
-                <span>Settings v-1.0</span>
+                <span>Clock v-1.0</span>
                 <span>Documents v-1.0</span>
+                <span>Books v-1.0</span>
+                <span>Feedback v-1.0</span>
+                <span>Marketplace v-1.3.0</span>
                 <span>Spotify Metro v-1.0</span>
                 <span>YTMusic Metro v-1.0</span>
                 <span>Weather v-1.0</span>
+                <span>Live Tiles Toolkit v-1.0</span>
             </div>
             <div class="mt-12 mb-8">
                 <span class="text-2xl" style="color: {accentColor};">faq</span>
