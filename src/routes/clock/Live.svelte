@@ -81,12 +81,14 @@
 		style="background-color: {accentColor};"
 	>
 		<div class="flex flex-col self-end items-center h-full justify-center">
-			<div class="flex flex-row items-baseline gap-1 self-end justify-center text-6xl font-[200]">
+			<div
+				class="flex flex-row items-baseline gap-1 self-end justify-center text-6xl font-[200] mr-2"
+			>
 				{timeDisplay.hours}:{timeDisplay.minutes}
 			</div>
-			<span class="text-base font-[300] self-end mr-1">{timeDisplay.ampm}</span>
+			<span class="text-base font-[300] self-end mr-2">{timeDisplay.ampm}</span>
 		</div>
-		<div class="flex flex-col self-start items-start w-full p-1 absolute bottom-0 left-0">
+		<div class="flex flex-col self-start items-start w-full p-2 absolute bottom-0 left-0">
 			<span class="text-base font-[500]">{dateDisplay.dayName}</span>
 			<span class="text-base font-[300]"
 				>{dateDisplay.monthName} {dateDisplay.day}, {dateDisplay.year}</span
@@ -106,9 +108,11 @@
 				<span class="text-7xl font-[200]">{timeDisplay.minutes}</span>
 				<span class="text-4xl font-[200] ml-2">{timeDisplay.ampm}</span>
 			</div>
-            <div class="flex flex-col self-start items-start w-full p-1 absolute bottom-0 left-0">
+			<div class="flex flex-col self-start items-start w-full p-1 absolute bottom-0 left-0">
 				<span class="text-base font-[500] self-start">{dateDisplay.dayName}</span>
-				<span class="text-base font-[300] self-start">{dateDisplay.monthName} {dateDisplay.day}, {dateDisplay.year}</span>
+				<span class="text-base font-[300] self-start"
+					>{dateDisplay.monthName} {dateDisplay.day}, {dateDisplay.year}</span
+				>
 			</div>
 		</div>
 	</div>
