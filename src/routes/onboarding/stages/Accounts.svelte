@@ -9,7 +9,7 @@
 	<span class="text-lg text-left w-full font-semibold {textClass}">ACCOUNTS</span>
 
 	<p class="text-lg {textClass}">Connect your accounts to your device.</p>
-	<p class="text-lg {textClass}">Connect Spotify and ImgBB accounts to your device.</p>
+	<p class="text-lg {textClass}">Connect Spotify, YTMusic, and ImgBB accounts to your device.</p>
 </div>
 
 <style>

@@ -9,6 +9,7 @@ import UnitsLocationSetupStage from './stages/UnitsLocationSetup.svelte';
 import LiveTilesIntroStage from './stages/LiveTilesIntro.svelte';
 import AddResourceIntroStage from './stages/AddResourceIntro.svelte';
 import SpotifySetupStage from './stages/SpotifySetup.svelte';
+import YTMusicSetupStage from './stages/YTMusicSetup.svelte';
 import ImgBBSetupStage from './stages/ImgBBSetup.svelte';
 import FinalMessageStage from './stages/FinalMessage.svelte';
 
@@ -32,6 +33,10 @@ export const onboardingStages = [
 	{
 		id: 'spotify-setup',
 		component: SpotifySetupStage,
+	},
+	{
+		id: 'ytmusic-setup',
+		component: YTMusicSetupStage,
 	},
 	{
 		id: 'imgbb-setup',
