@@ -1,85 +1,83 @@
-// Search utilities for multiple open source search engines
-// Supports SearXNG, DuckDuckGo, and other privacy-focused search engines
+// Search utilities for web and unified local search
+import { RESULT_GROUPS, RESULT_ACTIONS, GROUP_ORDER, GROUP_LABELS } from './search-types.js';
 
 /**
  * Search result structure
  */
 export class SearchResult {
 	constructor(data) {
+		this.id = data.id || `web-${data.url || data.title}`;
 		this.title = data.title || '';
+		this.subtitle = data.subtitle || '';
 		this.url = data.url || '';
 		this.description = data.description || '';
 		this.engine = data.engine || '';
 		this.timestamp = data.timestamp || new Date();
 		this.favicon = data.favicon || '';
-		this.category = data.category || 'general';
+		this.category = data.category || RESULT_GROUPS.WEB;
+		this.type = data.type || RESULT_GROUPS.WEB;
+		this.icon = data.icon || '';
+		this.iconSrc = data.iconSrc || '';
+		this.iconify = data.iconify || data.icon || '';
+		this.bgClass = data.bgClass || '';
+		this.bgStyle = data.bgStyle || '';
+		this.initial = data.initial || '';
+		this.overrideClass = data.overrideClass || '';
+		this.rowOverrideClass = data.rowOverrideClass || '';
+		this.contentOverrideClass = data.contentOverrideClass || '';
+		this.action = data.action || RESULT_ACTIONS.OPEN_URL;
+		this.score = data.score || 0;
+		this.metadata = data.metadata || {};
 	}
 }
 
 /**
- * Search engines configuration - Only APIs that work without CORS
+ * Search engines configuration
  */
 export const SEARCH_ENGINES = {
+	AUTO: {
+		name: 'Auto (best results)',
+		enabled: true,
+		privacy: 'high',
+		usesProxy: true
+	},
 	DUCKDUCKGO: {
 		name: 'DuckDuckGo',
-		baseUrl: 'https://api.duckduckgo.com',
-		apiPath: '/',
-		params: {
-			q: '',
-			format: 'json',
-			no_html: '1',
-			skip_disambig: '1'
-		},
 		enabled: true,
-		privacy: 'high'
+		privacy: 'high',
+		usesProxy: true
 	},
+	WIKIPEDIA: {
+		name: 'Wikipedia',
+		enabled: true,
+		privacy: 'high',
+		usesProxy: true
+	}
 };
 
 /**
- * Get search suggestions from DuckDuckGo
- * @param {string} query - Search query
- * @returns {Promise<Array<string>>} - Array of suggestions
+ * Get autocomplete suggestions from DuckDuckGo
+ * @param {string} query
+ * @returns {Promise<Array<string>>}
  */
 export async function getSearchSuggestions(query) {
 	if (!query || query.length < 2) return [];
-	
+
 	try {
-		const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`);
+		const response = await fetch(
+			`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`
+		);
 		const data = await response.json();
-		
-		// Extract suggestions from DuckDuckGo response
-		const suggestions = [];
-		
-		// Add instant answer if available
-		if (data.AbstractText) {
-			suggestions.push(data.Heading || query);
+		if (Array.isArray(data) && Array.isArray(data[1])) {
+			return data[1].slice(0, 8);
 		}
-		
-		// Add related topics
-		if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-			data.RelatedTopics.slice(0, 5).forEach(topic => {
-				if (topic.Text) {
-					suggestions.push(topic.Text);
-				}
-			});
-		}
-		
-		// Add instant answer suggestions
-		if (data.Answer) {
-			suggestions.push(data.Answer);
-		}
-		
-		// Remove duplicates and limit to 8 suggestions
-		return [...new Set(suggestions)].slice(0, 8);
+		return [];
 	} catch (error) {
 		console.error('Error fetching suggestions:', error);
 		return [];
 	}
 }
 
-/**
- * Search categories
- */
 export const SEARCH_CATEGORIES = {
 	GENERAL: 'general',
 	IMAGES: 'images',
@@ -90,163 +88,51 @@ export const SEARCH_CATEGORIES = {
 };
 
 /**
- * Perform a search using the specified engine
- * @param {string} query - Search query
- * @param {string} engine - Search engine key
- * @param {string} category - Search category
- * @param {number} page - Page number (for pagination)
+ * Perform a web search via the server proxy
+ * @param {string} query
+ * @param {string} engine
+ * @param {number} limit
  * @returns {Promise<Array<SearchResult>>}
  */
-export async function performSearch(query, engine = 'DUCKDUCKGO', category = 'general', page = 0) {
+export async function performSearch(query, engine = 'AUTO', _category = 'general', _page = 0, limit = 10) {
 	if (!query || query.trim().length === 0) {
 		return [];
 	}
 
-	const engineConfig = SEARCH_ENGINES[engine];
-	if (!engineConfig || !engineConfig.enabled) {
-		throw new Error(`Search engine ${engine} is not available`);
-	}
+	const resolvedEngine =
+		SEARCH_ENGINES[engine]?.enabled ? engine : 'AUTO';
 
-
-	try {
-		console.log(`Searching with ${engineConfig.name} for: "${query}"`);
-		
-		const results = await searchWithEngine(query, engineConfig, category, page);
-		console.log(`Found ${results.length} results from ${engineConfig.name}`);
-		
-		return results;
-	} catch (error) {
-		console.error(`Search error with ${engineConfig.name}:`, error);
-		throw new Error(`Search failed: ${error.message}`);
-	}
-}
-
-/**
- * Search using a specific engine
- * @param {string} query - Search query
- * @param {Object} engineConfig - Engine configuration
- * @param {string} category - Search category
- * @param {number} page - Page number
- * @returns {Promise<Array<SearchResult>>}
- */
-async function searchWithEngine(query, engineConfig, category, page) {
-	const url = buildSearchUrl(query, engineConfig, category, page);
-	
-	const headers = {
-		'Accept': 'application/json',
-		'User-Agent': 'Ubiquity Search/1.0'
-	};
-
-	
-	const response = await fetch(url, {
-		method: 'GET',
-		headers
+	const params = new URLSearchParams({
+		q: query,
+		engine: resolvedEngine,
+		limit: String(limit)
 	});
 
-	if (!response.ok) {
-		throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-	}
-
+	const response = await fetch(`/api/search/web?${params}`);
 	const data = await response.json();
-	return parseSearchResults(data, engineConfig.name, category);
-}
 
-/**
- * Build search URL for the specified engine
- * @param {string} query - Search query
- * @param {Object} engineConfig - Engine configuration
- * @param {string} category - Search category
- * @param {number} page - Page number
- * @returns {string} - Complete search URL
- */
-function buildSearchUrl(query, engineConfig, category, page) {
-	const baseUrl = engineConfig.baseUrl + engineConfig.apiPath;
-	const params = new URLSearchParams();
-	
-	// Add engine-specific parameters
-	Object.entries(engineConfig.params).forEach(([key, value]) => {
-		if (key === 'q' || key === 'query') {
-			params.append(key, query);
-		} else if (key === 'categories' && category !== 'general') {
-			params.append(key, category);
-		} else if (key === 'offset' && page > 0) {
-			params.append(key, (page * 10).toString());
-		} else {
-			params.append(key, value);
-		}
-	});
-
-	return `${baseUrl}?${params.toString()}`;
-}
-
-/**
- * Parse search results from different engines
- * @param {Object} data - Raw response data
- * @param {string} engineName - Name of the search engine
- * @param {string} category - Search category
- * @returns {Array<SearchResult>} - Parsed search results
- */
-function parseSearchResults(data, engineName, category) {
-	const results = [];
-
-	try {
-		if (engineName === 'DuckDuckGo') {
-			results.push(...parseDuckDuckGoResults(data));
-		}
-	} catch (error) {
-		console.error(`Error parsing ${engineName} results:`, error);
+	if (!response.ok && !data.results) {
+		throw new Error(data.error || `HTTP ${response.status}`);
 	}
 
-	return results;
+	return (data.results || []).map(
+		(item) =>
+			new SearchResult({
+				...item,
+				type: RESULT_GROUPS.WEB,
+				action: RESULT_ACTIONS.OPEN_URL,
+				favicon: item.url ? getFaviconUrl(item.url) : ''
+			})
+	);
 }
-
-
-/**
- * Parse DuckDuckGo search results
- * @param {Object} data - DuckDuckGo response data
- * @returns {Array<SearchResult>}
- */
-function parseDuckDuckGoResults(data) {
-	const results = [];
-	
-	// DuckDuckGo instant answers
-	if (data.AbstractText) {
-		results.push(new SearchResult({
-			title: data.Heading || 'DuckDuckGo Answer',
-			url: data.AbstractURL || '',
-			description: data.AbstractText || '',
-			engine: 'DuckDuckGo',
-			category: 'general'
-		}));
-	}
-
-	// Related topics
-	if (data.RelatedTopics && Array.isArray(data.RelatedTopics)) {
-		data.RelatedTopics.forEach(item => {
-			if (item.FirstURL && item.Text) {
-				results.push(new SearchResult({
-					title: item.Text.split(' - ')[0] || '',
-					url: item.FirstURL || '',
-					description: item.Text || '',
-					engine: 'DuckDuckGo',
-					category: 'general'
-				}));
-			}
-		});
-	}
-
-	return results;
-}
-
-
 
 /**
  * Get available search engines
- * @returns {Array<Object>} - List of available search engines
+ * @returns {Array<Object>}
  */
 export function getAvailableEngines() {
 	return Object.entries(SEARCH_ENGINES)
-		.filter(([key, config]) => config.enabled)
+		.filter(([, config]) => config.enabled)
 		.map(([key, config]) => ({
 			key,
 			name: config.name,
@@ -256,10 +142,13 @@ export function getAvailableEngines() {
 
 /**
  * Format search result URL for display
- * @param {string} url - Full URL
- * @returns {string} - Formatted URL
+ * @param {string} url
+ * @returns {string}
  */
 export function formatUrl(url) {
+	if (!url) return '';
+	if (url.startsWith('/')) return url;
+
 	try {
 		const urlObj = new URL(url);
 		return urlObj.hostname + urlObj.pathname;
@@ -270,8 +159,8 @@ export function formatUrl(url) {
 
 /**
  * Get favicon URL for a domain
- * @param {string} url - Full URL
- * @returns {string} - Favicon URL
+ * @param {string} url
+ * @returns {string}
  */
 export function getFaviconUrl(url) {
 	try {
@@ -280,4 +169,25 @@ export function getFaviconUrl(url) {
 	} catch {
 		return '';
 	}
+}
+
+/**
+ * Group flat results by type for Spotlight-style UI
+ * @param {Array<Object>} results
+ * @returns {Array<{ key: string, label: string, results: Array<Object> }>}
+ */
+export function groupResults(results) {
+	const buckets = new Map();
+
+	for (const result of results) {
+		const key = result.type || result.category || RESULT_GROUPS.WEB;
+		if (!buckets.has(key)) buckets.set(key, []);
+		buckets.get(key).push(result);
+	}
+
+	return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
+		key,
+		label: GROUP_LABELS[key] || key,
+		results: buckets.get(key)
+	}));
 }

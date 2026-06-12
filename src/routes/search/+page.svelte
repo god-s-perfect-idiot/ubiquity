@@ -4,8 +4,9 @@
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
 	import { searchActions } from '../../lib/search-actions.js';
+	import { RESULT_ACTIONS } from '../../lib/search-types.js';
 	import { slide } from 'svelte/transition';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { accentColorStore, textColorClassStore } from '../../utils/theme';
 
 	let isExiting = false;
@@ -14,19 +15,29 @@
 	let searchQuery = '';
 	let finalSearchQuery = '';
 	let searchResults = [];
+	let resultGroups = [];
 	let loading = false;
 	let error = null;
-	let currentPage = 0;
 	let showSearchBar = false;
-	
+	let selectedIndex = -1;
+	let searchDebounce = null;
+	let searchGeneration = 0;
+
 	$: accentColor = $accentColorStore;
 	$: textClass = $textColorClassStore;
+	$: navbarHeight = isExpanded ? 80 : 40;
+	$: flatResults = resultGroups.length
+		? resultGroups.flatMap((g) => g.results)
+		: searchResults;
 
 	onMount(() => {
-		// Show search bar after a short delay to trigger slide-in animation
 		setTimeout(() => {
 			showSearchBar = true;
 		}, 100);
+	});
+
+	onDestroy(() => {
+		if (searchDebounce) clearTimeout(searchDebounce);
 	});
 
 	function handleToggle(event) {
@@ -34,7 +45,7 @@
 	}
 
 	function closePage() {
-		showSearchBar = false; // Hide search bar to trigger slide-out animation
+		showSearchBar = false;
 		isUnmounting = true;
 		setTimeout(() => {
 			isExpanded = false;
@@ -42,90 +53,168 @@
 				isExiting = true;
 				setTimeout(() => {
 					goto('/');
-				}, 200); // Match the animation duration
-			}, 300); // Allow time for bottom controls to collapse
-		}, 300); // Allow time for unmounting animation
+				}, 200);
+			}, 300);
+		}, 300);
 	}
 
-	async function handleSearch() {
-		if (!searchQuery.trim()) return;
+	async function runSearch(query) {
+		const trimmed = query.trim();
+		if (!trimmed) {
+			searchResults = [];
+			resultGroups = [];
+			finalSearchQuery = '';
+			selectedIndex = -1;
+			loading = false;
+			return;
+		}
 
-		console.log('Searching for:', searchQuery);
-		finalSearchQuery = searchQuery;
+		const generation = ++searchGeneration;
+		finalSearchQuery = trimmed;
 		loading = true;
 		error = null;
-		currentPage = 0;
+		selectedIndex = -1;
 
 		try {
-			searchResults = await searchActions.search(searchQuery);
-			console.log('Search results:', searchResults);
+			const { results, groups } = await searchActions.unifiedSearch(trimmed);
+			if (generation !== searchGeneration) return;
+			searchResults = results;
+			resultGroups = groups;
 		} catch (err) {
+			if (generation !== searchGeneration) return;
 			console.error('Search error:', err);
 			error = err.message;
 		} finally {
-			loading = false;
+			if (generation === searchGeneration) {
+				loading = false;
+			}
+		}
+	}
+
+	function scheduleSearch() {
+		if (searchDebounce) clearTimeout(searchDebounce);
+		searchDebounce = setTimeout(() => runSearch(searchQuery), 250);
+	}
+
+	function handleSearch() {
+		if (searchDebounce) clearTimeout(searchDebounce);
+		runSearch(searchQuery);
+	}
+
+	function handleResultClick(result) {
+		const action = result.action;
+
+		if (action === RESULT_ACTIONS.COPY) {
+			navigator.clipboard?.writeText(result.title);
+			return;
+		}
+
+		if (action === RESULT_ACTIONS.SEARCH_WEB && result.url) {
+			searchQuery = result.url;
+			runSearch(result.url);
+			return;
+		}
+
+		if (action === RESULT_ACTIONS.NAVIGATE && result.url?.startsWith('/')) {
+			goto(result.url);
+			return;
+		}
+
+		if (result.url) {
+			window.open(result.url, '_blank', 'noopener,noreferrer');
+		}
+	}
+
+	function activateSelected() {
+		if (selectedIndex >= 0 && flatResults[selectedIndex]) {
+			handleResultClick(flatResults[selectedIndex]);
+		} else {
+			handleSearch();
 		}
 	}
 
 	function handleKeydown(event) {
 		if (event.key === 'Enter') {
-			handleSearch();
+			event.preventDefault();
+			activateSelected();
+			return;
+		}
+
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			if (flatResults.length === 0) return;
+			selectedIndex = Math.min(selectedIndex + 1, flatResults.length - 1);
+			return;
+		}
+
+		if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			if (flatResults.length === 0) return;
+			selectedIndex = Math.max(selectedIndex - 1, 0);
+			return;
+		}
+
+		if (event.key === 'Escape') {
+			closePage();
 		}
 	}
 
-	function handleResultClick(result) {
-		// Open in new tab
-		window.open(result.url, '_blank', 'noopener,noreferrer');
+	function handleInput() {
+		scheduleSearch();
 	}
 </script>
 
 <div class="page-holder">
 	<div class="pt-4 px-4 flex flex-col h-screen page" class:page-exit={isExiting}>
-		<!-- Fixed title area -->
 		<div class="flex-shrink-0 pb-4 overflow-hidden">
-			<span class="text-5xl font-[300] truncate leading-tight block">{finalSearchQuery || 'search'}</span>
+			<span class="text-5xl font-[300] truncate leading-tight block">
+				{finalSearchQuery || 'search'}
+			</span>
 		</div>
 
-		<!-- Search Results with constrained height -->
 		<div class="flex-1 overflow-y-auto min-h-0">
 			<SearchResults
 				results={searchResults}
+				groups={resultGroups}
 				{loading}
 				{error}
 				onResultClick={handleResultClick}
 				{finalSearchQuery}
+				{selectedIndex}
 			/>
 		</div>
 	</div>
 </div>
 
-<!-- Search Input and Controls -->
 {#if showSearchBar}
 	<div
-		class="absolute bottom-10 left-0 right-0"
+		class="fixed left-0 right-0 z-50"
+		style="bottom: {navbarHeight}px;"
 		in:slide={{ duration: 300, axis: 'y' }}
 		out:slide={{ duration: 200, axis: 'y' }}
 	>
 		<div class="flex flex-row">
-			<!-- Search Input -->
 			<div class="flex-1 relative">
 				<input
 					type="text"
-					class="w-full h-12 bg-white text-xl text-black pl-4 pr-12 focus:outline-none z-[100]"
+					class="w-full h-12 bg-white text-xl text-black pl-4 pr-12 focus:outline-none"
 					bind:value={searchQuery}
+					on:input={handleInput}
 					on:keydown={handleKeydown}
-					placeholder="search the web..."
+					placeholder="apps, settings, math, web…"
+					autocomplete="off"
+					autocapitalize="off"
+					spellcheck="false"
 				/>
 			</div>
 
-			<!-- Search Button -->
 			<button
 				class="w-12 h-12 {textClass} flex justify-center items-center"
 				style="background-color: {accentColor};"
 				on:click={handleSearch}
-				disabled={loading}
+				disabled={loading && flatResults.length === 0}
 			>
-				{#if loading}
+				{#if loading && flatResults.length === 0}
 					<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
 				{:else}
 					<Icon icon="carbon:search" width="20" height="20" strokeWidth="2" />

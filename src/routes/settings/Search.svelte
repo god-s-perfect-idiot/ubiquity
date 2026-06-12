@@ -13,7 +13,7 @@
 	let loading = true;
 	let searchSettings = {};
 	let availableEngines = [];
-	let selectedEngine = 'DUCKDUCKGO';
+	let selectedEngine = 'AUTO';
 	let maxResults = '10';
 	let safeSearch = true;
 	let isInitialized = false;
@@ -32,8 +32,7 @@
 		safeSearch = searchSettings.safeSearch;
 
 		loading = false;
-		d;
-		isInitialized = true; // Allow reactive statements to work
+		isInitialized = true;
 	});
 
 	async function handleEngineChange(newEngine) {
@@ -62,8 +61,8 @@
 		<span class="text-6xl font-[300]">search</span>
 		<div class="flex flex-col gap-4 mt-6 pb-10 flex-1 overflow-y-auto">
 			<span class="text-lg font-[300] text-[#a1a1a1]"
-				>Use this page to change the default search engine and the number of results per search.
-				This is for the search app.
+				>Search finds apps, settings, files, and smart answers on your device, plus web results.
+				Choose your preferred web engine below.
 			</span>
 			{#if loading}
 				<div class="flex flex-col items-center justify-center py-12 h-full my-24 mt-4">

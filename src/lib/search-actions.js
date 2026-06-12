@@ -1,109 +1,100 @@
-import { performSearch, getAvailableEngines, getSearchSuggestions } from './search-utils.js';
+import {
+	performSearch,
+	getAvailableEngines,
+	getSearchSuggestions,
+	SearchResult,
+	groupResults
+} from './search-utils.js';
+import { searchLocal } from './local-search-index.js';
+import { evaluateSmartSearch } from './smart-search.js';
+import { RESULT_GROUPS } from './search-types.js';
 import { settingsStore } from '../store/settings.js';
 
+function toSearchResult(item) {
+	if (item instanceof SearchResult) return item;
+	return new SearchResult(item);
+}
+
 /**
- * Search actions that integrate with the settings store
+ * Search actions — unified Spotlight-style search across local + web
  */
 export const searchActions = {
 	/**
-	 * Perform a search with the current settings
-	 * @param {string} query - Search query
-	 * @param {string} category - Search category (optional)
-	 * @param {number} page - Page number (optional)
-	 * @returns {Promise<Array>} - Search results
+	 * Unified search: smart answers, local results, then web
+	 * @param {string} query
+	 * @param {Object} options
+	 * @returns {Promise<{ results: Array, groups: Array, query: string }>}
 	 */
-	async search(query, category = 'general', page = 0) {
-		try {
-			console.log('Starting search:', { query, category, page });
-			
-			// Get search settings from store
-			const searchEngine = settingsStore.get('search.defaultEngine') || 'DUCKDUCKGO';
-			const maxResults = settingsStore.get('search.maxResults') || 10;
-			// Perform the search
-			const results = await performSearch(query, searchEngine, category, page);
-			
-			// Limit results based on settings
-			const limitedResults = results.slice(0, maxResults);
-			
-			console.log(`Search completed: ${limitedResults.length} results`);
-			return limitedResults;
-			
-		} catch (error) {
-			console.error('Search error:', error);
-			throw new Error(`Search failed: ${error.message}`);
+	async unifiedSearch(query, options = {}) {
+		const trimmed = query.trim();
+		if (!trimmed) {
+			return { results: [], groups: [], query: trimmed };
 		}
+
+		const includeWeb = options.includeWeb !== false;
+		const maxLocal = options.maxLocal ?? 12;
+		const maxWeb = options.maxWeb ?? (settingsStore.get('search.maxResults') || 10);
+
+		const smartResults = evaluateSmartSearch(trimmed).map(toSearchResult);
+		const localResults = searchLocal(trimmed, maxLocal).map(toSearchResult);
+
+		let webResults = [];
+		if (includeWeb) {
+			try {
+				const engine = settingsStore.get('search.defaultEngine') || 'AUTO';
+				webResults = await performSearch(trimmed, engine, 'general', 0, maxWeb);
+			} catch (error) {
+				console.error('Web search error:', error);
+			}
+		}
+
+		const results = [...smartResults, ...localResults, ...webResults];
+		const groups = groupResults(results);
+
+		return { results, groups, query: trimmed };
 	},
 
-	/**
-	 * Search with a specific engine
-	 * @param {string} query - Search query
-	 * @param {string} engine - Search engine key
-	 * @param {string} category - Search category (optional)
-	 * @param {number} page - Page number (optional)
-	 * @returns {Promise<Array>} - Search results
-	 */
+	/** @deprecated Use unifiedSearch — kept for compatibility */
+	async search(query, category = 'general', page = 0) {
+		const { results } = await this.unifiedSearch(query, { includeWeb: true });
+		return results;
+	},
+
 	async searchWithEngine(query, engine, category = 'general', page = 0) {
 		try {
-			console.log('Starting search with specific engine:', { query, engine, category, page });
-			
-			const results = await performSearch(query, engine, category, page);
-			
-			console.log(`Search with ${engine} completed: ${results.length} results`);
-			return results;
-			
+			return await performSearch(query, engine, category, page);
 		} catch (error) {
 			console.error(`Search error with ${engine}:`, error);
 			throw new Error(`Search with ${engine} failed: ${error.message}`);
 		}
 	},
 
-	/**
-	 * Get search suggestions
-	 * @param {string} query - Partial search query
-	 * @returns {Promise<Array<string>>} - Search suggestions
-	 */
 	async getSuggestions(query) {
 		try {
-			const suggestions = await getSearchSuggestions(query);
-			return suggestions;
+			return await getSearchSuggestions(query);
 		} catch (error) {
 			console.error('Suggestions error:', error);
 			return [];
 		}
 	},
 
-
-	/**
-	 * Set default search engine
-	 * @param {string} engine - Search engine key
-	 * @returns {boolean} - Success status
-	 */
 	setDefaultEngine(engine) {
 		const availableEngines = getAvailableEngines();
-		const engineExists = availableEngines.some(e => e.key === engine);
-		
+		const engineExists = availableEngines.some((e) => e.key === engine);
+
 		if (engineExists) {
 			settingsStore.set('search.defaultEngine', engine);
-			console.log('Default search engine set to:', engine);
 			return true;
 		}
-		
+
 		console.error('Invalid search engine:', engine);
 		return false;
 	},
 
-	/**
-	 * Get default search engine
-	 * @returns {string} - Default search engine key
-	 */
 	getDefaultEngine() {
-		return settingsStore.get('search.defaultEngine') || 'SEARXNG';
+		return settingsStore.get('search.defaultEngine') || 'AUTO';
 	},
 
-	/**
-	 * Set search settings
-	 * @param {Object} settings - Search settings
-	 */
 	updateSettings(settings) {
 		const allowedSettings = [
 			'search.defaultEngine',
@@ -111,7 +102,6 @@ export const searchActions = {
 			'search.safeSearch'
 		];
 
-		// Filter to only allowed settings
 		const filteredSettings = {};
 		Object.entries(settings).forEach(([key, value]) => {
 			if (allowedSettings.includes(key)) {
@@ -119,40 +109,25 @@ export const searchActions = {
 			}
 		});
 
-		// Use updateSettings to ensure proper saving to localStorage
 		settingsStore.updateSettings(filteredSettings);
 	},
 
-	/**
-	 * Get search settings
-	 * @returns {Object} - Current search settings
-	 */
 	getSettings() {
 		return {
-			defaultEngine: settingsStore.get('search.defaultEngine') || 'DUCKDUCKGO',
+			defaultEngine: settingsStore.get('search.defaultEngine') || 'AUTO',
 			maxResults: settingsStore.get('search.maxResults') || 10,
-			safeSearch: settingsStore.get('search.safeSearch') ?? true,
+			safeSearch: settingsStore.get('search.safeSearch') ?? true
 		};
 	},
 
-
-	/**
-	 * Get available search engines
-	 * @returns {Array} - Available search engines
-	 */
 	getAvailableEngines() {
 		return getAvailableEngines();
 	},
 
-	/**
-	 * Test search engine connectivity
-	 * @param {string} engine - Search engine key
-	 * @returns {Promise<boolean>} - Connectivity status
-	 */
 	async testEngine(engine) {
 		try {
-			const results = await performSearch('test', engine, 'general', 0);
-			return results.length >= 0; // Even 0 results means the engine is working
+			const results = await performSearch('earth', engine, 'general', 0, 3);
+			return results.length >= 0;
 		} catch (error) {
 			console.error(`Engine ${engine} test failed:`, error);
 			return false;

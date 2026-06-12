@@ -17,6 +17,7 @@
 		borderColorClassStore,
 		backgroundThemeStore
 	} from '../utils/theme';
+	import { SYSTEM_APPS } from '../lib/system-apps.js';
 
 	export let onBackClick = () => {};
 
@@ -25,127 +26,7 @@
 	$: borderClass = $borderColorClassStore;
 	$: backgroundTheme = $backgroundThemeStore;
 
-	const systemApps = [
-		{
-			name: 'Ubiquity',
-			content: '/about',
-			isSystemApp: true,
-			icon: 'mdi:information',
-			bgColor: '' // Will use accent color via inline style
-		},
-		{
-			name: 'Settings',
-			content: '/settings',
-			isSystemApp: true,
-			icon: 'rivet-icons:settings',
-			bgColor: 'bg-green-800'
-		},
-		{
-			name: 'Files',
-			content: '/files',
-			isSystemApp: true,
-			icon: 'material-symbols:files-sharp',
-			bgColor: 'bg-blue-900'
-		},
-		{
-			name: 'Photos',
-			content: '/photos',
-			isSystemApp: true,
-			icon: 'tdesign:image-filled',
-			bgColor: 'bg-orange-600'
-		},
-		{
-			name: 'Camera',
-			content: '/camera',
-			isSystemApp: true,
-			icon: 'el:camera',
-			bgColor: 'bg-[#4b1a4b]'
-		},
-		{
-			name: 'Music',
-			content: '/music',
-			isSystemApp: true,
-			icon: 'ic:sharp-headphones',
-			bgColor: 'bg-green-700'
-		},
-		{
-			name: 'Video',
-			content: '/video',
-			isSystemApp: true,
-			icon: 'tdesign:video-filled',
-			bgColor: 'bg-pink-800'
-		},
-		{
-			name: 'Clock',
-			content: '/clock',
-			isSystemApp: true,
-			icon: 'nrk:clock',
-			bgColor: 'bg-indigo-800'
-		},
-		{
-			name: 'Documents',
-			content: '/documents',
-			isSystemApp: true,
-			icon: 'ix:document-filled',
-			bgColor: 'bg-red-700'
-		},
-		{
-			name: 'Books',
-			content: '/books',
-			isSystemApp: true,
-			icon: 'mdi:book-open-page-variant',
-			bgColor: 'bg-amber-800'
-		},
-		{
-			name: 'Feedback',
-			content: '/feedback',
-			isSystemApp: true,
-			icon: 'fluent-mdl2:feedback-response-solid',
-			bgColor: 'bg-teal-700'
-		},
-		{
-			name: 'Marketplace',
-			content: '/marketplace',
-			isSystemApp: true,
-			icon: 'ic:sharp-store',
-			bgColor: 'bg-purple-900'
-		},
-		{
-			name: 'Spotify Metro',
-			content: '/spotify',
-			isSystemApp: true,
-			icon: 'mdi:spotify',
-			bgColor: 'bg-green-700'
-		},
-		{
-			name: 'YTMusic Metro',
-			content: '/ytmusic',
-			isSystemApp: true,
-			icon: 'simple-icons:youtubemusic',
-			bgColor: 'bg-red-700'
-		},
-		{
-			name: 'Weather',
-			content: '/weather',
-			isSystemApp: true,
-			icon: 'material-symbols-light:weather-mix',
-			bgColor: 'bg-blue-900'
-		},
-		{
-			name: 'Search',
-			content: '/search',
-			isSystemApp: true,
-			icon: 'mdi:magnify',
-			bgColor: 'bg-red-700'
-		},
-		{
-			name: 'Live Tiles Toolkit',
-			content: '/live-tiles',
-			isSystemApp: true,
-			icon: 'material-symbols:grid-view',
-			bgColor: 'bg-purple-800'
-		}
-	];
+	const systemApps = SYSTEM_APPS;
 	let apps = [];
 	let faviconCache = {};
 

@@ -84,7 +84,7 @@ const createSettingsStore = () => {
 
       // Search settings
       search: {
-        defaultEngine: 'DUCKDUCKGO', // Default search engine
+        defaultEngine: 'AUTO', // Default search engine (AUTO merges DuckDuckGo and Wikipedia)
         maxResults: 10, // Maximum number of results per search
         safeSearch: true, // Enable safe search filtering
         autoComplete: true, // Enable auto-complete suggestions
