@@ -52,24 +52,88 @@
 				>
 			</div>
 			<span class="text-lg mt-4 underline font-[300]"> Privacy Policy </span>
-			<div class="flex flex-col gap-2 mt-6 text-lg font-[300]">
-				<span>Ubiquity Version v1.5.0</span>
-				<span>Settings v2.1.1</span>
-				<span>Search v2.0</span>
-				<span>File Explorer v1.0</span>
-				<span>Photos v1.2.0</span>
-				<span>Camera v1.0</span>
-				<span>Music Player v1.0</span>
-				<span>Video v1.0</span>
-				<span>Clock v1.0</span>
-				<span>Documents v1.0</span>
-				<span>Books v1.0</span>
-				<span>Feedback v1.0</span>
-				<span>Marketplace v1.3.0</span>
-				<span>Spotify Metro v1.0</span>
-				<span>YTMusic Metro v1.0</span>
-				<span>Weather v1.0</span>
-				<span>Live Tiles Toolkit v1.0</span>
+			<div class="flex flex-col gap-3 mt-6 text-lg font-[300]">
+				<span class="flex flex-row gap-2 items-center">
+					<span class="flex bg-red-800 p-2"><Icon icon="mdi:application" class="w-5 h-5" /></span>
+					<span><span>Ubiquity Version v1.5.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-blue-800 p-2"><Icon icon="rivet-icons:settings" class="w-5 h-5" /></span>
+					<span><span>Settings v2.1.1</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-green-800 p-2"><Icon icon="mdi:search" class="w-5 h-5" /></span>
+					<span><span>Search v2.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-orange-800 p-2"
+						><Icon icon="material-symbols:folder" class="w-5 h-5" /></span
+					>
+					<span><span>File Explorer v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-purple-800 p-2"><Icon icon="tdesign:image-filled" class="w-5 h-5" /></span
+					>
+					<span><span>Photos v1.2.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-violet-800 p-2"><Icon icon="el:camera" class="w-5 h-5" /></span>
+					<span><span>Camera v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-indigo-800 p-2"><Icon icon="ic:sharp-headphones" class="w-5 h-5" /></span>
+					<span><span>Music Player v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-pink-800 p-2"><Icon icon="tdesign:video-filled" class="w-5 h-5" /></span>
+					<span><span>Video v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-rose-800 p-2"><Icon icon="nrk:clock" class="w-5 h-5" /></span>
+					<span><span>Clock v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-red-800 p-2"><Icon icon="ix:document-filled" class="w-5 h-5" /></span>
+					<span><span>Documents v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-amber-800 p-2"
+						><Icon icon="mdi:book-open-page-variant" class="w-5 h-5" /></span
+					>
+					<span><span>Books v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-teal-800 p-2"
+						><Icon icon="fluent-mdl2:feedback-response-solid" class="w-5 h-5" /></span
+					>
+					<span><span>Feedback v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-purple-800 p-2"><Icon icon="ic:sharp-store" class="w-5 h-5" /></span>
+					<span><span>Marketplace v1.3.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-green-700 p-2"><Icon icon="mdi:spotify" class="w-5 h-5" /></span>
+					<span><span>Spotify Metro v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-red-700 p-2"
+						><Icon icon="simple-icons:youtubemusic" class="w-5 h-5" /></span
+					>
+					<span><span>YTMusic Metro v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-blue-900 p-2"
+						><Icon icon="material-symbols-light:weather-mix" class="w-5 h-5" /></span
+					>
+					<span><span>Weather v1.0</span></span>
+				</span>
+				<span class="flex flex-row gap-2 items-center">
+					<span class="bg-purple-800 p-2"
+						><Icon icon="material-symbols:grid-view" class="w-5 h-5" /></span
+					>
+					<span><span>Live Tiles Toolkit v1.0</span></span>
+				</span>
 			</div>
 			<div class="mt-12 mb-8">
 				<span class="text-2xl" style="color: {accentColor};">faq</span>
